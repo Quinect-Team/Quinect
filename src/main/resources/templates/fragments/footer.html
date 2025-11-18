@@ -1,12 +1,45 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
   <body>
-    <footer class="sticky-footer bg-white" th:fragment="footer">
-      <div class="container my-auto">
-        <div class="copyright text-center my-auto">
-          <span>Copyright &copy; Your Website 2021</span>
-        </div>
-      </div>
-    </footer>
+	<footer class="sticky-footer bg-white text-black-50" th:fragment="footer">
+	  <div class="container my-auto">
+		
+		<!-- 공지 파트 -->
+	    <div class="mb-2">
+	        <a href="#" class="text-black-50 font-weight-bold text-decoration-none" style="font-size: 0.9rem;">
+	            공지 | QuizParty 첫 오픈!
+	        </a>
+	    </div>
+		
+		<!-- 구분선 디바이더 -->
+		<hr class="sidebar-divider">
+		
+		<!-- footer 메뉴 -->
+	    <div class="mb-3">
+	        <a href="#" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">개인정보처리방침</a>
+	        <span class="mx-2" style="color: rgba(255,255,255,0.2);">|</span>
+	        <a href="#" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">문의하기</a>
+	        <span class="mx-2" style="color: rgba(255,255,255,0.2);">|</span>
+	        <a href="#" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">자주 묻는 질문</a>
+	        <span class="mx-2" style="color: rgba(255,255,255,0.2);">|</span>
+	        <a href="#" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">QuizParty란?</a>
+	        <span class="mx-2" style="color: rgba(255,255,255,0.2);">|</span>
+	        <a href="#" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">위치</a>
+	    </div>
+		
+		<!-- 기타 -->
+	    <div class="copyright mb-2" style="font-size: 0.8rem;">
+	      <span>Copyright &copy; QuizParty 2025 All Rights Reserved.</span>
+	    </div>
+
+	    <a class="d-flex align-items-center text-decoration-none" href="index.html" 
+	       style="opacity: 0.8;"
+	       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
+	        <div class="rotate-n-15">
+	            <i class="fas fa-laugh-wink fa-lg text-success"></i> </div>
+	        <div class="mx-2 font-weight-bold text-success" style="font-size: 1rem;">QuizParty</div> </a>
+
+	  </div>
+	</footer>
   </body>
 </html>
