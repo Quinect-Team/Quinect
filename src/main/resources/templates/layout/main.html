@@ -1,0 +1,49 @@
+<div class="container my-5" th:fragment="main">
+	<div class="row justify-content-center g-4 flex-column align-items-center">
+		<!-- 방 생성 -->
+		<div class="col-md-4">
+			<div class="card text-center shadow-sm">
+				<div class="card-header">
+					<h5 class="card-title">방 생성</h5>
+				</div>
+				<div class="card-body">
+					<form th:action="@{/create-room}" method="get">
+						<button type="submit" class="btn btn-primary w-100">새 방 생성</button>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- 방 참가 -->
+		<div class="col-md-4">
+			<div class="card text-center shadow-sm">
+				<div class="card-header">
+					<h5 class="card-title">방 참가</h5>
+				</div>
+				<div class="card-body">
+					<form th:action="@{/join-room}" method="post" >
+						<input type="text" class="form-control mb-3" placeholder="방 코드 입력"
+							required>
+						<button type="submit" class="btn btn-success w-100">입장</button>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- 퀴즈 참가 -->
+		<div class="col-md-4">
+			<div class="card text-center shadow-sm">
+				<div class="card-header">
+					<h5 class="card-title">퀴즈 참가</h5>
+				</div>
+				<div class="card-body">
+					<form th:action="@{/join-quiz}" method="post" >
+						<input type="text" class="form-control mb-3" placeholder="퀴즈 코드 입력"
+							required>
+						<button type="submit" class="btn btn-warning w-100">참가</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

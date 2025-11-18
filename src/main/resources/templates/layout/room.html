@@ -1,0 +1,8 @@
+<div class="container py-5" th:fragment="room">
+	<h2>방 입장 화면</h2>
+	<p>방 코드: <span th:text="${room.roomCode}">0000</span></p>
+	<p>방 주최자: <span th:text="${room.hostUserId}">호스트</span></p>
+	<p>방 상태: <span th:text="${room.status}">OPEN</span></p>
+	<p>방 유형: <span th:text="${room.roomType}">객관식</span></p>
+	<!-- 이후 실제 퀴즈 시작 버튼, 참가자 리스트 등 추가 -->
+</div>

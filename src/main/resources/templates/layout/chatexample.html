@@ -1,0 +1,15 @@
+<div class="container-fluid" th:fragment="chatexample">
+	<h1>실시간 채팅</h1>
+	<div style="margin: 10px 0;">
+		<input id="nameInput" type="text" class="form-control d-inline-block" style="width:20%; display:inline-block;"
+			placeholder="이름 입력" />
+		<input id="msgInput" type="text" class="form-control d-inline-block" style="width:70%; display:inline-block;"
+			placeholder="메시지를 입력하세요" />
+		<button id="sendBtn" class="btn btn-info">전송</button>
+	</div>
+	<div id="chatList"
+		style="margin-top:10px; border:1px solid #ccc; background:#f9f9f9; width:100%; max-width:600px; height:250px; overflow-y:auto; padding:8px;">
+	</div>
+</div>
+
+<script th:src="@{/js/websocket-chat.js}"></script>
