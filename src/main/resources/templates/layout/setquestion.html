@@ -1,0 +1,53 @@
+<div class="question-block" style="margin-bottom:20px; border:1px solid #ccc; padding:10px; border-radius:5px;">
+	<!-- 문제 제목 + 문제 유형 선택 -->
+	<div style="display:flex; align-items:center; gap:10px;">
+        <label for="question">Q1.</label>
+        <input type="text" id="question" name="question" placeholder="문제를 입력하세요" style="flex:1; padding:5px;">
+        
+        <select name="question_type" id="question_type" style="padding:5px;">
+            <option value="short_answer">서술형</option>
+            <option value="multiple_choice">객관식</option>
+        </select>
+    </div>
+	
+	<!-- 지문 입력 -->
+    <div id="text-container" style="margin-top:10px;">
+        <input type="text" id="sub" name="sub" placeholder="지문을 작성하세요" style="width:100%; padding:5px;">
+    </div>
+</div>
+
+<!-- 문제 타입에 따라 지문 입력 방식 변경 -->
+<script>
+const typeSelect = document.getElementById('question_type');
+const answerContainer = document.getElementById('text-container');
+
+typeSelect.addEventListener('change', function() {
+    // 기존 입력 초기화
+    answerContainer.innerHTML = '';
+
+    if(this.value === 'short_answer'){
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'sub';
+        input.name = 'sub';
+        input.placeholder = '지문을 작성하세요';
+        input.style.width = '100%';
+        input.style.padding = '5px';
+        answerContainer.appendChild(input);
+    }
+    else if(this.value === 'multiple_choice'){
+        for(let i=1; i<=3; i++){
+            const choiceInput = document.createElement('input');
+            choiceInput.type = 'text';
+            choiceInput.name = `choice${i}`;
+            choiceInput.placeholder = `선택지 ${i}`;
+            choiceInput.style.display = 'block';
+            choiceInput.style.marginTop = '5px';
+            choiceInput.style.width = '100%';
+            choiceInput.style.padding = '5px';
+            answerContainer.appendChild(choiceInput);
+        }
+    }
+});
+</script>
+
