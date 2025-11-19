@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>퀴즈 대기실</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body>
+    <h1>퀴즈 대기실</h1>
+    <div>
+        <label>닉네임: <input type="text" id="username" /></label>
+        <button onclick="connect()">입장하기</button>
+    </div>
+    <div id="chatArea" style="display:none;">
+        <div id="messages" style="border:1px solid #ccc; width:300px; height:400px; overflow-y:auto;"></div>
+        <input type="text" id="messageInput" placeholder="메시지 입력"/>
+        <button onclick="sendMessage()">전송</button>
+    </div>
+
+    <script type="text/javascript">
+        var stompClient = null;
+
+        function connect() {
+            var username = document.getElementById('username').value;
+            if (!username) {
+                alert('닉네임을 입력하세요');
+                return;
+            }
+
+            var socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function(frame) {
+                document.getElementById('chatArea').style.display = 'block';
+                stompClient.subscribe('/topic/waitroom', function(message) {
+                    showMessage(JSON.parse(message.body));
+                });
+                stompClient.send("/app/waitroom/join", {}, JSON.stringify({sender: username, type: 'JOIN', content: username + '님이 입장했습니다.'}));
+            });
+        }
+
+        function sendMessage() {
+            var messageContent = document.getElementById('messageInput').value.trim();
+            if (messageContent && stompClient) {
+                var chatMessage = {
+                    sender: document.getElementById('username').value,
+                    content: messageContent,
+                    type: 'CHAT'
+                };
+                stompClient.send("/app/waitroom/message", {}, JSON.stringify(chatMessage));
+                document.getElementById('messageInput').value = '';
+            }
+        }
+
+        function showMessage(message) {
+            var messages = document.getElementById('messages');
+            var messageElement = document.createElement('p');
+
+            if (message.type === 'JOIN' || message.type === 'LEAVE') {
+                messageElement.style.color = 'gray';
+                messageElement.textContent = message.content;
+            } else if (message.type === 'CHAT') {
+                messageElement.innerHTML = '<strong>' + message.sender + ':</strong> ' + message.content;
+            }
+            
+            messages.appendChild(messageElement);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
