@@ -1,23 +1,23 @@
 package com.project.quiz.service;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.project.quiz.domain.QuizRoom;
-import com.project.quiz.repository.QuizRoomRepository;
-
 import java.time.LocalDateTime;
 import java.util.Random;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.project.quiz.domain.Room;
+import com.project.quiz.repository.RoomRepository;
+
 @Service
 @Transactional
-public class QuizRoomService {
+public class RoomService {
 
-	private final QuizRoomRepository quizRoomRepository;
+	private final RoomRepository RoomRepository;
 	private final Random random = new Random();
 
-	public QuizRoomService(QuizRoomRepository quizRoomRepository) {
-		this.quizRoomRepository = quizRoomRepository;
+	public RoomService(RoomRepository RoomRepository) {
+		this.RoomRepository = RoomRepository;
 	}
 
 	/**
@@ -27,26 +27,26 @@ public class QuizRoomService {
 		String roomCode;
 		do {
 			roomCode = String.format("%04d", random.nextInt(10000));
-		} while (quizRoomRepository.existsByRoomCode(roomCode));
+		} while (RoomRepository.existsByRoomCode(roomCode));
 		return roomCode;
 	}
 
 	/**
 	 * 새로운 방을 생성합니다.
 	 */
-	public QuizRoom createRoom(String hostUserId, String roomType) {
+	public Room createRoom(String hostUserId, String roomType) {
 		String roomCode = generateUniqueRoomCode();
-		QuizRoom room = QuizRoom.builder().roomCode(roomCode).hostUserId(hostUserId).status("OPEN").roomType(roomType)
+		Room room = Room.builder().roomCode(roomCode).hostUserId(hostUserId).status("OPEN").roomType(roomType)
 				.createdAt(LocalDateTime.now()).build();
 
-		return quizRoomRepository.save(room);
+		return RoomRepository.save(room);
 	}
 
 	public boolean existsRoomCode(String roomCode) {
-		return quizRoomRepository.existsByRoomCode(roomCode);
+		return RoomRepository.existsByRoomCode(roomCode);
 	}
 
-	public QuizRoom findByRoomCode(String roomCode) {
-		return quizRoomRepository.findByRoomCode(roomCode).orElse(null);
+	public Room findByRoomCode(String roomCode) {
+		return RoomRepository.findByRoomCode(roomCode).orElse(null);
 	}
 }

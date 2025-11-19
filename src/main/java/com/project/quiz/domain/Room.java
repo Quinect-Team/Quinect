@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @ToString
 @Builder
-public class QuizRoom {
+public class Room {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
