@@ -32,6 +32,8 @@ dependencies {
 	// lombok 추가
 	compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'  
+    implementation 'com.google.zxing:core:3.4.1'
+    implementation 'com.google.zxing:javase:3.4.1'
 }
 
 tasks.named('test') {

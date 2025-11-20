@@ -10,14 +10,43 @@
 	<!-- CSS -->
 	<link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
 	<link th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900}" rel="stylesheet" />
-	<link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet" />
+	<link th:href="@{/css/sb-admin-2.css}" rel="stylesheet" />
+	<style>		
+		html {
+		  scroll-behavior: smooth;
+		}
+
+		#sidebarModalBackdrop {
+		  position: fixed;
+		  top: 0; left: 0; width: 100vw; height: 100vh;
+		  background-color: rgba(0,0,0,0.5);
+		  z-index: 1050;
+		  display: none;
+		}
+
+		.sidebar-modal {
+		  position: fixed;
+		  top: 0; right: 0;
+		  overflow-y: auto;
+		  background: #1cc88a; /* 기존 bg-gradient-success 대신 단색으로 변경 가능 */
+		  z-index: 1060;
+		  transition: transform 0.3s ease;
+		  transform: translateX(100%);
+		  box-sizing: content-box; /* 기본값이므로 명확히 하고 싶을 때만 */
+		  display: inline-block;  /* 또는 display: table; */
+		}
+
+		.sidebar-modal.show {
+		  transform: translateX(0);
+		  display: block;
+		}
+
+	</style>
 </head>
 
 <body id="page-top">
+	<div id="sidebarModalBackdrop"></div>
 	<div id="wrapper">
-
-		<!-- Sidebar -->
-		<div th:replace="~{fragments/sidebar :: sidebar}"></div>
 
 		<div id="content-wrapper" class="d-flex flex-column">
 			<div id="content">
@@ -33,6 +62,11 @@
 			<!-- Footer -->
 			<div th:replace="~{fragments/footer :: footer}"></div>
 		</div>
+		
+		<!-- Sidebar -->
+		<div id="sidebarModal" class="sidebar-modal" style="display:none;">
+			<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+		</div>
 	</div>
 
 	<!-- Scroll to Top Button-->
@@ -43,11 +77,35 @@
 
 	<!-- JS -->
 	<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
-	<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 	<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 	<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
-	<script th:src="@{/js/sb-admin-2.min.js}"></script>
+	<script th:src="@{/js/sb-admin-2.js}"></script>
+	<script>
+		function openSidebarModal() {
+		  document.getElementById('sidebarModalBackdrop').style.display = 'block';
+		  document.getElementById('sidebarModal').style.display = 'block';
+		  setTimeout(() => {
+		    document.getElementById('sidebarModal').classList.add('show');
+		  }, 10);
+		}
+
+		function closeSidebarModal() {
+		  document.getElementById('sidebarModal').classList.remove('show');
+		  setTimeout(() => {
+		    document.getElementById('sidebarModal').style.display = 'none';
+		    document.getElementById('sidebarModalBackdrop').style.display = 'none';
+		  }, 300);
+		}
+
+		document.addEventListener('DOMContentLoaded', function() {
+		  document.getElementById('sidebarToggle').onclick = openSidebarModal;
+		  document.getElementById('sidebarModalBackdrop').onclick = closeSidebarModal;
+		});
+	</script>
+	
+	<!--웹소켓-->
+	<!--<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>-->
 
 </body>
 
