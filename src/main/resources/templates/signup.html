@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Quinect - 회원가입</title>
+
+    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* 로그인 페이지와 동일한 레이아웃 스타일 */
+		body {
+		    background-color: #fff;
+		    min-height: 100vh;      /* height 대신 min-height 권장 */
+		    display: flex;
+		    align-items: flex-start; /* 변경: 위쪽을 기준으로 정렬 */
+		    padding-top: 80px;      /* 변경: 위에서 120px 만큼 내려와서 시작 (이 숫자로 위치 고정) */
+		    justify-content: center; /* 가로 중앙 정렬은 유지 */
+		}
+        .login-container {
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+        }
+        
+        /* 입력창 크기 및 폰트 강제 적용 (로그인 페이지와 통일) */
+        input.form-control-user {
+            font-size: 1.1rem !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container text-center">
+        
+        <div class="mb-5 pb-3">
+            <div class="d-flex align-items-center justify-content-center">
+                <div class="rotate-n-15">
+                    <i class="fas fa-laugh-wink fa-3x text-success"></i>
+                </div>
+                <div class="ml-3 font-weight-bold text-success" style="font-size: 2.5rem;">QuizParty</div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h1 class="h3 text-gray-900 font-weight-bold mb-2">계정을 생성하세요!</h1>
+            <p class="text-gray-600">간단한 정보 입력으로 바로 시작할 수 있습니다.</p>
+        </div>
+
+        <form class="user" th:action="@{/register}" method="post">
+            
+            <div class="form-group">
+                <input type="text" class="form-control form-control-user w-75 mx-auto"
+                       id="exampleInputName" placeholder="이름 (Username)" 
+                       name="username" required>
+            </div>
+
+            <div class="form-group">
+                <input type="email" class="form-control form-control-user w-75 mx-auto"
+                       id="exampleInputEmail" placeholder="이메일 주소" 
+                       name="email" required>
+            </div>
+
+            <div class="form-group">
+                <input type="password" class="form-control form-control-user w-75 mx-auto"
+                       id="exampleInputPassword" placeholder="비밀번호" 
+                       name="password" required>
+            </div>
+            
+            <div class="mb-4"></div>
+
+            <button type="submit" class="btn btn-success btn-user w-75 mx-auto d-block font-weight-bold" style="font-size: 1.3rem; padding-top: 0.5rem; padding-bottom: 0.5rem;">
+                계정 생성하기
+            </button>
+        </form>
+
+        <hr class="w-75 mx-auto my-4">
+		
+        <div class="text-center">
+			<div class="small">이미 계정이 있으신가요?</div>
+            <a class="small font-weight-bold text-primary" th:href="@{/login}">로그인</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Quinect - 프로필</title>
+
+    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
+    <link th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900}" rel="stylesheet" />
+    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet" />
+    
+    <style>
+        /* [수정됨] 프로필 컨테이너: 너비를 제한하고 중앙 정렬 */
+        .profile-container {
+            max-width: 700px; /* 로그인 화면 비슷하게 하되, 내용 고려해 700px로 설정 (조절 가능) */
+            width: 100%;
+            margin: 0 auto;   /* 좌우 중앙 정렬 */
+            padding-top: 2rem; /* 상단 여백 */
+        }
+
+        /* 프로필 이미지 원형으로 */
+        .profile-img-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #e9ecef;
+        }
+        .profile-img-placeholder {
+            font-size: 5rem;
+            color: #6c757d;
+        }
+        
+        /* 통계 박스 스타일 */
+        .stats-box {
+            border: 1px solid #c7d4e3;
+            border-radius: .35rem;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 0.95rem;
+            background-color: #fff;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .05);
+        }
+        .stats-item {
+            text-align: center;
+            flex-grow: 1;
+        }
+        .stats-item:not(:last-child) {
+            border-right: 1px solid #e3e6f0;
+        }
+
+        /* 업적 아이콘 */
+        .achievement-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #36b9cc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+
+        <!-- <div th:replace="~{fragments/sidebar :: sidebar}"></div> -->
+
+        <div id="content-wrapper" class="d-flex flex-column">
+            
+            <div id="content">
+
+                <div th:replace="~{fragments/topbar :: topbar}"></div>
+
+                <div class="profile-container">
+
+                    <div class="d-flex align-items-center mb-4">
+                        <a href="javascript:history.back()" class="text-decoration-none text-gray-800">
+                            <i class="fas fa-arrow-left fa-2x mr-2"></i>
+                        </a>
+                        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">메인</h1>
+                    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto mr-4">
+                                    <div class="profile-img-container">
+                                        <i class="fas fa-user profile-img-placeholder"></i>
+                                    </div>
+                                </div>
+                                <div class="col">
+									<div class="d-flex align-items-center mb-2">
+									    <h2 class="h3 font-weight-bold mb-0 mr-2">김OO (이름)</h2>
+									    
+									    <a th:href="@{/profile/settings}" class="text-gray-600 text-decoration-none" title="설정">
+									        <i class="fas fa-cog fa-lg"></i>
+									    </a>
+									</div>
+                                    <p class="text-gray-700 mb-1">OO대학교</p>
+                                    <p class="text-gray-600 font-weight-bold mb-0">우리 함께 즐겁게 퀴즈를 풀어보아요.</p>
+                                    <p class="text-gray-600">주로 오후 7시에 접속합니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-box mb-4">
+                        <div class="stats-item">
+                            현재 푼 퀴즈 개수: <span class="font-weight-bold text-success">N</span> 개
+                        </div>
+                        <div class="stats-item">
+                            현재 보유 포인트: <span class="font-weight-bold text-success">N</span> 개
+                        </div>
+                        <div class="stats-item">
+                            팔로워: <span class="font-weight-bold text-success">N</span> 명
+                        </div>
+                    </div>
+
+                    <h5 class="font-weight-bold text-gray-800 mb-3">업적 내역</h5>
+                    <div class="d-flex mb-4">
+                        <div class="achievement-icon"><i class="fas fa-trophy text-white"></i></div>
+                        <div class="achievement-icon"><i class="fas fa-award text-white"></i></div>
+                        <div class="achievement-icon"><i class="fas fa-medal text-white"></i></div>
+                        <div class="achievement-icon"><i class="fas fa-star text-white"></i></div>
+                    </div>
+
+                </div> </div>
+            <div th:replace="~{fragments/footer :: footer}"></div>
+
+        </div>
+    </div>
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+    <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
+    <script th:src="@{/js/sb-admin-2.min.js}"></script>
+
+</body>
+</html>

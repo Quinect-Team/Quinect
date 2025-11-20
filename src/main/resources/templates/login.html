@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Quinect - 로그인</title>
+
+    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
+    <style>
+		body {
+		    background-color: #fff;
+		    min-height: 100vh;      /* height 대신 min-height 권장 */
+		    display: flex;
+		    align-items: flex-start; /* 변경: 위쪽을 기준으로 정렬 */
+		    padding-top: 80px;      /* 변경: 위에서 120px 만큼 내려와서 시작 (이 숫자로 위치 고정) */
+		    justify-content: center; /* 가로 중앙 정렬은 유지 */
+		}
+        .login-container {
+            max-width: 600px; /* 가로 폭을 조금 더 넓혀도 좋습니다 */
+            width: 100%;
+            padding: 2rem;
+        }
+        
+        /* 구분선 스타일 */
+        .divider-text {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #858796;
+            margin: 2rem 0;
+        }
+        .divider-text::before,
+        .divider-text::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        .divider-text span {
+            padding: 0 10px;
+            font-size: 0.9rem;
+        }
+		
+        /* 카카오 (노랑 #FEE500, 글자색 #3C1E1E) */
+        .btn-kakao {
+            background-color: #FEE500;
+            color: #3C1E1E;
+            border-color: #FEE500;
+        }
+        .btn-kakao:hover {
+            background-color: #e6cf00;
+            color: #3C1E1E;
+        }
+		input.form-control-user {
+		    font-size: 1.1rem !important; /* 글자 크기 (원하는 만큼 조절: 1.5rem 등) */
+		}
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container text-center">
+        
+        <div class="mb-5 pb-3">
+            <div class="d-flex align-items-center justify-content-center">
+                <div class="rotate-n-15">
+                    <i class="fas fa-laugh-wink fa-3x text-success"></i>
+                </div>
+                <div class="ml-3 font-weight-bold text-success" style="font-size: 2.5rem;">QuizParty</div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h1 class="h3 text-gray-900 font-weight-bold mb-2">퀴즈 파티를 열기 위해 로그인하세요!</h1>
+        </div>
+		<form class="user" th:action="@{/login}" method="post">
+            <div class="form-group">
+                <input type="email" class="form-control form-control-user form-control-lg w-75 mx-auto"
+                       id="exampleInputEmail" aria-describedby="emailHelp"
+                       placeholder="이메일 (example@email.com)" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <input type="password" class="form-control form-control-user form-control-lg w-75 mx-auto"
+                       id="exampleInputPassword" placeholder="비밀번호" name="password" required>
+            </div>
+        
+            <button type="submit" class="btn btn-success btn-user w-75 mx-auto d-block font-weight-bold" 
+                    style="font-size: 1.3rem; padding-top: 0.5rem; padding-bottom: 0.5rem;">
+                로그인
+            </button>
+        </form>
+		<div class="text-center mt-3">
+            <span class="small text-gray-600">혹시 QuizParty 이용은 처음이신가요?</span>
+            <a th:href="@{/signup}" class="small font-weight-bold ml-1 text-primary">계정 생성</a>
+        </div>
+		<div class="text-center mt-1 mb-4">
+            <span class="small text-gray-600">혹시 로그인에 문제가 생겼나요?</span>
+            <a th:href="@{/forgot}" class="small font-weight-bold ml-1 text-primary">해결하기</a>
+        </div>
+        <div class="divider-text">
+            <span>또는 소셜 계정으로 로그인</span>
+        </div>
+
+		<div class="row justify-content-center">
+            <div class="col-sm-5 mb-2">
+                <a href="/oauth2/authorization/google" class="btn btn-google btn-user btn-block">
+                    <i class="fab fa-google fa-fw"></i> Google
+                </a>
+            </div>
+            <div class="col-sm-5 mb-2">
+                <a href="/oauth2/authorization/kakao" class="btn btn-kakao btn-user btn-block font-weight-bold">
+                    <i class="fas fa-comment fa-fw"></i> Kakao
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

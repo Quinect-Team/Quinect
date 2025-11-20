@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Quinect - 비밀번호 찾기</title>
+
+    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* 로그인 페이지와 동일한 레이아웃 및 스타일 유지 */
+        body {
+            background-color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start; 
+            padding-top: 80px;       
+            justify-content: center;
+        }
+        .login-container {
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+        }
+        input.form-control-user {
+            font-size: 1.1rem !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-container text-center">
+        
+        <div class="mb-5 pb-3">
+            <div class="d-flex align-items-center justify-content-center">
+                <div class="rotate-n-15">
+                    <i class="fas fa-laugh-wink fa-3x text-success"></i>
+                </div>
+                <div class="ml-3 font-weight-bold text-success" style="font-size: 2.5rem;">QuizParty</div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h1 class="h3 text-gray-900 font-weight-bold mb-2">비밀번호를 잊으셨나요?</h1>
+            <p class="text-gray-600 mb-4">계정에 사용 중인 이메일 주소를 입력하시면<br>인증 코드를 보내드립니다.</p>
+        </div>
+
+        <form class="user" th:action="@{/forgot/send}" method="post">
+            
+            <div class="form-group">
+                <input type="email" class="form-control form-control-user form-control-lg w-75 mx-auto"
+                       id="exampleInputEmail" aria-describedby="emailHelp"
+                       placeholder="이메일 (example@email.com)" name="email" required>
+            </div>
+            
+            <button type="submit" class="btn btn-success btn-user w-75 mx-auto d-block font-weight-bold" 
+                    style="font-size: 1.3rem; padding-top: 0.5rem; padding-bottom: 0.5rem;">
+                계속
+            </button>
+        </form>
+
+        <hr class="w-75 mx-auto my-4">
+
+        <div class="text-center">
+            <a class="small font-weight-bold text-primary" th:href="@{/login}">로그인 페이지로 돌아가기</a>
+        </div>
+        
+        <div class="text-center mt-2">
+            <a class="small font-weight-bold text-primary" th:href="@{/signup}">계정 생성하기</a>
+        </div>
+
+    </div>
+
+</body>
+</html>
