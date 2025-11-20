@@ -1,7 +1,7 @@
 <!-- fragments/topbar.html -->
 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow" th:fragment="topbar">
     <!-- Topbar Logo -->
-    <a class="d-none d-sm-flex align-items-center" href="index.html" >
+    <a class="d-none d-sm-flex align-items-center" th:href="@{/}" >
         <div class="rotate-n-15">
             <i class="fas fa-laugh-wink fa-lg text-success"></i> </div>
         <div class="mx-2 font-weight-bold text-success" style="font-size: 1.1rem;">QuizParty</div>
@@ -143,17 +143,6 @@
                         <div class="text-truncate">Last month's report looks great, I am very happy with
                             the progress so far, keep up the good work!</div>
                         <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                    </div>
-                </a>
-                <a class="dropdown-item d-flex align-items-center" href="#">
-                    <div class="dropdown-list-image mr-3">
-                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60" alt="...">
-                        <div class="status-indicator bg-success"></div>
-                    </div>
-                    <div>
-                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                            told me that people say this to all dogs, even if they aren't good...</div>
-                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
                     </div>
                 </a>
                 <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>

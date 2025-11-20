@@ -419,6 +419,12 @@ h6, .h6 {
   line-height: 1.2;
 }
 
+.display-5{
+  font-size: 2.5rem;
+  font-weight: 300;
+  line-height: 1.2;
+}
+
 hr {
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -10231,8 +10237,8 @@ a:focus {
 }
 
 .topbar .dropdown-list .dropdown-header {
-  background-color: #4e73df;
-  border: 1px solid #4e73df;
+  background-color: #1cc88a;
+  border: 1px solid #1cc88a;
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
   color: #fff;
@@ -11279,3 +11285,8 @@ footer.sticky-footer .copyright {
 body.sidebar-toggled footer.sticky-footer {
   width: 100%;
 }
+
+.gap-1 > * {margin-right: 0.25rem; margin-bottom: 0.25rem;}
+.gap-2 > * {margin-right: 0.5rem; margin-bottom: 0.5rem;}
+.gap-3 > * {margin-right: 1rem; margin-bottom: 1rem;}
+.gap-4 > * {margin-right: 1.5rem; margin-bottom: 1.5rem;}
