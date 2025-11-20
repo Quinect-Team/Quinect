@@ -1,53 +1,167 @@
-<div class="question-block" style="margin-bottom:20px; border:1px solid #ccc; padding:10px; border-radius:5px;">
-	<!-- 문제 제목 + 문제 유형 선택 -->
-	<div style="display:flex; align-items:center; gap:10px;">
-        <label for="question">Q1.</label>
-        <input type="text" id="question" name="question" placeholder="문제를 입력하세요" style="flex:1; padding:5px;">
-        
-        <select name="question_type" id="question_type" style="padding:5px;">
-            <option value="short_answer">서술형</option>
-            <option value="multiple_choice">객관식</option>
-        </select>
-    </div>
+<style>
+	/* 문제 블록 전체 */
+	#question-container {
+		position: relative;
+	    max-width: 900px;      /* 문제 블록 최대 너비와 맞춤 */
+	    margin: 0 auto;         /* 화면 가운데 정렬 */
+	    padding: 0 20px;        /* 좌우 최소 여백 20px */
+	    box-sizing: border-box; /* padding이 너비에 포함되도록 */
+	}
 	
-	<!-- 지문 입력 -->
-    <div id="text-container" style="margin-top:10px;">
-        <input type="text" id="sub" name="sub" placeholder="지문을 작성하세요" style="width:100%; padding:5px;">
-    </div>
+	.question-block {
+	    position: relative;
+	    border: 1px solid #cccccc;
+	    padding: 20px;
+	    border-radius: 8px;
+	    background: #f8f9fa;
+	    margin: 20px auto;
+	    max-width: 900px;
+	}
+
+	.question-block input[type="text"] {
+	    padding: 8px;
+	    width: 100%;
+	    border: 1px solid #adb5bd;
+	    border-radius: 6px;
+	}
+
+	.question-block input[type="text"]:focus {
+	    outline: none;
+	    border-color: #6c757d;
+	    box-shadow: 0 0 0 3px rgba(108,117,125,0.25);
+	}
+
+	.dropdown-toggle {
+	    min-width: 120px;
+	}
+	
+	/* 문제 추가 버튼 */
+	.add-question-area {
+	    display: flex;
+	    justify-content: flex-end; /* 오른쪽 끝으로 정렬 */
+	    margin-top: 10px;          /* 문제 블록과의 간격 */
+	    padding-right: 20px;       /* 오른쪽 여백 */
+		;
+	}
+	
+	.add-question-area button {
+	    height: 38px;          /* 버튼 높이 */
+	    position: relative;     /* 화면 기준이 아닌 부모 기준 */
+	    right: calc(21%);           /* 원하는 위치 유지 */
+	    margin-top: 10px;       /* 마지막 문제 아래로 여백 */
+	    align-self: flex-start; /* 수평 정렬 */
+	    z-index: 1;             /* 문제 블록 위에 표시 */
+	}
+
+
+</style>
+
+
+<!-- 부트스트랩 -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<div id="question-container">
+
+	<div class="question-block">
+		<div class="d-flex align-items-center" style="gap:10px;">
+	        <label class="q-label" for="question" style="margin:0; font-weight:bold;">Q1.</label>
+
+	        <input type="text" name="question" 
+	               placeholder="문제를 입력하세요" style="flex:1;">
+
+	        <div class="btn-group dropright">
+			  <button type="button" class="btn btn-secondary dropdown-toggle"
+			          data-toggle="dropdown">
+			    문제 유형
+			  </button>
+			  <div class="dropdown-menu">
+			    <a class="dropdown-item select-type" data-type="short_answer" href="#">서술형</a>
+			    <a class="dropdown-item select-type" data-type="multiple_choice" href="#">객관식</a>
+			  </div>
+			</div>
+	    </div>
+
+	    <div class="text-container" style="margin-top:10px;">
+	        <input type="text" name="sub" placeholder="지문을 작성하세요" style="width:100%; padding:5px;">
+	    </div>
+	</div>
 </div>
 
-<!-- 문제 타입에 따라 지문 입력 방식 변경 -->
+<!-- 문제 추가 -->
+	<div class="add-question-area">
+		<button id="add-question" class="btn btn-secondary add-question-btn">+ 문제 추가</button>
+	</div>
+
+<!-- Bootstrap & Script -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
 <script>
-const typeSelect = document.getElementById('question_type');
-const answerContainer = document.getElementById('text-container');
+	function activateDropdownHandlers(block) {
+		const menuItems = block.querySelectorAll('.select-type');
+		const answerContainer = block.querySelector('.text-container');
 
-typeSelect.addEventListener('change', function() {
-    // 기존 입력 초기화
-    answerContainer.innerHTML = '';
+		menuItems.forEach(item => {
+			item.addEventListener('click', function(e){
+				e.preventDefault();
+				const type = this.dataset.type;
 
-    if(this.value === 'short_answer'){
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.id = 'sub';
-        input.name = 'sub';
-        input.placeholder = '지문을 작성하세요';
-        input.style.width = '100%';
-        input.style.padding = '5px';
-        answerContainer.appendChild(input);
-    }
-    else if(this.value === 'multiple_choice'){
-        for(let i=1; i<=3; i++){
-            const choiceInput = document.createElement('input');
-            choiceInput.type = 'text';
-            choiceInput.name = `choice${i}`;
-            choiceInput.placeholder = `선택지 ${i}`;
-            choiceInput.style.display = 'block';
-            choiceInput.style.marginTop = '5px';
-            choiceInput.style.width = '100%';
-            choiceInput.style.padding = '5px';
-            answerContainer.appendChild(choiceInput);
-        }
-    }
-});
+				answerContainer.innerHTML = '';
+
+				if(type === 'short_answer'){
+					const input = document.createElement('input');
+					input.type = 'text';
+					input.name = 'sub';
+					input.placeholder = '지문을 작성하세요';
+					input.style.width = '100%';
+					input.style.padding = '5px';
+					answerContainer.appendChild(input);
+				}
+				else if(type === 'multiple_choice'){
+					for(let i=1; i<=3; i++){
+					    const choiceInput = document.createElement('input');
+					    choiceInput.type = 'text';
+					    choiceInput.name = `choice${i}`;
+					    choiceInput.placeholder = `선택지 ${i}`;
+					    choiceInput.style.display = 'block';
+					    choiceInput.style.marginTop = '5px';
+					    choiceInput.style.width = '100%';
+					    choiceInput.style.padding = '5px';
+					    answerContainer.appendChild(choiceInput);
+					}
+				}
+			});
+		});
+	}
+
+
+	// + 버튼 누르면 복제
+	document.getElementById('add-question').addEventListener('click', function(){
+
+		const container = document.getElementById('question-container');
+		const blocks = container.querySelectorAll('.question-block');
+
+		// 마지막 블록 복제
+		const last = blocks[blocks.length - 1];
+		const clone = last.cloneNode(true);
+
+		// 문제 번호 업데이트
+		const newIndex = blocks.length + 1;
+		clone.querySelector('.q-label').innerText = `Q${newIndex}.`;
+
+		// 내부 입력값 모두 초기화
+		clone.querySelectorAll('input').forEach(el => el.value = '');
+
+		// 새 dropdown 이벤트 다시 세팅
+		activateDropdownHandlers(clone);
+
+		// 화면에 추가
+		container.appendChild(clone);
+	});
+
+
+	// 처음 로딩 시 최초 블록에도 이벤트 연결
+	activateDropdownHandlers(document.querySelector('.question-block'));
+
 </script>
-
