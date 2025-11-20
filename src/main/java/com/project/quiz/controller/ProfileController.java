@@ -15,4 +15,9 @@ public class ProfileController {
     public String settingsPage() {
         return "profilesettings";
 	}
+	
+	@GetMapping("/profile/timeline")
+	public String timelinePage() {
+	    return "timeline";
+	}
 }

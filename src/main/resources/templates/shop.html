@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Quinect - 포인트 상점</title>
+
+    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
+    <link th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900}" rel="stylesheet" />
+    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet" />
+    
+    <style>
+        .shop-container {
+            max-width: 1000px; /* 상점은 아이템 나열을 위해 좀 더 넓게 */
+            width: 100%;
+            margin: 0 auto;
+            padding-top: 0.5rem;
+            padding-bottom: 3rem;
+        }
+
+        /* 배너 스타일 */
+        .shop-banner {
+            height: 200px;
+            background-color: #4e73df; /* Primary Color */
+            border-radius: 1rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-bottom: 2rem;
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+        }
+        
+        /* 아이템 카드 스타일 */
+        .item-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e3e6f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: #fff;
+            height: 100%; /* 높이 맞춤 */
+        }
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            border-color: #4e73df;
+        }
+        .item-img-placeholder {
+            height: 150px;
+            background-color: #2c3e50; /* 스케치의 진한 남색 느낌 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.5);
+        }
+        .item-info {
+            padding: 1rem;
+            text-align: center;
+        }
+
+        /* 모달 스타일 */
+        .modal-item-img {
+            width: 100%;
+            height: 200px;
+            background-color: #2c3e50;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+        }
+    </style>
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+
+        <!-- <div th:replace="~{fragments/sidebar :: sidebar}"></div>-->
+
+        <div id="content-wrapper" class="d-flex flex-column">
+            
+            <div id="content">
+
+                <div th:replace="~{fragments/topbar :: topbar}"></div>
+
+                <div class="shop-container">
+
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex align-items-center">
+                            <a href="javascript:history.back()" class="text-decoration-none text-gray-800 mr-3">
+                                <i class="fas fa-arrow-left fa-2x"></i>
+                            </a>
+                            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">포인트 상점</h1>
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            현재 보유 포인트 : <span class="text-success">1,250 P</span>
+                        </div>
+                    </div>
+
+                    <div id="shopCarousel" class="carousel slide shop-banner" data-ride="carousel">
+                        <ol class="carousel-indicators">
+                            <li data-target="#shopCarousel" data-slide-to="0" class="active"></li>
+                            <li data-target="#shopCarousel" data-slide-to="1"></li>
+                            <li data-target="#shopCarousel" data-slide-to="2"></li>
+                        </ol>
+                        <div class="carousel-inner text-center">
+                            <div class="carousel-item active">
+                                <h2 class="font-weight-bold">🎉 새로운 상품 입고!</h2>
+                                <p>한정판 아바타를 만나보세요</p>
+                            </div>
+                            <div class="carousel-item">
+                                <h2 class="font-weight-bold">🔥 주말 한정 세일</h2>
+                                <p>모든 경험치 부스터 20% 할인</p>
+                            </div>
+                             <div class="carousel-item">
+                                <h2 class="font-weight-bold">💎 포인트 충전 이벤트</h2>
+                                <p>지금 충전하면 보너스 포인트 지급</p>
+                            </div>
+                        </div>
+                    </div>
+
+					<div class="row mb-4">
+	                    <div class="col-md-4 mb-2">
+	                        <select class="form-control border-left-success">
+	                            <option>전체 카테고리</option>
+	                            <option>아바타 꾸미기</option>
+	                            <option>아이템 / 부스터</option>
+	                            <option>이모티콘</option>
+	                        </select>
+	                    </div>
+	                    <div class="col-md-8 mb-2">
+	                        <div class="input-group">
+	                            <input type="text" class="form-control bg-light border-0 small" placeholder="상품 검색..." aria-label="Search">
+	                            <div class="input-group-append">
+	                                <button class="btn btn-success" type="button">
+	                                    <i class="fas fa-search fa-sm"></i>
+	                                </button>
+	                            </div>
+	                            
+	                            <div class="input-group-append ml-2">
+	                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+	                                         id="sortDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                                    <i class="fas fa-sort-amount-down mr-1"></i> 정렬
+	                                 </button>
+	                                 
+	                                 <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="sortDropdown">
+	                                     <div class="dropdown-header">정렬 기준:</div>
+	                                     <a class="dropdown-item" href="?sort=latest">최신순 (New)</a>
+	                                     <a class="dropdown-item" href="?sort=popular">인기순 (Hot)</a>
+	                                     <div class="dropdown-divider"></div>
+	                                     <a class="dropdown-item" href="?sort=low_price">가격 낮은순</a>
+	                                     <a class="dropdown-item" href="?sort=high_price">가격 높은순</a>
+	                                 </div>
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
+
+                    <div class="row">
+                        
+                        <div class="col-lg-3 col-md-4 col-6 mb-4">
+                            <div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal"
+                                 data-name="전설의 검" data-price="500" data-desc="용사가 사용하던 전설적인 검입니다. 착용 시 간지가 +10 상승합니다.">
+                                <div class="item-img-placeholder">
+                                    <i class="fas fa-khanda fa-3x"></i>
+                                </div>
+                                <div class="item-info">
+                                    <h6 class="font-weight-bold text-gray-900 mb-1">전설의 검</h6>
+                                    <div class="text-success font-weight-bold">500 P</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-4 col-6 mb-4">
+                            <div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal"
+                                 data-name="투명 망토" data-price="1200" data-desc="착용하면 몸이 투명해집니다. (실제로 투명해지진 않습니다)">
+                                <div class="item-img-placeholder">
+                                    <i class="fas fa-tshirt fa-3x"></i>
+                                </div>
+                                <div class="item-info">
+                                    <h6 class="font-weight-bold text-gray-900 mb-1">투명 망토</h6>
+                                    <div class="text-success font-weight-bold">1,200 P</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-4 col-6 mb-4">
+                            <div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal"
+                                 data-name="경험치 2배" data-price="300" data-desc="1시간 동안 획득하는 경험치가 2배로 증가합니다.">
+                                <div class="item-img-placeholder">
+                                    <i class="fas fa-flask fa-3x"></i>
+                                </div>
+                                <div class="item-info">
+                                    <h6 class="font-weight-bold text-gray-900 mb-1">경험치 2배</h6>
+                                    <div class="text-success font-weight-bold">300 P</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-4 col-6 mb-4">
+                            <div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal"
+                                 data-name="랜덤 박스" data-price="100" data-desc="무엇이 나올지 모르는 신비한 상자입니다. 꽝이 있을 수도?">
+                                <div class="item-img-placeholder">
+                                    <i class="fas fa-box-open fa-3x"></i>
+                                </div>
+                                <div class="item-info">
+                                    <h6 class="font-weight-bold text-gray-900 mb-1">랜덤 박스</h6>
+                                    <div class="text-success font-weight-bold">100 P</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> </div>
+            </div>
+            <div th:replace="~{fragments/footer :: footer}"></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="itemModal" tabindex="-1" role="dialog" aria-labelledby="itemModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-5 mb-3 mb-md-0">
+                            <div class="modal-item-img">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-7 d-flex flex-column justify-content-between">
+                            <div>
+                                <h3 class="font-weight-bold text-gray-900 mb-3" id="modalItemName">아이템 이름</h3>
+                                <p class="text-gray-600" id="modalItemDesc" style="font-size: 1.1rem;">
+                                    여기에 아이템 설명이 들어갑니다.
+                                </p>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-gray-100 rounded">
+                                    <span class="font-weight-bold">가격</span>
+                                    <span class="h4 mb-0 font-weight-bold text-success" id="modalItemPrice">0 P</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-3">
+                                    <span class="small text-gray-600">현재 내 포인트</span>
+                                    <span class="font-weight-bold">1,250 P</span>
+                                </div>
+
+                                <form th:action="@{/shop/buy}" method="post">
+                                    <input type="hidden" name="itemName" id="hiddenItemName"> <div class="row">
+                                        <div class="col-6">
+                                            <button type="button" class="btn btn-secondary btn-block btn-lg" data-dismiss="modal">취소</button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button type="submit" class="btn btn-success btn-block btn-lg font-weight-bold">구매</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+    <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
+    <script th:src="@{/js/sb-admin-2.min.js}"></script>
+    
+    <script>
+        $('#itemModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget); // 모달을 띄운 버튼(아이템 카드)
+            
+            // data-*** 속성에서 값 가져오기
+            var name = button.data('name');
+            var price = button.data('price');
+            var desc = button.data('desc');
+
+            // 모달 내부 요소에 값 넣기
+            var modal = $(this);
+            modal.find('#modalItemName').text(name);
+            modal.find('#modalItemPrice').text(price + ' P');
+            modal.find('#modalItemDesc').text(desc);
+            
+            // 폼 전송용 hidden input에도 값 넣기
+            modal.find('#hiddenItemName').val(name);
+        })
+    </script>
+
+</body>
+</html>

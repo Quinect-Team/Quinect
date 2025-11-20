@@ -12,15 +12,14 @@
     <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet" />
     
     <style>
-        /* [수정됨] 프로필 컨테이너: 너비를 제한하고 중앙 정렬 */
+        /* 기존 스타일 유지 */
         .profile-container {
-            max-width: 700px; /* 로그인 화면 비슷하게 하되, 내용 고려해 700px로 설정 (조절 가능) */
+            max-width: 700px;
             width: 100%;
-            margin: 0 auto;   /* 좌우 중앙 정렬 */
-            padding-top: 2rem; /* 상단 여백 */
+            margin: 0 auto;   
+            padding-top: 0.5rem;
         }
 
-        /* 프로필 이미지 원형으로 */
         .profile-img-container {
             width: 150px;
             height: 150px;
@@ -37,7 +36,6 @@
             color: #6c757d;
         }
         
-        /* 통계 박스 스타일 */
         .stats-box {
             border: 1px solid #c7d4e3;
             border-radius: .35rem;
@@ -57,7 +55,6 @@
             border-right: 1px solid #e3e6f0;
         }
 
-        /* 업적 아이콘 */
         .achievement-icon {
             width: 60px;
             height: 60px;
@@ -68,13 +65,93 @@
             justify-content: center;
             margin-right: 15px;
         }
+
+		/* 타임라인 영역 (기준점) */
+	        .timeline-section {
+	            position: relative;
+	            padding-left: 10px;
+	            padding-bottom: 20px; /* 하단 여백 */
+	            overflow: hidden; /* 그라데이션이 영역 밖으로 나가는 것 방지 */
+	        }
+
+	        /* [핵심] 하단 화이트 그라데이션 효과 (Fade Out) */
+	        .timeline-section::after {
+	            content: '';
+	            position: absolute;
+	            left: 0;
+	            bottom: 0; /* 맨 아래에 배치 */
+	            width: 100%;
+	            height: 120px; /* [조절 가능] 그라데이션 높이 (이걸 낮추면 덜 덮입니다) */
+	            
+	            /* 투명에서 흰색으로 변하는 그라데이션 */
+	            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, #e3e6f0 60%);
+	            z-index: 2; /* 아이콘보다 위에 올라오도록 설정 */
+	            pointer-events: none; /* 마우스 클릭은 통과되도록 (더보기 버튼 클릭 가능하게) */
+	        }
+
+	        /* 세로 줄 (Line) */
+	        .timeline-section::before {
+	            content: '';
+	            position: absolute;
+	            top: 10px; /* 시작점 */
+	            bottom: 0; /* 끝점: 바닥까지 */
+	            left: 39px;
+	            width: 2px;
+	            background-color: #e3e6f0;
+	            z-index: 0;
+	        }
+
+	        .timeline-item {
+	            position: relative;
+	            display: flex;
+	            align-items: flex-start; /* 텍스트가 길어져도 아이콘은 위쪽에 고정 */
+	            margin-bottom: 1.5rem;
+	            z-index: 1;
+	        }
+
+	        /* 타임라인 원형 아이콘 */
+	        .timeline-icon {
+	            width: 60px;
+	            height: 60px;
+	            border-radius: 50%;
+	            display: flex;
+	            align-items: center;
+	            justify-content: center;
+	            color: #fff;
+	            font-size: 1.5rem;
+	            flex-shrink: 0;
+	            border: 4px solid #fff; /* 흰 테두리 */
+	            position: relative;
+	            z-index: 1; /* 그라데이션 아래, 줄 위에 */
+	        }
+
+	        /* (중요) 마지막 아이콘은 그라데이션에 묻히도록 z-index 조절 */
+	        .timeline-item:last-of-type .timeline-icon {
+	             z-index: 0; 
+	        }
+
+	        /* 기존 아이콘 색상 유지 */
+	        .bg-timeline-quiz { background-color: #2e59d9; }
+	        .bg-timeline-attend { background-color: #36b9cc; }
+
+	        .timeline-content {
+	            margin-left: 1.5rem;
+	            padding-top: 0.5rem; /* 아이콘 중앙과 텍스트 높이 맞추기 */
+	            position: relative;
+	            z-index: 0; /* 텍스트도 그라데이션에 묻히게 */
+	        }
+	        
+	        /* [추가] 더보기 버튼 위치 조정 (그라데이션 위로 올리기) */
+	        .more-btn-wrapper {
+	            position: relative; 
+	            z-index: 3; /* 그라데이션(z-index: 2)보다 높게 */
+	            margin-top: -40px; /* 위로 끌어올려서 그라데이션 영역에 배치 */
+	        }
     </style>
 </head>
 
 <body id="page-top">
     <div id="wrapper">
-
-        <!-- <div th:replace="~{fragments/sidebar :: sidebar}"></div> -->
 
         <div id="content-wrapper" class="d-flex flex-column">
             
@@ -88,7 +165,7 @@
                         <a href="javascript:history.back()" class="text-decoration-none text-gray-800">
                             <i class="fas fa-arrow-left fa-2x mr-2"></i>
                         </a>
-                        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">메인</h1>
+                        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">내 프로필</h1>
                     </div>
 
                     <div class="card shadow mb-4">
@@ -100,13 +177,12 @@
                                     </div>
                                 </div>
                                 <div class="col">
-									<div class="d-flex align-items-center mb-2">
-									    <h2 class="h3 font-weight-bold mb-0 mr-2">김OO (이름)</h2>
-									    
-									    <a th:href="@{/profile/settings}" class="text-gray-600 text-decoration-none" title="설정">
-									        <i class="fas fa-cog fa-lg"></i>
-									    </a>
-									</div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h2 class="h3 font-weight-bold mb-0 mr-2">김OO (이름)</h2>
+                                        <a th:href="@{/profile/settings}" class="text-gray-600 text-decoration-none" title="설정">
+                                            <i class="fas fa-cog fa-lg"></i>
+                                        </a>
+                                    </div>
                                     <p class="text-gray-700 mb-1">OO대학교</p>
                                     <p class="text-gray-600 font-weight-bold mb-0">우리 함께 즐겁게 퀴즈를 풀어보아요.</p>
                                     <p class="text-gray-600">주로 오후 7시에 접속합니다.</p>
@@ -128,14 +204,43 @@
                     </div>
 
                     <h5 class="font-weight-bold text-gray-800 mb-3">업적 내역</h5>
-                    <div class="d-flex mb-4">
-                        <div class="achievement-icon"><i class="fas fa-trophy text-white"></i></div>
+                    <div class="d-flex mb-5"> <div class="achievement-icon"><i class="fas fa-trophy text-white"></i></div>
                         <div class="achievement-icon"><i class="fas fa-award text-white"></i></div>
                         <div class="achievement-icon"><i class="fas fa-medal text-white"></i></div>
                         <div class="achievement-icon"><i class="fas fa-star text-white"></i></div>
                     </div>
 
-                </div> </div>
+                    <h5 class="font-weight-bold text-gray-800 mb-3">타임라인</h5>
+                    
+					<div class="timeline-section mb-5" style="padding-bottom: 60px;"> <div class="timeline-item">
+                            <div class="timeline-icon bg-timeline-quiz shadow-sm">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-date">2025.11.17</div>
+                                <p class="timeline-text">김OO님이 OO퀴즈를 완료했습니다.</p>
+                            </div>
+                        </div>
+
+						<div class="timeline-item">
+                        <div class="timeline-icon bg-timeline-attend shadow-sm">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-date">2025.11.16</div>
+                            <p class="timeline-text">김OO님이 출석하였습니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center more-btn-wrapper" style="padding-left: 80px; text-align: left !important; top: 30px;">
+                        <a th:href="@{/profile/timeline}" class="font-weight-bold text-dark text-decoration-none" style="font-size: 1.1rem;">
+                            + 더보기
+                        </a>
+                    </div>
+
+                </div>
+                </div> 
+            </div>
             <div th:replace="~{fragments/footer :: footer}"></div>
 
         </div>
