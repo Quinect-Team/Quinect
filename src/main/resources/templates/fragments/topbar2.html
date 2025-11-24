@@ -1,30 +1,13 @@
 <!-- fragments/topbar.html -->
-<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow" th:fragment="topbar">
+<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow d-flex justify-content-center" th:fragment="topbar2">
     <!-- Topbar Logo -->
+	
     <a class="d-none d-sm-flex align-items-center" th:href="@{/}" >
         <div class="rotate-n-15">
             <i class="fas fa-laugh-wink fa-2x text-success"></i> </div>
         <div class="mx-2 font-weight-bold text-success" style="font-size: 2rem;">QuizParty</div>
     </a>
 	
-	<!-- 탭 네비게이션(Anchor Link) -->
-	<ul class="nav" id="myTab">
-	  <li class="nav-item">
-	    <a class="nav-link text-secondary" href="#tab1">Overview</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link text-secondary" href="#tab2">Features</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link text-secondary" href="#tab3">Application</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link text-secondary" href="#tab4">Gallery</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link text-secondary" href="#tab5">Service</a>
-	  </li>
-	</ul>
 
     <!-- Topbar Navbar -->
     <ul class="navbar-nav ml-auto">
