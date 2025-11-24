@@ -4,8 +4,9 @@ html {
 
 #sidebarModalBackdrop {
   position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background-color: rgba(0,0,0,0.5);
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5);
   z-index: 1050;
   display: none;
 }
@@ -13,16 +14,17 @@ html {
 .sidebar-modal {
   position: fixed;
   top: 0; right: 0;
-  overflow-y: auto;
-  background: #1cc88a; /* 기존 bg-gradient-success 대신 단색으로 변경 가능 */
+  height: 100vh;
+  background: #1cc88a;
   z-index: 1060;
   transition: transform 0.3s ease;
   transform: translateX(100%);
-  box-sizing: content-box; /* 기본값이므로 명확히 하고 싶을 때만 */
-  display: inline-block;  /* 또는 display: table; */
+  display: none;
+  box-sizing: border-box;     /* 레이아웃 혼란 방지 */
+  overflow-y: auto;
 }
 
 .sidebar-modal.show {
-  transform: translateX(0);
   display: block;
+  transform: translateX(0);
 }

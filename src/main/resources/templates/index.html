@@ -11,7 +11,6 @@
 	<link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
 	<link th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900}" rel="stylesheet" />
 	<link th:href="@{/css/sb-admin-2.css}" rel="stylesheet" />
-	<link th:href="@{/css/index.css}" rel="stylesheet" />
 </head>
 
 <body id="page-top">
@@ -25,7 +24,62 @@
 				<div th:replace="~{fragments/topbar :: topbar}"></div>
 
 				<!-- Main Content -->
-				<div th:replace="~{layout/main :: main}"></div>
+				<div class="container-lg py-4" th:fragment="example">
+
+					<!-- 상단 슬로건/통계 영역 -->
+					<div class="rounded-4 p-4 mb-4 shadow-sm bg-success">
+						<h1 class="display-6 mb-1 fw-bold text-white">
+							퀴즈로, 모두가<br><span class="text-warning">실시간</span>으로 연결됩니다.
+						</h1>
+						<p class="mb-2 fs-5 text-white">퀴즈와 대화, 모두가 함께하는 즐거운 지식 대결 플랫폼!</p>
+						<div class="row mb-3 fs-6 text-center justify-content-center mt-5">
+							<div class="col-6 col-md-3 text-white">문제 출제<br><span class="font-weight-bolder display-5">12,345</span>
+							</div>
+							<div class="col-6 col-md-3 text-white">참여 인원<br><span class="font-weight-bolder display-5">67,890</span>
+							</div>
+							<div class="col-6 col-md-3 text-white">진행 중인 퀴즈<br><span class="font-weight-bolder display-5">23</span>
+							</div>
+							<div class="col-6 col-md-3 text-white">누적 대결<br><span class="font-weight-bolder display-5">6,789</span>
+							</div>
+						</div>
+					</div>
+
+					<div class="row gx-4 gy-3">
+					    <div class="col-12">
+					        <div id="tab1" class="card text-light border-0 mb-2" style="background: chocolate;">
+					            <div class="card-body d-flex flex-column justify-content-center align-items-start" style="min-height: 350px;"> <i class="fas fa-eye fa-3x mb-3"></i>
+					                <h5 class="card-title mb-3">Overview</h5>
+					                <p class="card-text text-start fs-5"> 이 퀴즈 플랫폼은 모든 연령과 배경의 사용자들을 위한 쉽고 재미있는 학습 공간을 제공합니다. <br> 실시간으로 연결되어 즉시 참여하고 대결할 수 있으며, 사용자 친화적인 UI와 혁신적인 기능을 갖추고 있습니다. <br> 교육, 엔터테인먼트, 팀 빌딩 등 다양한 목적으로 폭넓게 활용 가능합니다. </p>
+					            </div>
+					        </div>
+					        <div id="tab2" class="card text-light border-0 mb-2" style="background: olivedrab;">
+					            <div class="card-body d-flex flex-column justify-content-center align-items-start" style="min-height: 350px;"> <i class="fas fa-cogs fa-3x mb-3"></i>
+					                <h5 class="card-title mb-3">Features</h5>
+					                <p class="card-text text-start fs-5"> 객관식, 단답형, 이미지와 동영상을 포함하는 다양한 문제 유형을 지원합니다. <br> 실시간 협업 보드 및 비디오와의 결합으로 높은 몰입감을 선사하며, 다양한 디바이스에서 최적화된 이용 경험을 제공합니다. <br> 멀티플레이, 랭킹 시스템 및 팔로우 기능 등 커뮤니티 기반 확장도 가능합니다. </p>
+					            </div>
+					        </div>
+					        <div id="tab3" class="card text-light border-0 mb-2" style="background: tan;">
+					            <div class="card-body d-flex flex-column justify-content-center align-items-start" style="min-height: 350px;"> <i class="fas fa-mobile-alt fa-3x mb-3"></i>
+					                <h5 class="card-title mb-3">Application</h5>
+					                <p class="card-text text-start fs-5"> 교실, 원격 교육, 기업 연수부터 취미 모임과 마케팅 이벤트까지 다양한 환경에서 활용되어 교육과 소통의 패러다임을 바꿉니다. <br> 사용자 맞춤형 퀴즈 생성과 다양한 참여 옵션으로 학습 효과와 재미를 동시에 추구할 수 있습니다. <br> 모바일과 데스크톱 등 모든 기기에서 쉽고 편하게 접근 가능합니다. </p>
+					            </div>
+					        </div>
+					        <div id="tab4" class="card text-light border-0 mb-2" style="background: indigo;">
+					            <div class="card-body d-flex flex-column justify-content-center align-items-start" style="min-height: 350px;"> <i class="fas fa-images fa-3x mb-3"></i>
+					                <h5 class="card-title mb-3">Gallery</h5>
+					                <p class="card-text text-start fs-5"> 다양한 화면 캡처, 이벤트 사진, 인터랙티브 게임 스냅샷 등을 통해 플랫폼의 현장감과 사용성을 한눈에 파악할 수 있습니다. <br> 사용자 경험과 실시간 소통의 순간들을 기록 · 공유할 수 있는 공간을 제공합니다. </p>
+					            </div>
+					        </div>
+					        <div id="tab5" class="card text-light border-0" style="background: darkkhaki;">
+					            <div class="card-body d-flex flex-column justify-content-center align-items-start" style="min-height: 350px;"> <i class="fas fa-headset fa-3x mb-3"></i>
+					                <h5 class="card-title mb-3">Service</h5>
+					                <p class="card-text text-start fs-5"> 24시간 고객 지원과 신속한 문제 해결, 안정적인 서버 운영 및 주기적인 서비스 업데이트를 통해 최상의 사용자 경험을 지속적으로 보장합니다. <br> 고객의 의견을 반영한 기능 개선과 확장성 있는 서비스 제공에 힘쓰고 있습니다. </p>
+					            </div>
+					        </div>
+					    </div>
+					</div>
+
+				</div>
 
 			</div>
 
@@ -33,10 +87,6 @@
 			<div th:replace="~{fragments/footer :: footer}"></div>
 		</div>
 		
-		<!-- Sidebar -->
-		<div id="sidebarModal" class="sidebar-modal" style="display:none;">
-			<div th:replace="~{fragments/sidebar :: sidebar}"></div>
-		</div>
 	</div>
 
 	<!-- Scroll to Top Button-->
@@ -52,6 +102,7 @@
 	<script th:src="@{/js/sb-admin-2.js}"></script>
 	<script th:src="@{/vendor/chart.js/Chart.min.js}"></script>
 	<script th:src="@{/js/demo/chart-area-demo.js}"></script>
+	<script th:src="@{/js/demo/chart-pie-demo.js}"></script>
 	
 	<!--웹소켓-->
 	<!--<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
