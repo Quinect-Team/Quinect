@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>게스트 정보 입력</title>
+    <link rel="stylesheet" th:href="@{/css/sb-admin-2.css}" />
+    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
+    <link th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900}" rel="stylesheet" />
+	<style>
+	.character-card-group { display: flex; justify-content: space-between; gap: 10px; }
+	.character-card {
+	    border: 2px solid #cccccc;
+	    border-radius: 16px;
+	    padding: 20px;
+	    display: flex;
+	    justify-content: center;
+	    align-items: center;
+	    background: #fff;
+	    cursor: pointer;
+	    transition: border-color 0.2s, box-shadow 0.2s;
+	}
+	.character-card.selected {
+	    border-color: #1cc88a;
+	    box-shadow: 0 0 10px #1cc88a;
+	}
+	.character-card i { font-size: 2rem; }
+	input[type="radio"] { display: none; }
+	</style>
+</head>
+<body class="bg-success d-flex align-items-center justify-content-center" style="min-height:100vh;">
+    <div class="container d-flex flex-column justify-content-center align-items-center" style="min-height:90vh;">
+        
+        <!-- 로고 영역 -->
+        <div class="d-flex align-items-center justify-content-center mb-4" style="gap:18px;">
+            <div class="rotate-n-15">
+                <i class="fas fa-laugh-wink fa-3x text-light"></i>
+            </div>
+            <div class="font-weight-bold text-light mt-2" style="font-size: 2rem;">
+                QuizParty Guest
+            </div>
+        </div>
+        <!-- 폼 카드 -->
+        <div class="card shadow-lg p-4" style="width: 400px;">
+            <form th:action="@{/guest/setup}" method="post">
+                <div class="form-group">
+                    <label for="nickname" class="font-weight-bold text-dark">닉네임</label>
+                    <input type="text"
+                           id="nickname"
+                           name="nickname"
+                           class="form-control form-control-lg"
+                           placeholder="닉네임 입력"
+                           required>
+                </div>
+				<div class="form-group mt-3">
+				        <label class="font-weight-bold text-dark mb-2">캐릭터 선택</label>
+				        <div class="character-card-group">
+				            <div class="character-card" onclick="selectCharacter('char1')"
+				                 id="card-char1">
+				                <input type="radio" name="characterImageUrl" value="/img/char1.png" id="char1" required>
+				                <label for="char1" style="margin:0;">
+				                    <i class="fas fa-user-astronaut text-primary"></i>
+				                </label>
+				            </div>
+				            <div class="character-card" onclick="selectCharacter('char2')"
+				                 id="card-char2">
+				                <input type="radio" name="characterImageUrl" value="/img/char2.png" id="char2" required>
+				                <label for="char2" style="margin:0;">
+				                    <i class="fas fa-user-graduate text-danger"></i>
+				                </label>
+				            </div>
+							<div class="character-card" onclick="selectCharacter('char3')"
+				                 id="card-char3">
+				                <input type="radio" name="characterImageUrl" value="/img/char3.png" id="char4" required>
+				                <label for="char3" style="margin:0;">
+				                    <i class="fas fa-user-tie text-warning"></i>
+				                </label>
+				            </div>
+							<div class="character-card" onclick="selectCharacter('char4')"
+				                 id="card-char4">
+				                <input type="radio" name="characterImageUrl" value="/img/char4.png" id="char4" required>
+				                <label for="char4" style="margin:0;">
+				                    <i class="fas fa-user-ninja text-dark"></i>
+				                </label>
+				            </div>
+				            <!-- 더 추가 가능 -->
+				        </div>
+				    </div>
+                <input type="hidden" name="next" th:value="${next}">
+                <button type="submit" class="btn btn-dark btn-lg btn-block font-weight-bold mt-4">입장</button>
+                <div th:if="${error}" th:text="${error}" class="text-danger mt-2"></div>
+            </form>
+        </div>
+    </div>
+	
+	<script>
+	function selectCharacter(charId) {
+	    // 모든 카드에서 selected 제거
+	    document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+	    document.getElementById('card-' + charId).classList.add('selected');
+	    // 라디오 선택
+	    document.getElementById(charId).checked = true;
+	}
+	</script>
+</body>
+</html>
