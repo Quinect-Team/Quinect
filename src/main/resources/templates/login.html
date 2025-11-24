@@ -72,15 +72,19 @@
             </div>
         </div>
 
-        <div class="mb-4">
+		<div class="mb-4">
             <h1 class="h3 text-gray-900 font-weight-bold mb-2">퀴즈 파티를 열기 위해 로그인하세요!</h1>
         </div>
-		<div th:if="${param.error}" class="alert alert-danger w-75 mx-auto text-center" role="alert">
-		    이메일 또는 비밀번호를 확인해주세요.
-		</div>
 
-		<div th:if="${param.logout}" class="alert alert-info w-75 mx-auto text-center" role="alert">
-		    성공적으로 로그아웃되었습니다.
+        <div th:if="${param.error}" class="alert alert-danger w-75 mx-auto text-center font-weight-bold" role="alert">
+            <i class="fas fa-exclamation-circle mr-1"></i> 이메일 또는 비밀번호가 틀립니다.
+        </div>
+
+        <div th:if="${param.logout}" class="alert alert-primary w-75 mx-auto text-center font-weight-bold" role="alert">
+            <i class="fas fa-info-circle mr-1"></i> 로그아웃 되었습니다.
+        </div>
+		<div th:if="${param.expired}" class="alert alert-warning w-75 mx-auto text-center font-weight-bold" role="alert">
+		    <i class="fas fa-clock mr-1"></i> 로그인 세션이 만료되었습니다. <br> 다시 로그인해주세요.
 		</div>
 		<form class="user" th:action="@{/login}" method="post">
             <div class="form-group">
