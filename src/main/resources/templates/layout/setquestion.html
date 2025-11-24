@@ -1,21 +1,18 @@
 <style>
 	/* 문제 블록 전체 */
 	#question-container {
-		position: relative;
-	    max-width: 900px;      /* 문제 블록 최대 너비와 맞춤 */
-	    margin: 0 auto;         /* 화면 가운데 정렬 */
-	    padding: 0 20px;        /* 좌우 최소 여백 20px */
-	    box-sizing: border-box; /* padding이 너비에 포함되도록 */
+	    max-width: 900px;
+	    margin: 0 auto;
+	    padding: 0 20px;
+	    box-sizing: border-box;
 	}
-	
+
 	.question-block {
-	    position: relative;
-	    border: 1px solid #cccccc;
+	    border: 1px solid #ccc;
 	    padding: 20px;
 	    border-radius: 8px;
 	    background: #f8f9fa;
 	    margin: 20px auto;
-	    max-width: 900px;
 	}
 
 	.question-block input[type="text"] {
@@ -24,35 +21,38 @@
 	    border: 1px solid #adb5bd;
 	    border-radius: 6px;
 	}
-
 	.question-block input[type="text"]:focus {
 	    outline: none;
 	    border-color: #6c757d;
 	    box-shadow: 0 0 0 3px rgba(108,117,125,0.25);
 	}
 
-	.dropdown-toggle {
-	    min-width: 120px;
+	.choice-buttons {
+	    display: flex;
+	    gap: 10px;
+	    margin-top: 10px;
 	}
 	
 	/* 문제 추가 버튼 */
 	.add-question-area {
+	    max-width: 900px;
+	    margin: 0 auto;
 	    display: flex;
-	    justify-content: flex-end; /* 오른쪽 끝으로 정렬 */
-	    margin-top: 10px;          /* 문제 블록과의 간격 */
-	    padding-right: 20px;       /* 오른쪽 여백 */
-		;
+	    gap: 10px;
+	    justify-content: flex-end;
+	}
+	.add-question-area button {
+	    width: 150px;
+	    height: 40px;
 	}
 	
-	.add-question-area button {
-	    height: 38px;          /* 버튼 높이 */
-	    position: relative;     /* 화면 기준이 아닌 부모 기준 */
-	    right: calc(21%);           /* 원하는 위치 유지 */
-	    margin-top: 10px;       /* 마지막 문제 아래로 여백 */
-	    align-self: flex-start; /* 수평 정렬 */
-	    z-index: 1;             /* 문제 블록 위에 표시 */
+	/* 선지 추가 버튼 */
+	#choices {
+		padding: 8px;
+		display: flex;
+		margin-top: 10px;
+		padding-right: 20px;
 	}
-
 
 </style>
 
@@ -83,14 +83,16 @@
 
 	    <div class="text-container" style="margin-top:10px;">
 	        <input type="text" name="sub" placeholder="지문을 작성하세요" style="width:100%; padding:5px;">
+
 	    </div>
 	</div>
 </div>
 
 <!-- 문제 추가 -->
-	<div class="add-question-area">
-		<button id="add-question" class="btn btn-secondary add-question-btn">+ 문제 추가</button>
-	</div>
+<div class="add-question-area">
+    <button id="add-question" class="btn btn-secondary">+ 문제 추가</button>
+    <button id="remove-question" class="btn btn-secondary">- 문제 제거</button>
+</div>
 
 <!-- Bootstrap & Script -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -98,70 +100,130 @@
 
 
 <script>
-	function activateDropdownHandlers(block) {
-		const menuItems = block.querySelectorAll('.select-type');
-		const answerContainer = block.querySelector('.text-container');
+/* ===============================
+   문제 유형 변경 (서술형/객관식)
+================================ */
+function activateDropdown(block) {
 
-		menuItems.forEach(item => {
-			item.addEventListener('click', function(e){
-				e.preventDefault();
-				const type = this.dataset.type;
+    const typeOptions = block.querySelectorAll('.select-type');
+    const answerContainer = block.querySelector('.text-container');
 
-				answerContainer.innerHTML = '';
+    typeOptions.forEach(option => {
+        option.addEventListener('click', function (e) {
+            e.preventDefault();
 
-				if(type === 'short_answer'){
-					const input = document.createElement('input');
-					input.type = 'text';
-					input.name = 'sub';
-					input.placeholder = '지문을 작성하세요';
-					input.style.width = '100%';
-					input.style.padding = '5px';
-					answerContainer.appendChild(input);
-				}
-				else if(type === 'multiple_choice'){
-					for(let i=1; i<=3; i++){
-					    const choiceInput = document.createElement('input');
-					    choiceInput.type = 'text';
-					    choiceInput.name = `choice${i}`;
-					    choiceInput.placeholder = `선택지 ${i}`;
-					    choiceInput.style.display = 'block';
-					    choiceInput.style.marginTop = '5px';
-					    choiceInput.style.width = '100%';
-					    choiceInput.style.padding = '5px';
-					    answerContainer.appendChild(choiceInput);
-					}
-				}
-			});
-		});
-	}
+            const type = this.dataset.type;
+            answerContainer.innerHTML = "";
+
+            // ▣ 서술형 --------------------
+            if (type === "short_answer") {
+                const input = document.createElement('input');
+                input.type = "text";
+                input.placeholder = "지문을 작성하세요";
+                input.style = "width:100%; padding:5px;";
+                answerContainer.appendChild(input);
+            }
+
+            // 객관식
+            else if (type === "multiple_choice") {
+
+                // 기본 3개 생성
+                for (let i = 1; i <= 3; i++) {
+                    const choice = document.createElement("input");
+                    choice.type = "text";
+                    choice.placeholder = `선택지 ${i}`;
+                    choice.style.marginTop = "5px";
+                    answerContainer.appendChild(choice);
+                }
+
+                // 선택지 + / - 버튼 영역
+                const btnBox = document.createElement("div");
+                btnBox.className = "choice-buttons";
+
+                const addBtn = document.createElement("button");
+                addBtn.className = "btn btn-secondary";
+                addBtn.textContent = "+";
+
+                const removeBtn = document.createElement("button");
+                removeBtn.className = "btn btn-secondary";
+                removeBtn.textContent = "-";
+
+                btnBox.appendChild(addBtn);
+                btnBox.appendChild(removeBtn);
+                answerContainer.appendChild(btnBox);
+
+                // + 버튼 클릭 → 선택지 추가
+                addBtn.addEventListener('click', () => {
+                    const newChoice = document.createElement("input");
+                    newChoice.type = "text";
+                    newChoice.placeholder = `선택지`;
+                    newChoice.style.marginTop = "5px";
+                    answerContainer.insertBefore(newChoice, btnBox);
+                });
+
+                // - 버튼 클릭 → 마지막 선택지 제거
+                removeBtn.addEventListener('click', () => {
+                    const inputs = answerContainer.querySelectorAll("input");
+                    if (inputs.length > 0) {
+                        inputs[inputs.length - 1].remove();
+                    }
+                });
+            }
+        });
+    });
+}
 
 
-	// + 버튼 누르면 복제
-	document.getElementById('add-question').addEventListener('click', function(){
+/* ===============================
+   문제 추가 기능
+================================ */
+document.getElementById('add-question').addEventListener('click', function () {
 
-		const container = document.getElementById('question-container');
-		const blocks = container.querySelectorAll('.question-block');
+    const container = document.getElementById('question-container');
+    const blocks = container.querySelectorAll('.question-block');
+    const last = blocks[blocks.length - 1];
 
-		// 마지막 블록 복제
-		const last = blocks[blocks.length - 1];
-		const clone = last.cloneNode(true);
+    const clone = last.cloneNode(true);
 
-		// 문제 번호 업데이트
-		const newIndex = blocks.length + 1;
-		clone.querySelector('.q-label').innerText = `Q${newIndex}.`;
+    // 번호 재설정
+    const newIndex = blocks.length + 1;
+    clone.querySelector('.q-label').innerText = `Q${newIndex}.`;
 
-		// 내부 입력값 모두 초기화
-		clone.querySelectorAll('input').forEach(el => el.value = '');
+    // 입력값 초기화
+    clone.querySelectorAll('input').forEach(el => el.value = '');
 
-		// 새 dropdown 이벤트 다시 세팅
-		activateDropdownHandlers(clone);
+    // Dropdown 다시 연결
+    activateDropdown(clone);
 
-		// 화면에 추가
-		container.appendChild(clone);
-	});
+    container.appendChild(clone);
+});
 
 
-	// 처음 로딩 시 최초 블록에도 이벤트 연결
-	activateDropdownHandlers(document.querySelector('.question-block'));
+/* ===============================
+   문제 제거 기능
+================================ */
+document.getElementById('remove-question').addEventListener('click', function () {
 
+    const container = document.getElementById('question-container');
+    const blocks = container.querySelectorAll('.question-block');
+
+    if (blocks.length <= 1) {
+        alert("최소 1개 이상의 문제는 남아 있어야 합니다.");
+        return;
+    }
+
+    blocks[blocks.length - 1].remove();
+
+    // 번호 재정렬
+    const reBlocks = container.querySelectorAll('.question-block');
+    reBlocks.forEach((b, i) => {
+        b.querySelector('.q-label').innerText = `Q${i + 1}.`;
+    });
+});
+
+
+/* ===============================
+   최초 로딩 시 실행
+================================ */
+activateDropdown(document.querySelector('.question-block'));
 </script>
