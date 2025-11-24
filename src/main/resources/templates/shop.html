@@ -10,6 +10,7 @@
     <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
     <link th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900}" rel="stylesheet" />
     <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet" />
+	<link th:href="@{/css/index.css}" rel="stylesheet" />
     
     <style>
         .shop-container {
@@ -75,30 +76,57 @@
             color: white;
             font-size: 3rem;
         }
+
+        /* 플로팅 포인트 배지 스타일 (우측 상단) */
+        .point-badge-floating {
+            position: fixed;
+            top: 1.5rem;
+            right: 1rem;
+            z-index: 1000;
+            display: none;
+            
+            padding: 0.8rem 1.2rem;
+            border-radius: 50rem;
+            background-color: #fff;
+            color: #1cc88a;
+            border: 2px solid #1cc88a;
+            
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            font-weight: 800;
+            font-size: 1rem;
+            
+            /* jQuery fadeIn/Out 충돌 방지를 위해 transition은 특정 속성만 지정 */
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .point-badge-floating:hover {
+            background-color: #1cc88a;
+            color: #fff;
+            text-decoration: none;
+            transform: translateY(-3px);
+        }
     </style>
 </head>
 
 <body id="page-top">
+	<div id="sidebarModalBackdrop"></div>
     <div id="wrapper">
-
-        <!-- <div th:replace="~{fragments/sidebar :: sidebar}"></div>-->
-
-        <div id="content-wrapper" class="d-flex flex-column">
-            
+        <div id="content-wrapper" class="d-flex flex-column">      
             <div id="content">
-
-                <div th:replace="~{fragments/topbar :: topbar}"></div>
-
+				<div th:replace="~{fragments/topbar :: topbar}"></div>
                 <div class="shop-container">
 
-                    <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div id="shopHeaderSection" class="d-flex align-items-center justify-content-between mb-4">
                         <div class="d-flex align-items-center">
                             <a href="javascript:history.back()" class="text-decoration-none text-gray-800 mr-3">
                                 <i class="fas fa-arrow-left fa-2x"></i>
                             </a>
                             <h1 class="h3 mb-0 text-gray-800 font-weight-bold">포인트 상점</h1>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        
+                        <div id="pagePointDisplay" class="h5 mb-0 font-weight-bold text-gray-800"
+                             data-toggle="modal" data-target="#pointHistoryModal" 
+                             style="cursor: pointer;" title="내역 보기">
                             현재 보유 포인트 : <span class="text-success">1,250 P</span>
                         </div>
                     </div>
@@ -125,42 +153,42 @@
                         </div>
                     </div>
 
-					<div class="row mb-4">
-	                    <div class="col-md-4 mb-2">
-	                        <select class="form-control border-left-success">
-	                            <option>전체 카테고리</option>
-	                            <option>아바타 꾸미기</option>
-	                            <option>아이템 / 부스터</option>
-	                            <option>이모티콘</option>
-	                        </select>
-	                    </div>
-	                    <div class="col-md-8 mb-2">
-	                        <div class="input-group">
-	                            <input type="text" class="form-control bg-light border-0 small" placeholder="상품 검색..." aria-label="Search">
-	                            <div class="input-group-append">
-	                                <button class="btn btn-success" type="button">
-	                                    <i class="fas fa-search fa-sm"></i>
-	                                </button>
-	                            </div>
-	                            
-	                            <div class="input-group-append ml-2">
-	                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
-	                                         id="sortDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	                                    <i class="fas fa-sort-amount-down mr-1"></i> 정렬
-	                                 </button>
-	                                 
-	                                 <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="sortDropdown">
-	                                     <div class="dropdown-header">정렬 기준:</div>
-	                                     <a class="dropdown-item" href="?sort=latest">최신순 (New)</a>
-	                                     <a class="dropdown-item" href="?sort=popular">인기순 (Hot)</a>
-	                                     <div class="dropdown-divider"></div>
-	                                     <a class="dropdown-item" href="?sort=low_price">가격 낮은순</a>
-	                                     <a class="dropdown-item" href="?sort=high_price">가격 높은순</a>
-	                                 </div>
-	                            </div>
-	                        </div>
-	                    </div>
-	                </div>
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-2">
+                            <select class="form-control border-left-success">
+                                <option>전체 카테고리</option>
+                                <option>아바타 꾸미기</option>
+                                <option>아이템 / 부스터</option>
+                                <option>이모티콘</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8 mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control bg-light border-0 small" placeholder="상품 검색..." aria-label="Search">
+                                <div class="input-group-append">
+                                    <button class="btn btn-success" type="button">
+                                        <i class="fas fa-search fa-sm"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="input-group-append ml-2">
+                                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                             id="sortDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-sort-amount-down mr-1"></i> 정렬
+                                     </button>
+                                     
+                                     <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="sortDropdown">
+                                         <div class="dropdown-header">정렬 기준:</div>
+                                         <a class="dropdown-item" href="?sort=latest">최신순 (New)</a>
+                                         <a class="dropdown-item" href="?sort=popular">인기순 (Hot)</a>
+                                         <div class="dropdown-divider"></div>
+                                         <a class="dropdown-item" href="?sort=low_price">가격 낮은순</a>
+                                         <a class="dropdown-item" href="?sort=high_price">가격 높은순</a>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row">
                         
@@ -215,11 +243,27 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="col-lg-3 col-md-4 col-6 mb-4">
+                            <div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal"
+                                 data-name="랜덤 박스" data-price="100" data-desc="무엇이 나올지 모르는 신비한 상자입니다. 꽝이 있을 수도?">
+                                <div class="item-img-placeholder">
+                                    <i class="fas fa-box-open fa-3x"></i>
+                                </div>
+                                <div class="item-info">
+                                    <h6 class="font-weight-bold text-gray-900 mb-1">랜덤 박스</h6>
+                                    <div class="text-success font-weight-bold">100 P</div>
+                                </div>
+                            </div>
+                        </div>
 
                     </div> </div>
             </div>
             <div th:replace="~{fragments/footer :: footer}"></div>
         </div>
+		<div id="sidebarModal" class="sidebar-modal" style="display:none;">
+			<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+		</div>
     </div>
 
     <div class="modal fade" id="itemModal" tabindex="-1" role="dialog" aria-labelledby="itemModalLabel" aria-hidden="true">
@@ -251,7 +295,8 @@
                                 </div>
 
                                 <form th:action="@{/shop/buy}" method="post">
-                                    <input type="hidden" name="itemName" id="hiddenItemName"> <div class="row">
+                                    <input type="hidden" name="itemName" id="hiddenItemName"> 
+                                    <div class="row">
                                         <div class="col-6">
                                             <button type="button" class="btn btn-secondary btn-block btn-lg" data-dismiss="modal">취소</button>
                                         </div>
@@ -268,6 +313,81 @@
         </div>
     </div>
 
+    <div class="modal fade" id="pointHistoryModal" tabindex="-1" role="dialog" aria-labelledby="pointHistoryLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold text-gray-900" id="pointHistoryLabel">포인트 내역</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-gray-100 rounded">
+                        <span class="font-weight-bold text-gray-700">현재 잔액</span>
+                        <span class="h4 mb-0 font-weight-bold text-success">1,250 P</span>
+                    </div>
+
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>날짜</th>
+                                    <th>내용</th>
+                                    <th class="text-right">변동</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="small align-middle">2025.11.20</td>
+                                    <td class="align-middle">
+                                        <div class="font-weight-bold">출석 체크</div>
+                                        <div class="small text-muted">일일 보상</div>
+                                    </td>
+                                    <td class="text-right align-middle text-success font-weight-bold">+ 50</td>
+                                </tr>
+                                <tr>
+                                    <td class="small align-middle">2025.11.19</td>
+                                    <td class="align-middle">
+                                        <div class="font-weight-bold">아이템 구매</div>
+                                        <div class="small text-muted">전설의 검</div>
+                                    </td>
+                                    <td class="text-right align-middle text-danger font-weight-bold">- 500</td>
+                                </tr>
+                                <tr>
+                                    <td class="small align-middle">2025.11.18</td>
+                                    <td class="align-middle">
+                                        <div class="font-weight-bold">퀴즈 우승</div>
+                                        <div class="small text-muted">상식 퀴즈 1등</div>
+                                    </td>
+                                    <td class="text-right align-middle text-success font-weight-bold">+ 300</td>
+                                </tr>
+                                <tr>
+                                    <td class="small align-middle">2025.11.15</td>
+                                    <td class="align-middle">
+                                        <div class="font-weight-bold">포인트 충전</div>
+                                        <div class="small text-muted">이벤트 보너스 포함</div>
+                                    </td>
+                                    <td class="text-right align-middle text-primary font-weight-bold">+ 1,000</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="point-badge-floating" id="floatingPointBadge"
+         data-toggle="modal" data-target="#pointHistoryModal" 
+         style="cursor: pointer;" title="내역 보기">
+        <i class="fas fa-coins mr-2"></i> 
+        <span id="floatingPointText">0 P</span> 
+    </div>
+
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
@@ -275,26 +395,46 @@
     <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
     <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
     <script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
-    <script th:src="@{/js/sb-admin-2.min.js}"></script>
+	<script th:src="@{/js/sb-admin-2.js}"></script>
     
     <script>
+        // [스크립트 1] 아이템 구매 모달에 데이터 넣기
         $('#itemModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget); // 모달을 띄운 버튼(아이템 카드)
-            
-            // data-*** 속성에서 값 가져오기
+            var button = $(event.relatedTarget);
             var name = button.data('name');
             var price = button.data('price');
             var desc = button.data('desc');
 
-            // 모달 내부 요소에 값 넣기
             var modal = $(this);
             modal.find('#modalItemName').text(name);
             modal.find('#modalItemPrice').text(price + ' P');
             modal.find('#modalItemDesc').text(desc);
-            
-            // 폼 전송용 hidden input에도 값 넣기
             modal.find('#hiddenItemName').val(name);
         })
+        
+        // [스크립트 2] 스크롤 시 포인트 배지 표시
+        $(document).ready(function() {
+            // 초기화: 본문 포인트를 배지에 복사
+            var pointText = $('#pagePointDisplay span').text(); 
+            $('#floatingPointText').text(pointText);
+
+            $(document).on('scroll', function() {
+                var $target = $('#pagePointDisplay');
+                // 안전장치: 요소가 존재할 때만 실행
+                if ($target.length > 0) {
+                    var scrollDistance = $(this).scrollTop();
+                    
+                    // 텍스트가 탑바(약 70px)에 닿는 순간부터 표시
+                    var triggerPoint = $target.offset().top - 70;
+
+                    if (scrollDistance > triggerPoint) {
+                        $('#floatingPointBadge').fadeIn(); // jQuery fadeIn (부드럽게)
+                    } else {
+                        $('#floatingPointBadge').fadeOut();
+                    }
+                }
+            });
+        });
     </script>
 
 </body>
