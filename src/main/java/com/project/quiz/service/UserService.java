@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserProfile;
 import com.project.quiz.repository.UserRepository;
@@ -41,6 +42,7 @@ public class UserService {
         
         return userRepository.save(user);
     }
+
 
 	public User findByEmail(String name) {
 		return userRepository.findByEmail(name).orElse(null);
