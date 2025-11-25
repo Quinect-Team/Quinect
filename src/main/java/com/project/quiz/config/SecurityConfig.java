@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                 .logoutSuccessUrl("/login?logout")     // 로그아웃 성공 시 이동할 페이지
                 .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
             )
             .sessionManagement((session) -> session
                     // 세션이 끊긴 상태로 접근하면 이 주소로 보냄 (?expired 파라미터 추가)
