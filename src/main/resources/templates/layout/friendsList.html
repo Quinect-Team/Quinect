@@ -1,0 +1,48 @@
+<!-- 친구 모달 (숨겨져 있다가 버튼 클릭 시 보이도록) -->
+<div id="friendModal" class="modal fade show" tabindex="-1" role="dialog" style="display:none; position:absolute; left:330px; top:120px; width:460px; height:340px; z-index:1100;">
+  <div class="modal-dialog" role="document" style="width:100%; height:100%;">
+    <div class="modal-content" style="height:100%;">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title font-weight-bold">친구 관리</h5>
+        <button type="button" class="close" onclick="closeModal()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body" style="height:200px; overflow-y:auto;">
+        <form th:action="@{/friend/add}" method="post" class="form-inline mb-2">
+          <input type="text" name="friendNickname" class="form-control mr-2" placeholder="닉네임으로 친구 찾기" required>
+          <button type="submit" class="btn btn-primary">친구 추가</button>
+        </form>
+
+        <div>
+          <h6 class="font-weight-bold mb-2">내 친구 목록</h6>
+          <ul class="list-group">
+            <li class="list-group-item d-flex align-items-center justify-content-between" th:each="friend : ${friends}">
+              <span>
+                <img th:src="@{${friend.avatarUrl}}" class="rounded-circle mr-2" width="34" height="34" alt="아바타">
+                <span class="font-weight-bold text-success" th:text="${friend.nickname}">닉네임</span>
+              </span>
+              <form th:action="@{/friend/remove}" method="post" style="margin:0;">
+                <input type="hidden" name="friendId" th:value="${friend.id}">
+                <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 친구 모달 열기 버튼 (적절한 위치에 배치) -->
+<button type="button" class="btn btn-success" onclick="openModal()">친구창 열기</button>
+
+<script>
+function openModal() {
+  document.getElementById('friendModal').style.display = "block";
+}
+function closeModal() {
+  document.getElementById('friendModal').style.display = "none";
+}
+</script>
