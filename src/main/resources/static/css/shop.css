@@ -1,0 +1,96 @@
+.shop-container {
+     max-width: 1000px; /* 상점은 아이템 나열을 위해 좀 더 넓게 */
+     width: 100%;
+     margin: 0 auto;
+     padding-top: 0.5rem;
+     padding-bottom: 3rem;
+ }
+
+ /* 배너 스타일 */
+ .shop-banner {
+     height: 200px;
+     background-color: #4e73df; /* Primary Color */
+     border-radius: 1rem;
+     position: relative;
+     overflow: hidden;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     color: white;
+     margin-bottom: 2rem;
+     box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+ }
+ 
+ /* 아이템 카드 스타일 */
+ .item-card {
+     cursor: pointer;
+     transition: transform 0.2s, box-shadow 0.2s;
+     border: 1px solid #e3e6f0;
+     border-radius: 0.5rem;
+     overflow: hidden;
+     background: #fff;
+     height: 100%; /* 높이 맞춤 */
+ }
+ .item-card:hover {
+     transform: translateY(-5px);
+     box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+     border-color: #4e73df;
+ }
+ .item-img-placeholder {
+     height: 150px;
+     background-color: #2c3e50; /* 스케치의 진한 남색 느낌 */
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     color: rgba(255,255,255,0.5);
+ }
+ .item-info {
+     padding: 1rem;
+     text-align: center;
+ }
+
+ /* 모달 스타일 */
+ .modal-item-img {
+     width: 100%;
+     height: 200px;
+     background-color: #2c3e50;
+     border-radius: 0.5rem;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     color: white;
+     font-size: 3rem;
+ }
+
+ /* 플로팅 포인트 배지 스타일 (우측 상단) */
+ .point-badge-floating {
+     position: fixed;
+     top: 1.5rem;
+     right: 1rem;
+     z-index: 1000;
+     display: none;
+     
+     padding: 0.8rem 1.2rem;
+     border-radius: 50rem;
+     background-color: #fff;
+     color: #1cc88a;
+     border: 2px solid #1cc88a;
+     
+     box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+     font-weight: 800;
+     font-size: 1rem;
+     
+     /* jQuery fadeIn/Out 충돌 방지를 위해 transition은 특정 속성만 지정 */
+     transition: transform 0.2s, background-color 0.2s;
+ }
+
+ .point-badge-floating:hover {
+     background-color: #1cc88a;
+     color: #fff;
+     text-decoration: none;
+     transform: translateY(-3px);
+ }
+/* 부트스트랩 자체 내에서 모달오픈될때 padding을 넣게 설정되어 있어서 이걸 방지하는 장치 */ 
+body.modal-open {
+    padding-right: 0 !important;
+}

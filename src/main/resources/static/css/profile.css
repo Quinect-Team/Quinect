@@ -1,0 +1,158 @@
+/* 기존 스타일 유지 */
+.profile-container {
+	max-width: 700px;
+	width: 100%;
+	margin: 0 auto;
+	padding-top: 0.5rem;
+}
+
+.profile-img-container {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	border: 2px solid #ccc;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	background-color: #e9ecef;
+}
+
+.profile-img-placeholder {
+	font-size: 5rem;
+	color: #6c757d;
+}
+
+.stats-box {
+	border: 1px solid #c7d4e3;
+	border-radius: .35rem;
+	padding: 1rem;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	font-size: 0.95rem;
+	background-color: #fff;
+	box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .05);
+}
+
+.stats-item {
+	text-align: center;
+	flex-grow: 1;
+}
+
+.stats-item:not(:last-child) {
+	border-right: 1px solid #e3e6f0;
+}
+
+.achievement-icon {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	background-color: #36b9cc;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-right: 15px;
+}
+
+/* 타임라인 영역 (기준점) */
+.timeline-section {
+	position: relative;
+	padding-left: 10px;
+	padding-bottom: 20px;
+	/* 하단 여백 */
+	overflow: hidden;
+	/* 그라데이션이 영역 밖으로 나가는 것 방지 */
+}
+
+/* [핵심] 하단 화이트 그라데이션 효과 (Fade Out) */
+.timeline-section::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	/* 맨 아래에 배치 */
+	width: 100%;
+	height: 120px;
+	/* [조절 가능] 그라데이션 높이 (이걸 낮추면 덜 덮입니다) */
+
+	/* 투명에서 흰색으로 변하는 그라데이션 */
+	background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, #e3e6f0 60%);
+	z-index: 2;
+	/* 아이콘보다 위에 올라오도록 설정 */
+	pointer-events: none;
+	/* 마우스 클릭은 통과되도록 (더보기 버튼 클릭 가능하게) */
+}
+
+/* 세로 줄 (Line) */
+.timeline-section::before {
+	content: '';
+	position: absolute;
+	top: 10px;
+	/* 시작점 */
+	bottom: 0;
+	/* 끝점: 바닥까지 */
+	left: 39px;
+	width: 2px;
+	background-color: #e3e6f0;
+	z-index: 0;
+}
+
+.timeline-item {
+	position: relative;
+	display: flex;
+	align-items: flex-start;
+	/* 텍스트가 길어져도 아이콘은 위쪽에 고정 */
+	margin-bottom: 1.5rem;
+	z-index: 1;
+}
+
+/* 타임라인 원형 아이콘 */
+.timeline-icon {
+	width: 60px;
+	height: 60px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	font-size: 1.5rem;
+	flex-shrink: 0;
+	border: 4px solid #fff;
+	/* 흰 테두리 */
+	position: relative;
+	z-index: 1;
+	/* 그라데이션 아래, 줄 위에 */
+}
+
+/* (중요) 마지막 아이콘은 그라데이션에 묻히도록 z-index 조절 */
+.timeline-item:last-of-type .timeline-icon {
+	z-index: 0;
+}
+
+/* 기존 아이콘 색상 유지 */
+.bg-timeline-quiz {
+	background-color: #2e59d9;
+}
+
+.bg-timeline-attend {
+	background-color: #36b9cc;
+}
+
+.timeline-content {
+	margin-left: 1.5rem;
+	padding-top: 0.5rem;
+	/* 아이콘 중앙과 텍스트 높이 맞추기 */
+	position: relative;
+	z-index: 0;
+	/* 텍스트도 그라데이션에 묻히게 */
+}
+
+/* [추가] 더보기 버튼 위치 조정 (그라데이션 위로 올리기) */
+.more-btn-wrapper {
+	position: relative;
+	z-index: 3;
+	/* 그라데이션(z-index: 2)보다 높게 */
+	margin-top: -40px;
+	/* 위로 끌어올려서 그라데이션 영역에 배치 */
+}
