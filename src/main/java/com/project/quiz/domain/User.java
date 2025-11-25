@@ -1,49 +1,54 @@
 package com.project.quiz.domain;
 
-import lombok.*;
-import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
-@Table(name = "user")
-@Getter
+@Getter 
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor 
+@AllArgsConstructor 
 @Builder
 public class User {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
 
-	@Column(name = "created_at")
-	private LocalDateTime createdAt;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(name = "email", length = 255)
-	private String email;
+    @Column(unique = true, nullable = false)
+    private String email;
+    private String password;
+    
+    private String provider;    // google, kakao
+    private String providerId;  // sub, id
+    private String role;        // USER, ADMIN
+    private String status;      // ACTIVE, INACTIVE (계정 상태 유지)
+    
+    private LocalDateTime createdAt;
 
-	@Column(name = "password", length = 255)
-	private String password;
+    // ▼▼▼ 핵심: UserProfile과 1:1 연결 ▼▼▼
+    // CascadeType.ALL: User를 저장하면 Profile도 같이 저장됨
+    // orphanRemoval = true: 연결 끊으면 Profile 데이터도 삭제됨
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private UserProfile userProfile;
 
-	@Column(name = "username", length = 255)
-	private String username;
-
-	@Column(name = "profile_image", length = 512)
-	private String profileImage;
-
-	@Column(name = "point_balance")
-	private Long pointBalance;
-
-	@Column(name = "provider", length = 50)
-	private String provider;
-
-	@Column(name = "provider_id", length = 255)
-	private String providerId;
-
-	@Column(name = "status", length = 20)
-	private String status;
-	
-	@Column(name = "role", length = 50)
-    private String role;
+    // 편의 메서드: 연관관계 편의 메서드 (양방향 세팅용)
+    public void setUserProfile(UserProfile profile) {
+        this.userProfile = profile;
+        if (profile != null) {
+            profile.setUser(this);
+        }
+    }
 }

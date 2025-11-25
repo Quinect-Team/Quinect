@@ -3,17 +3,17 @@
 
 	<div class="text-center p-3" th:if="${user != null}">
         <img class="img-profile rounded-circle mb-2"
-             th:src="${user.profileImage != null ? user.profileImage : '/img/undraw_profile.svg'}"
+             th:src="${user.userProfile.profileImage != null ? user.userProfile.profileImage : '/img/undraw_profile.svg'}"
              alt="User Profile Picture"
              style="width: 80px; height: 80px; border: 2px solid #fff;">
         
         <div class="font-weight-bold text-white mb-1" style="font-size: 1.1rem;"
-             th:text="${user.username}">
+             th:text="${user.userProfile.username}">
              사용자명
         </div> 
         
         <div class="small text-white-50 mb-2">
-            보유 포인트 : <span th:text="${#numbers.formatInteger(user.pointBalance, 0, 'COMMA')}">0</span> P
+            보유 포인트 : <span th:text="${#numbers.formatInteger(user.userProfile.pointBalance, 0, 'COMMA')}">0</span> P
         </div>
         
 		<div class="mt-2 d-flex justify-content-center"> 

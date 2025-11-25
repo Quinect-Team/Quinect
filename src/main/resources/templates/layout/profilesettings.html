@@ -1,147 +1,100 @@
 <div class="settings-container" th:fragment="profilesettings">
 
-	<div class="d-flex align-items-center justify-content-between mb-3">
-		<div class="d-flex align-items-center">
-			<a href="javascript:history.back()" class="text-decoration-none text-gray-800 mr-3">
-				<i class="fas fa-arrow-left fa-2x"></i>
-			</a>
-			<h1 class="h3 mb-0 text-gray-800 font-weight-bold">프로필 설정</h1>
-		</div>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+            <a href="javascript:history.back()" class="text-decoration-none text-gray-800 mr-3">
+                <i class="fas fa-arrow-left fa-2x"></i>
+            </a>
+            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">프로필 설정</h1>
+        </div>
 
-		<button type="submit" form="settingsForm" class="btn btn-success btn-icon-split">
-			<span class="icon text-white-50">
-				<i class="fas fa-save"></i>
-			</span>
-			<span class="text font-weight-bold">저장</span>
-		</button>
-	</div>
+        <button type="submit" form="settingsForm" id="saveButton" class="btn btn-success btn-icon-split" disabled>
+            <span class="icon text-white-50">
+                <i class="fas fa-save"></i>
+            </span>
+            <span class="text font-weight-bold">저장</span>
+        </button>
+    </div>
 
-	<hr class="mb-4">
+    <hr class="mb-4">
 
-	<div class="row">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="nav flex-column nav-pills settings-nav" id="v-pills-tab" role="tablist"
+                aria-orientation="vertical">
+                <a class="nav-link active" id="v-pills-profile-tab" data-toggle="pill" href="#v-pills-profile"
+                    role="tab" aria-controls="v-pills-profile" aria-selected="true">
+                    <i class="fas fa-user"></i> 기본 정보
+                </a>
+                <a class="nav-link" id="v-pills-theme-tab" data-toggle="pill" href="#v-pills-theme" role="tab"
+                    aria-controls="v-pills-theme" aria-selected="false">
+                    <i class="fas fa-palette"></i> 테마 변경
+                </a>
+            </div>
+        </div>
 
-		<div class="col-md-3 mb-4">
-			<div class="nav flex-column nav-pills settings-nav" id="v-pills-tab" role="tablist"
-				aria-orientation="vertical">
-				<a class="nav-link active" id="v-pills-profile-tab" data-toggle="pill" href="#v-pills-profile"
-					role="tab" aria-controls="v-pills-profile" aria-selected="true">
-					<i class="fas fa-user"></i> 기본 정보
-				</a>
-				<a class="nav-link" id="v-pills-theme-tab" data-toggle="pill" href="#v-pills-theme" role="tab"
-					aria-controls="v-pills-theme" aria-selected="false">
-					<i class="fas fa-palette"></i> 테마 변경
-				</a>
-			</div>
-		</div>
+        <div class="col-md-9">
+            <form id="settingsForm" th:action="@{/profile/settings/save}" method="post" enctype="multipart/form-data">
+                <div class="tab-content settings-content" id="v-pills-tabContent">
 
-		<div class="col-md-9">
-			<form id="settingsForm" th:action="@{/profile/settings/save}" method="post" enctype="multipart/form-data">
-				<div class="tab-content settings-content" id="v-pills-tabContent">
+                    <div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel"
+                        aria-labelledby="v-pills-profile-tab">
+                        <h5 class="font-weight-bold text-gray-800 mb-4">기본 프로필 정보</h5>
 
-					<div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel"
-						aria-labelledby="v-pills-profile-tab">
-						<h5 class="font-weight-bold text-gray-800 mb-4">기본 프로필 정보</h5>
+                        <div class="form-group">
+                            <label class="form-label">닉네임</label>
+                            <input type="text" class="form-control check-change" name="username" 
+                                   th:value="${user.userProfile.username}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">소속</label>
+                            <input type="text" class="form-control check-change" name="organization" 
+                                   th:value="${user.userProfile.organization}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">한줄 소개 (Bio)</label>
+                            
+                            <input type="text" class="form-control check-change" name="bio" 
+                                   th:value="${user.userProfile.bio}">
+                        </div>
+                    </div>
 
-						<div class="form-group">
-							<label class="form-label">닉네임</label>
-							<input type="text" class="form-control" value="김OO" name="nickname">
-						</div>
-						<div class="form-group">
-							<label class="form-label">소속</label>
-							<input type="text" class="form-control" value="OO대학교" name="organization">
-						</div>
-						<div class="form-group">
-							<label class="form-label">한줄 소개 (Bio)</label>
-							<textarea class="form-control" rows="3" name="bio">우리 함께 즐겁게 퀴즈를 풀어보아요.</textarea>
-						</div>
-					</div>
-					<div class="tab-pane fade" id="v-pills-theme" role="tabpanel" aria-labelledby="v-pills-theme-tab">
+                    <div class="tab-pane fade" id="v-pills-theme" role="tabpanel" aria-labelledby="v-pills-theme-tab">
+                        </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
-						<h5 class="font-weight-bold text-gray-800 mb-3">프로필 사진 변경</h5>
-						<div class="form-group mb-4">
-							<div class="d-flex align-items-center">
-								<div class="mr-3">
-									<div
-										style="width: 80px; height: 80px; border-radius: 50%; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;">
-										<i class="fas fa-user fa-2x text-gray-500"></i>
-									</div>
-								</div>
-								<div>
-									<input type="file" class="form-control-file" id="profileImageUpload"
-										name="profileImage">
-									<small class="text-muted d-block mt-1">JPG, PNG 파일만 업로드 가능합니다.</small>
-								</div>
-							</div>
-						</div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputs = document.querySelectorAll('.check-change');
+            const saveButton = document.getElementById('saveButton');
+            
+            // 1. 초기값을 저장해둡니다. (비교용)
+            const initialValues = {};
+            inputs.forEach(input => {
+                initialValues[input.name] = input.value;
+            });
 
-						<hr>
+            // 2. 값이 변했는지 확인하는 함수
+            function checkChanges() {
+                let isChanged = false;
+                inputs.forEach(input => {
+                    // 하나라도 초기값과 다르면 변경된 것으로 간주
+                    if (input.value !== initialValues[input.name]) {
+                        isChanged = true;
+                    }
+                });
 
-						<h5 class="font-weight-bold text-gray-800 mb-3">테두리 선택<h5>
-								<div class="row mb-4">
-									<div class="col-3 mb-2">
-										<div class="selection-box active">
-											<i class="fas fa-user fa-2x mb-2"></i>
-											<div class="small">기본</div>
-										</div>
-									</div>
-									<div class="col-3 mb-2">
-										<div class="selection-box">
-											<i class="fas fa-cat fa-2x mb-2 text-warning"></i>
-											<div class="small">고양이</div>
-										</div>
-									</div>
-									<div class="col-3 mb-2">
-										<div class="selection-box">
-											<i class="fas fa-robot fa-2x mb-2 text-info"></i>
-											<div class="small">로봇</div>
-										</div>
-									</div>
-									<div class="col-3 mb-2">
-										<div class="selection-box">
-											<i class="fas fa-ghost fa-2x mb-2 text-dark"></i>
-											<div class="small">유령</div>
-										</div>
-									</div>
-								</div>
+                // 변경되었으면 버튼 활성화(disabled 제거), 아니면 비활성화
+                saveButton.disabled = !isChanged;
+            }
 
-								<hr>
-
-								<h5 class="font-weight-bold text-gray-800 mb-3">테마 선택</h5>
-								<div class="row">
-									<div class="col-3 mb-2">
-										<div class="selection-box active">
-											<div class="theme-color-circle mb-2" style="background-color: #1cc88a;">
-											</div>
-											<div class="small">Green</div>
-										</div>
-									</div>
-									<div class="col-3 mb-2">
-										<div class="selection-box">
-											<div class="theme-color-circle mb-2" style="background-color: #4e73df;">
-											</div>
-											<div class="small">Blue</div>
-										</div>
-									</div>
-									<div class="col-3 mb-2">
-										<div class="selection-box">
-											<div class="theme-color-circle mb-2" style="background-color: #f6c23e;">
-											</div>
-											<div class="small">Yellow</div>
-										</div>
-									</div>
-									<div class="col-3 mb-2">
-										<div class="selection-box">
-											<div class="theme-color-circle mb-2" style="background-color: #6f42c1;">
-											</div>
-											<div class="small">Purple</div>
-										</div>
-									</div>
-								</div>
-
-					</div>
-
-				</div>
-			</form>
-		</div>
-	</div>
+            // 3. 모든 입력창에 이벤트 리스너 등록
+            inputs.forEach(input => {
+                input.addEventListener('input', checkChanges);
+            });
+        });
+    </script>
 </div>
