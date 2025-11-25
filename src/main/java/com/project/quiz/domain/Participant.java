@@ -19,8 +19,6 @@ public class Participant {
     @Column(nullable = false)
     private LocalDateTime joinAt;
 
-    private String roleCode;
-
     // FK: room 테이블
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)

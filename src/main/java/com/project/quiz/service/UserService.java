@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -30,4 +31,8 @@ public class UserService {
         
         return userRepository.save(user);
     }
+
+	public User findByEmail(String name) {
+		return userRepository.findByEmail(name).orElse(null);
+	}
 }

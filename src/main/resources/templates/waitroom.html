@@ -41,14 +41,14 @@
 		                <div class="font-weight-bold text-primary" th:text="${user.nickname}">닉네임</div>
 		                
 		                <!-- 본인일 때 READY/UNREADY 버튼 노출 -->
-		                <div th:if="${user.isMe}">
+		                <!--<div th:if="${user.isMe}">
 		                    <button class="btn btn-success btn-sm mt-2" style="width:80px;"
 		                            onclick="setReadyStatus(true)">READY</button>
 		                    <button class="btn btn-secondary btn-sm mt-2" style="width:80px;"
 		                            onclick="setReadyStatus(false)">UNREADY</button>
 		                </div>
-		                <!-- 본인이 아닐 경우 준비됨 표시만 -->
-		                <div th:if="${!user.isMe} and ${user.ready}" class="badge badge-success px-2 mt-1">READY</div>
+		                 본인이 아닐 경우 준비됨 표시만 
+		                <div th:if="${!user.isMe} and ${user.ready}" class="badge badge-success px-2 mt-1">READY</div>-->
 		            </div>
 		        </div>
 		    </div>
