@@ -1,11 +1,15 @@
 package com.project.quiz.controller;
 
-import com.project.quiz.dto.UserCreateForm;
-import com.project.quiz.service.UserService;
-import lombok.RequiredArgsConstructor;
+import java.security.Principal;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+
+import com.project.quiz.dto.UserCreateForm;
+import com.project.quiz.service.UserService;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor // 생성자 주입을 위해 추가
 @Controller
@@ -14,7 +18,10 @@ public class LoginController {
     private final UserService userService; // 서비스 주입
 
     @GetMapping("/login")
-    public String loginPage() {
+    public String loginPage(Principal principal) {
+        if (principal != null) {
+            return "redirect:/main";
+        }
         return "login";
     }
 

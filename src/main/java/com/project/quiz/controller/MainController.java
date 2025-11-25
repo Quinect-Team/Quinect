@@ -21,9 +21,12 @@ public class MainController {
     }
 
     // 2. 인덱스 페이지 (비로그인 접근 가능)
-    @GetMapping("/index")
-    public String index() {
-        return "index"; // index.html 필요 (미완성이라도 빈 파일 필요)
+	@GetMapping("/index")
+    public String index(Principal principal) {
+        if (principal != null) {
+            return "redirect:/main";
+        }
+        return "index";
     }
 
     // 3. 메인 페이지 (로그인 후 접근)
