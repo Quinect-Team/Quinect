@@ -44,10 +44,10 @@ public class UserService {
     }
 
 
-	public User findByEmail(String name) {
+    public User findByEmail(String name) {
 		return userRepository.findByEmail(name).orElse(null);
 	}
-
+    
     @Transactional // DB 변경이 일어나므로 트랜잭션 필수
     public void updateProfile(String email, String newNickname, String newOrganization, String newBio) {
         // 1. 유저 조회
