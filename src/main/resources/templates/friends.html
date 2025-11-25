@@ -1,0 +1,32 @@
+<!-- 친구 관리 모달 -->
+<div id="friendModal" style="display:none; position:fixed; left:340px; top:120px; width:460px; height:340px; z-index:2000;" th:fragment="${showFriendModal}">
+  <div class="card shadow-lg" style="height:100%;">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">친구 관리</h5>
+      <button type="button" class="close text-white" onclick="closeFriendModal()" style="font-size:1.8rem;">×</button>
+    </div>
+    <div class="card-body" style="height:220px; overflow-y:auto;">
+      <form th:action="@{/friend/add}" method="post" class="form-inline mb-3">
+        <input type="text" name="friendNickname" class="form-control mr-2" placeholder="닉네임으로 친구 찾기" required>
+        <button type="submit" class="btn btn-primary">친구 추가</button>
+      </form>
+      <div>
+        <h6 class="mb-2 font-weight-bold">내 친구 목록</h6>
+        <ul class="list-group">
+          <li class="list-group-item d-flex align-items-center justify-content-between"
+              th:each="friend : ${friends}">
+            <span>
+              <img th:src="@{${friend.avatarUrl}}" class="rounded-circle mr-2" width="32" height="32" alt="아바타">
+              <span th:text="${friend.nickname}" class="font-weight-bold text-success">닉네임</span>
+            </span>
+            <form th:action="@{/friend/remove}" method="post" style="margin:0;">
+              <input type="hidden" name="friendId" th:value="${friend.id}">
+              <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+            </form>
+          </li>
+          <li th:if="${#lists.isEmpty(friends)}" class="list-group-item text-muted">친구가 없습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
