@@ -1,0 +1,71 @@
+.settings-container {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding-top: 0.5rem;
+}
+.settings-nav .nav-link {
+    color: #858796;
+    font-weight: 600;
+    border-radius: 0.35rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s;
+}
+.settings-nav .nav-link:hover {
+    background-color: #eaecf4;
+    color: #1cc88a;
+}
+.settings-nav .nav-link.active {
+    background-color: #1cc88a;
+    color: #fff;
+}
+.settings-nav i {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+}
+.settings-content {
+    background-color: #fff;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+    padding: 2rem;
+    box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .05);
+}
+.form-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1cc88a;
+}
+
+/* [추가됨] 아이콘/테마 선택 박스 스타일 */
+.selection-box {
+    border: 2px solid #eaecf4;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+.selection-box:hover {
+    border-color: #1cc88a;
+    background-color: #f8f9fc;
+}
+.selection-box.active {
+    border-color: #1cc88a;
+    background-color: #e3fdf5;
+    color: #1cc88a;
+    font-weight: bold;
+}
+.theme-color-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin: 0 auto;
+}
+.settings-container {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding-top: 0.5rem;   /* 상단 여백 */
+    padding-bottom: 3rem;  /* [추가됨] 하단 여백 (footer와의 거리) */
+}

@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .loginPage("/login")            // 로그인 페이지 URL
                 .usernameParameter("email")     // HTML 폼의 input name (이메일로 로그인 시)
                 .passwordParameter("password")  // HTML 폼의 input name
-                .defaultSuccessUrl("/main")     // 로그인 성공 시 이동할 페이지
+                .defaultSuccessUrl("/main", true)     // 로그인 성공 시 이동할 페이지
                 .failureUrl("/login?error")
                 .permitAll()
             )

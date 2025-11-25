@@ -1,0 +1,16 @@
+body {
+    background-color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start; 
+    padding-top: 80px;       
+    justify-content: center;
+}
+.login-container {
+    max-width: 600px;
+    width: 100%;
+    padding: 2rem;
+}
+input.form-control-user {
+    font-size: 1.1rem !important;
+}

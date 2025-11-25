@@ -1,0 +1,18 @@
+body {
+    background-color: #fff;
+    min-height: 100vh;      /* height 대신 min-height 권장 */
+    display: flex;
+    align-items: flex-start; /* 변경: 위쪽을 기준으로 정렬 */
+    padding-top: 80px;      /* 변경: 위에서 120px 만큼 내려와서 시작 (이 숫자로 위치 고정) */
+    justify-content: center; /* 가로 중앙 정렬은 유지 */
+}
+.login-container {
+    max-width: 600px;
+    width: 100%;
+    padding: 2rem;
+}
+
+/* 입력창 크기 및 폰트 강제 적용 (로그인 페이지와 통일) */
+input.form-control-user {
+    font-size: 1.1rem !important;
+}
