@@ -1,14 +1,13 @@
 package com.project.quiz.dto;
 
+import com.project.quiz.domain.User;
+import com.project.quiz.domain.UserProfile;
+import lombok.Builder;
+import lombok.Getter;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
-
-import com.project.quiz.domain.User;
-import com.project.quiz.domain.UserProfile;
-
-import lombok.Builder;
-import lombok.Getter;
 
 @Getter
 public class OAuthAttributes {
@@ -33,11 +32,13 @@ public class OAuthAttributes {
         this.providerId = providerId;
     }
 
-    // 서비스에서 호출하는 메소드 (구글인지 카카오인지 구분)
+    // 서비스에서 호출하는 진입점
     public static OAuthAttributes of(String registrationId, String userNameAttributeName, Map<String, Object> attributes) {
+        // "kakao"로 들어오면 카카오 로직 실행
         if ("kakao".equals(registrationId)) {
             return ofKakao("id", attributes);
         }
+        // 나머지는 구글 로직 실행
         return ofGoogle(userNameAttributeName, attributes);
     }
 
@@ -47,51 +48,52 @@ public class OAuthAttributes {
                 .email((String) attributes.get("email"))
                 .picture((String) attributes.get("picture"))
                 .provider("google")
-                .providerId((String) attributes.get("sub")) // 구글의 PK
+                .providerId((String) attributes.get("sub"))
                 .attributes(attributes)
                 .nameAttributeKey(userNameAttributeName)
                 .build();
     }
 
+    // ▼▼▼ [핵심] 카카오 전용 데이터 추출 로직 ▼▼▼
     private static OAuthAttributes ofKakao(String userNameAttributeName, Map<String, Object> attributes) {
-        // 카카오는 kakao_account 안에 profile이 있는 중첩 구조
+        // 1. kakao_account 꺼내기
         Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        
+        // 2. profile 꺼내기 (닉네임은 여기 있음)
         Map<String, Object> kakaoProfile = (Map<String, Object>) kakaoAccount.get("profile");
 
         return OAuthAttributes.builder()
-                .username((String) kakaoProfile.get("nickname"))
-                .email((String) kakaoAccount.get("email"))
-                .picture((String) kakaoProfile.get("profile_image_url"))
+                .username((String) kakaoProfile.get("nickname")) // 닉네임
+                .email((String) kakaoAccount.get("email"))       // 이메일
+                .picture((String) kakaoProfile.get("thumbnail_image_url"))
                 .provider("kakao")
-                .providerId(String.valueOf(attributes.get("id"))) // 카카오의 PK
+                .providerId(String.valueOf(attributes.get("id"))) // 카카오의 고유 ID (숫자)
                 .attributes(attributes)
                 .nameAttributeKey(userNameAttributeName)
                 .build();
     }
 
-    // User 엔티티 생성 (가입 시점)
+    // toEntity는 이전에 수정한 것(User/UserProfile 분리 버전) 그대로 유지
     public User toEntity() {
-        // 1. User 객체 생성 (인증/계정 정보)
         User user = User.builder()
                 .email(email)
                 .role("USER")
                 .status("ACTIVE")
                 .provider(provider)
                 .providerId(providerId)
-                .password(UUID.randomUUID().toString()) // 임시 비밀번호
+                .password(UUID.randomUUID().toString()) 
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        // 2. UserProfile 객체 생성 (프로필 정보)
         UserProfile profile = UserProfile.builder()
-                .username(username)         // 소셜 닉네임
-                .profileImage(null)         // 아까 요청하신 대로 사진은 저장 안 함 (null)
-                .pointBalance(100L)         // 기본 포인트
+                .username(username)
+                .profileImage(null)  // 사진 저장 안 함
+                .pointBalance(100L)
+                .organization(null)  // 소속 빈칸
                 .build();
 
-        // 3. 두 객체 연결 (User가 주인이므로 set 메서드로 연결)
         user.setUserProfile(profile);
 
-        return user; // Profile을 품은 User 반환
+        return user;
     }
 }
