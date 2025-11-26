@@ -28,7 +28,10 @@
             <h1 class="h3 text-gray-900 font-weight-bold mb-2">비밀번호를 잊으셨나요?</h1>
             <p class="text-gray-600 mb-4">계정에 사용 중인 이메일 주소를 입력하시면<br>인증 코드를 보내드립니다.</p>
         </div>
-
+		<div th:if="${error}" class="alert alert-danger w-75 mx-auto text-center font-weight-bold" role="alert">
+		    <i class="fas fa-exclamation-circle mr-1"></i> <span th:text="${error}"></span>
+		</div>
+		
         <form class="user" th:action="@{/forgot/send}" method="post">
             
             <div class="form-group">

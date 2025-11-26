@@ -26,7 +26,10 @@ public class LoginController {
     }
 
     @GetMapping("/signup")
-    public String signupPage() {
+    public String signupPage(Principal principal) {
+    	if (principal != null) {
+            return "redirect:/main";
+        }
         return "signup"; // signup.html 보여줌
     }
 
@@ -40,10 +43,5 @@ public class LoginController {
         
         // 가입 완료 후 로그인 페이지로 이동
         return "redirect:/login"; 
-    }
-    
-    @GetMapping("/forgot")
-    public String forgotPasswordPage() {
-        return "forgot";
     }
 }

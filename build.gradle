@@ -39,6 +39,8 @@ dependencies {
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	// OAuth
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	// SMTP - 인증 메일
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {
