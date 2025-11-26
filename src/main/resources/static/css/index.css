@@ -92,7 +92,6 @@ body {
 /* 친구 항목 호버 효과 */
 .friend-item:hover {
     background: #eaecf4 !important;
-    transform: translateX(3px);
 }
 
 /* 버튼 호버 효과 */

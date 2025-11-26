@@ -2,6 +2,8 @@ package com.project.quiz.domain;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +31,8 @@ public class User {
 
     @Column(unique = true, nullable = false)
     private String email;
+    
+    @JsonIgnore
     private String password;
     
     private String provider;    // google, kakao
@@ -41,6 +45,7 @@ public class User {
     // ▼▼▼ 핵심: UserProfile과 1:1 연결 ▼▼▼
     // CascadeType.ALL: User를 저장하면 Profile도 같이 저장됨
     // orphanRemoval = true: 연결 끊으면 Profile 데이터도 삭제됨
+    @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private UserProfile userProfile;
 
