@@ -1,0 +1,89 @@
+<!--친구창 모달 팝업-->
+<div class="modalPOP" th:fragment="friends">
+    <div class="modalpopup bg-white rounded-lg shadow-lg" style="width: 420px; max-height: 650px; overflow: hidden;">
+        <!-- 헤더 -->
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <h3 class="mb-0 h5 text-gray-800">
+                <i class="fas fa-user-friends mr-2 text-primary"></i>친구 목록
+            </h3>
+            <button type="button" class="closebtn btn btn-link text-gray-600 p-0 text-decoration-none" style="font-size: 28px; line-height: 1;">
+                &times;
+            </button>
+        </div>
+
+		<div class="mb-3">
+		    <div class="input-group">
+		        <input type="text" 
+		               id="friendSearch" 
+		               class="form-control" 
+		               placeholder="이메일로 검색...">
+		        <div class="input-group-append">
+		            <button class="btn btn-success" type="button" id="searchBtn">
+		                <i class="fas fa-search"></i> 검색
+		            </button>
+		        </div>
+		    </div>
+		</div>
+		
+
+        <!-- 친구 추가 버튼 -->
+        <button type="button" class="btn btn-success btn-block mb-3">
+            <i class="fas fa-user-plus mr-1"></i>친구 추가
+        </button>
+
+        <!-- 친구 목록 -->
+        <div class="friends-list" style="max-height: 420px; overflow-y: auto;">
+            <!-- 친구 항목 반복 -->
+            <div th:each="friend : ${friendList}" 
+                 class="friend-item bg-light p-3 mb-2 rounded d-flex align-items-center" 
+                 style="cursor: pointer; transition: all 0.2s;">
+                
+                <!-- 프로필 이미지 -->
+                <div class="position-relative mr-3">
+                    <img th:src="${friend.profileImage} ?: '/img/default-avatar.png'" 
+                         alt="프로필"
+                         class="rounded-circle border border-gray-300"
+                         style="width: 48px; height: 48px; object-fit: cover;">
+                    <!-- 온라인 상태 -->
+                    <span th:if="${friend.isOnline}" 
+                          class="badge badge-success position-absolute rounded-circle p-0"
+                          style="bottom: 2px; right: 2px; width: 12px; height: 12px; border: 2px solid #fff;">
+                    </span>
+                </div>
+                
+                <!-- 친구 정보 -->
+                <div class="flex-grow-1 text-truncate">
+                    <div class="font-weight-bold text-gray-800 small mb-1" 
+                         th:text="${friend.name}">홍길동</div>
+                    <div class="text-muted small text-truncate" 
+                         th:text="${friend.statusMessage}">상태 메시지</div>
+                </div>
+                
+                <!-- 액션 버튼 -->
+                <div class="d-flex" style="gap: 5px;">
+                    <button type="button" 
+                            class="chat-btn btn btn-primary btn-sm"
+                            th:attr="data-friend-id=${friend.id}"
+                            title="채팅하기">
+                        <i class="fas fa-comment"></i>
+                    </button>
+                    <button type="button" 
+                            class="delete-btn btn btn-danger btn-sm"
+                            th:attr="data-friend-id=${friend.id}"
+                            title="삭제">
+                        <i class="fas fa-user-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 친구가 없을 때 -->
+            <div th:if="${#lists.isEmpty(friendList)}" 
+                 class="text-center py-5 text-muted">
+                <i class="fas fa-user-friends mb-3" style="font-size: 48px; opacity: 0.3;"></i>
+                <p class="mb-1">아직 친구가 없습니다.</p>
+                <p class="small mb-0">친구를 추가해보세요!</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!--end 친구창 모달 팝업-->

@@ -28,3 +28,75 @@ html {
   display: block;
   transform: translateX(0);
 }
+
+/*모달 팝업 영역 스타일링*/
+.modalPOP {
+/*팝업 배경*/
+	display: none; /*평소에는 보이지 않도록*/
+    position: absolute;
+    top:0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background: rgba(0,0,0,0.5);
+}
+.modalPOP .modalpopup {
+/*팝업*/
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 20px;
+}
+.modalPOP .modalpopup {
+    display: block;
+    padding: 10px 20px;
+    background-color: rgb(116, 0, 0);
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+}
+
+/* 친구 목록 스크롤바 스타일 */
+.friends-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.friends-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.friends-list::-webkit-scrollbar-thumb {
+    background: #d1d3e2;
+    border-radius: 10px;
+}
+
+.friends-list::-webkit-scrollbar-thumb:hover {
+    background: #858796;
+}
+
+/* 친구 항목 호버 효과 */
+.friend-item:hover {
+    background: #eaecf4 !important;
+    transform: translateX(3px);
+}
+
+/* 버튼 호버 효과 */
+.chat-btn:hover {
+    background-color: #2e59d9 !important;
+}
+
+.delete-btn:hover {
+    background-color: #d52a1a !important;
+}
+
+.closebtn:hover {
+    color: #000 !important;
+    opacity: 0.7;
+}

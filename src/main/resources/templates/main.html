@@ -12,6 +12,7 @@
 	<link th:href="@{https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900}" rel="stylesheet" />
 	<link th:href="@{/css/sb-admin-2.css}" rel="stylesheet" />
 	<link th:href="@{/css/index.css}" rel="stylesheet" />
+
 </head>
 
 <body id="page-top">
@@ -33,6 +34,9 @@
 			<div th:replace="~{fragments/footer :: footer}"></div>
 		</div>
 		
+		<!-- Popup -->
+		<div th:replace="~{layout/friends :: friends}"></div>
+		
 		<!-- Sidebar -->
 		<div id="sidebarModal" class="sidebar-modal" style="display:none;">
 			<div th:replace="~{fragments/sidebar :: sidebar}"></div>
@@ -44,16 +48,20 @@
 		<i class="fas fa-angle-up"></i>
 	</a>
 
-
 	<!-- JS -->
 	<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
 	<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 	<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
 	<script th:src="@{/js/sb-admin-2.js}"></script>
-	<!--<script th:src="@{/vendor/chart.js/Chart.min.js}"></script>-->
+	<script th:src="@{/vendor/chart.js/Chart.min.js}"></script>
 	<script th:src="@{/js/demo/chart-area-demo.js}"></script>
 	<script th:src="@{/js/demo/chart-pie-demo.js}"></script>
 	
+	<!-- 친구창 모달 -->
+	<script th:src="@{/js/friends-modal.js}"></script>
+
+
+
 	<!--웹소켓-->
 	<!--<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>-->
