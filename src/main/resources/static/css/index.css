@@ -1,5 +1,13 @@
 html {
+  /* 1. 스크롤바를 항상 표시해서 모달 뜰 때 화면 밀림 방지 */
+  overflow-y: scroll; 
   scroll-behavior: smooth;
+}
+
+body {
+  /* 2. 라이브러리들이 멋대로 패딩 넣는 것 강제 차단 */
+  padding-right: 0 !important; 
+  overflow: auto !important; /* SweetAlert 등이 overflow hidden 거는 것 방지 */
 }
 
 #sidebarModalBackdrop {

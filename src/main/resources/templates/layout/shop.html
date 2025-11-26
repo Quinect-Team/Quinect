@@ -1,0 +1,110 @@
+<div class="shop-container" th:fragment="shop">
+
+	<div id="shopHeaderSection" class="d-flex align-items-center justify-content-between mb-4">
+		<div class="d-flex align-items-center">
+			<a href="javascript:history.back()" class="text-decoration-none text-gray-800 mr-3">
+				<i class="fas fa-arrow-left fa-2x"></i>
+			</a>
+			<h1 class="h3 mb-0 text-gray-800 font-weight-bold">포인트 상점</h1>
+		</div>
+
+		<div id="pagePointDisplay" class="h5 mb-0 font-weight-bold text-gray-800" data-toggle="modal"
+			data-target="#pointHistoryModal" style="cursor: pointer;" title="내역 보기">
+			현재 보유 포인트 : <span class="text-success"
+				th:text="${user != null ? #numbers.formatInteger(user.userProfile.pointBalance, 0, 'COMMA') + ' P' : '0 P'}">
+				포인트
+			</span>
+		</div>
+	</div>
+
+	<div id="shopCarousel" class="carousel slide shop-banner" data-ride="carousel">
+		<ol class="carousel-indicators">
+			<li data-target="#shopCarousel" data-slide-to="0" class="active"></li>
+			<li data-target="#shopCarousel" data-slide-to="1"></li>
+			<li data-target="#shopCarousel" data-slide-to="2"></li>
+		</ol>
+		<div class="carousel-inner text-center">
+			<div class="carousel-item active">
+				<h2 class="font-weight-bold">🎉 새로운 상품 입고!</h2>
+				<p>한정판 아바타를 만나보세요</p>
+			</div>
+			<div class="carousel-item">
+				<h2 class="font-weight-bold">🔥 주말 한정 세일</h2>
+				<p>모든 경험치 부스터 20% 할인</p>
+			</div>
+			<div class="carousel-item">
+				<h2 class="font-weight-bold">💎 포인트 충전 이벤트</h2>
+				<p>지금 충전하면 보너스 포인트 지급</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="row mb-4">
+		<div class="col-md-4 mb-2">
+			<select class="form-control border-left-success">
+				<option>전체 카테고리</option>
+				<option>아바타 꾸미기</option>
+				<option>아이템 / 부스터</option>
+				<option>이모티콘</option>
+			</select>
+		</div>
+		<div class="col-md-8 mb-2">
+			<div class="input-group">
+				<input type="text" class="form-control bg-light border-0 small" placeholder="상품 검색..."
+					aria-label="Search">
+				<div class="input-group-append">
+					<button class="btn btn-success" type="button">
+						<i class="fas fa-search fa-sm"></i>
+					</button>
+				</div>
+
+				<div class="input-group-append ml-2">
+					<button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown"
+						data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<i class="fas fa-sort-amount-down mr-1"></i> 정렬
+					</button>
+
+					<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+						aria-labelledby="sortDropdown">
+						<div class="dropdown-header">정렬 기준:</div>
+						<a class="dropdown-item" href="?sort=latest">최신순 (New)</a>
+						<a class="dropdown-item" href="?sort=popular">인기순 (Hot)</a>
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item" href="?sort=low_price">가격 낮은순</a>
+						<a class="dropdown-item" href="?sort=high_price">가격 높은순</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-lg-3 col-md-4 col-6 mb-4" th:each="item : ${items}">
+			<div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal" th:data-id="${item.id}"
+				th:data-name="${item.itemName}" th:data-price="${item.price}" th:data-desc="${item.description}" th:data-owned="${item.isOwned}" style="cursor: pointer;">
+
+				<div class="item-img-placeholder">
+					<img th:if="${item.imageUrl != null}" th:src="${item.imageUrl}" style="max-width: 60px;">
+					<i th:unless="${item.imageUrl != null}" class="fas fa-gift fa-3x"></i>
+				</div>
+
+				<div class="item-info">
+					<h6 class="font-weight-bold text-gray-900 mb-1" th:text="${item.itemName}">아이템명</h6>
+
+					<div th:if="${item.isOwned}" class="text-secondary font-weight-bold">
+						<i class="fas fa-check-circle"></i> 보유중
+					</div>
+
+					<div th:unless="${item.isOwned}" class="text-success font-weight-bold"
+						th:text="${#numbers.formatInteger(item.price, 0, 'COMMA') + ' P'}">
+						500 P
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-12 text-center py-5" th:if="${#lists.isEmpty(items)}">
+			<p class="text-gray-500">판매 중인 상품이 없습니다.</p>
+		</div>
+	</div>
+</div>
