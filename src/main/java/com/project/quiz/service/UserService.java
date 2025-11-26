@@ -1,5 +1,6 @@
 package com.project.quiz.service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Random;
@@ -65,7 +66,18 @@ public class UserService {
         // (만약 profile이 null일 경우는 회원가입 로직상 없겠지만, 필요하다면 여기서 생성 로직 추가 가능)
     }
     
-    private final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
+    // 여기서부터 이메일 인증
+    private static class VerificationInfo {
+        String code;
+        LocalDateTime createAt;
+
+        public VerificationInfo(String code) {
+            this.code = code;
+            this.createAt = LocalDateTime.now();
+        }
+    }
+    
+    private final Map<String, VerificationInfo> verificationCodes = new ConcurrentHashMap<>();
     
     public void sendVerificationCode(String email) {
         // 1. 유저 존재 여부 확인
@@ -81,7 +93,7 @@ public class UserService {
         String code = generateRandomCode();
 
         // 4. 저장소에 저장 (이미 있으면 덮어쓰기)
-        verificationCodes.put(email, code);
+        verificationCodes.put(email, new VerificationInfo(code));
 
         // 5. 이메일 발송
         String subject = "[Quinect] 비밀번호 찾기 인증 코드";
@@ -92,13 +104,18 @@ public class UserService {
     // ▼▼▼ [추가] 2. 인증 번호 검증 메서드 ▼▼▼
     public boolean verifyCode(String email, String code) {
         // 1. 메모리에 저장된 인증 번호 가져오기
-        String savedCode = verificationCodes.get(email);
+    	VerificationInfo info = verificationCodes.get(email);
 
         // 2. 인증 번호가 없거나 틀리면 즉시 실패
-        if (savedCode == null || !savedCode.equals(code)) {
+    	if (info == null || !info.code.equals(code)) {
             return false;
         }
-
+    	
+    	long secondsDiff = Duration.between(info.createAt, LocalDateTime.now()).getSeconds();
+        if (secondsDiff > 180) { 
+            verificationCodes.remove(email); // 만료된 코드 삭제
+            return false; // 시간 초과로 실패 처리
+        }
         // ▼▼▼ [추가된 로직] DB에서 유저 상태 재확인 (Double Check) ▼▼▼
         // 인증 번호가 맞았더라도, 실제 유저가 ACTIVE 상태인지 한 번 더 검사합니다.
         User user = userRepository.findByEmail(email).orElse(null);

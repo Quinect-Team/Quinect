@@ -1,53 +1,157 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Quinect - 인증 코드 확인</title>
-    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
-    <link th:href="@{/css/forgot.css}" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>Quinect - 인증 코드 확인</title>
+
+	<link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+	<link th:href="@{/css/forgot.css}" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
+	<style>
+		/* PIN 입력창 전용 스타일 */
+		.pin-input {
+			font-size: 1.8rem !important;
+			letter-spacing: 12px !important;
+			font-weight: bold !important;
+			text-align: center !important;
+			background-color: #f8f9fc;
+			color: #333 !important;
+		}
+
+		.pin-input:focus {
+			background-color: #fff;
+			border-color: #1cc88a;
+			box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25);
+		}
+
+		/* 입력창이 비활성화되었을 때 스타일 */
+		.pin-input:disabled {
+			background-color: #eaecf4;
+			letter-spacing: normal !important;
+			/* 만료 메시지 등을 위해 간격 정상화 */
+			font-size: 1rem !important;
+		}
+	</style>
 </head>
+
 <body>
-    <div class="login-container text-center">
-        <div class="mb-5 pb-3">
-            <div class="d-flex align-items-center justify-content-center">
-                <div class="rotate-n-15">
-                    <i class="fas fa-laugh-wink fa-3x text-success"></i>
-                </div>
-                <div class="ml-3 font-weight-bold text-success" style="font-size: 2.5rem;">QuizParty</div>
-            </div>
-        </div>
 
-        <div class="mb-4">
-            <h1 class="h3 text-gray-900 font-weight-bold mb-2">인증 코드 입력</h1>
-            <p class="text-gray-600 mb-4">
-                이메일로 전송된 6자리 코드를 입력해주세요.<br>
-                (스팸 메일함도 확인해주세요)
-            </p>
-        </div>
-        
-        <div th:if="${error}" class="alert alert-danger w-75 mx-auto text-center font-weight-bold" role="alert">
-            <i class="fas fa-exclamation-circle mr-1"></i> <span th:text="${error}"></span>
-        </div>
+	<div class="login-container text-center">
 
-        <form class="user" th:action="@{/forgot/check}" method="post">
-            <div class="form-group">
-                <input type="text" class="form-control form-control-user form-control-lg w-75 mx-auto text-center"
-                       placeholder="123456" name="code" maxlength="6" required
-                       style="letter-spacing: 5px; font-weight: bold; font-size: 1.5rem;">
-            </div>
-            
-            <button type="submit" class="btn btn-success btn-user w-75 mx-auto d-block font-weight-bold" 
-                    style="font-size: 1.3rem; padding-top: 0.5rem; padding-bottom: 0.5rem;">
-                확인
-            </button>
-        </form>
+		<div class="mb-5 pb-3">
+			<div class="d-flex align-items-center justify-content-center">
+				<div class="rotate-n-15">
+					<i class="fas fa-laugh-wink fa-3x text-success"></i>
+				</div>
+				<div class="ml-3 font-weight-bold text-success" style="font-size: 2.5rem;">QuizParty</div>
+			</div>
+		</div>
 
-        <hr class="w-75 mx-auto my-4">
-        <div class="text-center">
-            <a class="small font-weight-bold text-primary" th:href="@{/forgot}">이메일 다시 입력하기</a>
-        </div>
-    </div>
+		<div class="mb-4">
+			<h1 class="h3 text-gray-900 font-weight-bold mb-2">인증 코드 입력</h1>
+			<p class="text-gray-600 mb-2">
+				이메일로 전송된 6자리 코드를 입력해주세요.<br>
+				(스팸 메일함도 확인해주세요)
+			</p>
+
+			<div class="text-danger font-weight-bold mb-3" style="font-size: 1.1rem;">
+				<i class="fas fa-stopwatch mr-1"></i> 남은 시간: <span id="timer">03:00</span>
+			</div>
+		</div>
+
+		<div th:if="${error}" class="alert alert-danger w-75 mx-auto text-center font-weight-bold" role="alert">
+			<i class="fas fa-exclamation-triangle mr-1"></i> <span th:text="${error}"></span>
+		</div>
+
+		<form class="user" th:action="@{/forgot/check}" method="post" id="verifyForm">
+			<div class="form-group">
+				<input type="text" id="codeInput" class="form-control form-control-user pin-input"
+					th:classappend="${error} ? 'is-invalid border-danger' : ''" placeholder="000000" name="code"
+					maxlength="6" required value="" autofocus>
+			</div>
+
+			<button type="submit" class="btn btn-success btn-user w-75 mx-auto d-block font-weight-bold"
+				style="font-size: 1.3rem; padding-top: 0.5rem; padding-bottom: 0.5rem;">
+				확인
+			</button>
+		</form>
+
+		<hr class="w-75 mx-auto my-4">
+
+		<div class="text-center">
+			<a class="small font-weight-bold text-primary" href="/login">로그인 화면으로 돌아가기</a>
+		</div>
+
+	</div>
+
+	<script th:inline="javascript">
+		document.addEventListener("DOMContentLoaded", function () {
+
+			// 1. 서버에서 받은 '남은 초' (예: 180)
+			let serverRemainingSeconds = /*[[${remainingSeconds}]]*/ 0;
+
+			// 2. [핵심] '목표 종료 시간'을 절대적인 타임스탬프(밀리초)로 계산해서 박제
+			// 현재 시간 + 남은 시간 = 종료 예정 시간
+			const targetTime = new Date().getTime() + (serverRemainingSeconds * 1000);
+
+			const timerElement = document.getElementById('timer');
+			let isFormSubmitting = false;
+
+			// 3. 타이머 함수 (1초마다 실행되지만, 1초씩 빼는게 아니라 차이를 다시 계산함)
+			const updateTimer = () => {
+				// 현재 시간
+				const now = new Date().getTime();
+
+				// 남은 시간 = 목표 시간 - 현재 시간 (초 단위 변환)
+				const distance = targetTime - now;
+				let timeLeft = Math.floor(distance / 1000);
+
+				// 시간 초과 시 처리
+				if (timeLeft <= 0) {
+					clearInterval(countdown);
+					timerElement.textContent = "00:00";
+
+					alert("인증 시간이 만료되었습니다.\n처음부터 다시 시도해주세요.");
+					window.removeEventListener('beforeunload', preventNavigation);
+					window.location.href = '/login';
+					return;
+				}
+
+				// 화면 표시 업데이트
+				updateTimerDisplay(timeLeft);
+			};
+
+			// 최초 1회 실행
+			updateTimer();
+
+			// 반복 실행
+			const countdown = setInterval(updateTimer, 1000);
+
+			// [시간 포맷 함수]
+			function updateTimerDisplay(time) {
+				if (time < 0) time = 0;
+				const minutes = Math.floor(time / 60);
+				let seconds = time % 60;
+				seconds = seconds < 10 ? '0' + seconds : seconds;
+				timerElement.textContent = `0${minutes}:${seconds}`;
+			}
+
+			// [페이지 이탈 방지]
+			const preventNavigation = function (e) {
+				if (!isFormSubmitting) {
+					e.preventDefault();
+					e.returnValue = '';
+				}
+			};
+			window.addEventListener('beforeunload', preventNavigation);
+			document.getElementById('verifyForm').addEventListener('submit', function () {
+				isFormSubmitting = true;
+			});
+		});
+	</script>
 </body>
+
 </html>

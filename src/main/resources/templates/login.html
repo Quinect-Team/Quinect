@@ -1,86 +1,92 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-	
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Quinect - 로그인</title>
 
-    <link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
+<head>
+
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<title>Quinect - 로그인</title>
+
+	<link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
 	<link th:href="@{/css/login.css}" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-	
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
 </head>
 
 <body>
 
-    <div class="login-container text-center">
-        
-        <div class="mb-5 pb-3">
-            <div class="d-flex align-items-center justify-content-center">
-                <div class="rotate-n-15">
-                    <i class="fas fa-laugh-wink fa-3x text-success"></i>
-                </div>
-                <div class="ml-3 font-weight-bold text-success" style="font-size: 2.5rem;">QuizParty</div>
-            </div>
-        </div>
+	<div class="login-container text-center">
+
+		<div class="mb-5 pb-3">
+			<div class="d-flex align-items-center justify-content-center">
+				<div class="rotate-n-15">
+					<i class="fas fa-laugh-wink fa-3x text-success"></i>
+				</div>
+				<div class="ml-3 font-weight-bold text-success" style="font-size: 2.5rem;">QuizParty</div>
+			</div>
+		</div>
 
 		<div class="mb-4">
-            <h1 class="h3 text-gray-900 font-weight-bold mb-2">퀴즈 파티를 열기 위해 로그인하세요!</h1>
-        </div>
+			<h1 class="h3 text-gray-900 font-weight-bold mb-2">퀴즈 파티를 열기 위해 로그인하세요!</h1>
+		</div>
 
-        <div th:if="${param.error}" class="alert alert-danger w-75 mx-auto text-center font-weight-bold" role="alert">
-            <i class="fas fa-exclamation-circle mr-1"></i> 이메일 또는 비밀번호가 틀립니다.
-        </div>
+		<div th:if="${param.error}" class="alert alert-danger w-75 mx-auto text-center font-weight-bold" role="alert">
+			<i class="fas fa-exclamation-circle mr-1"></i> 이메일 또는 비밀번호가 틀립니다.
+		</div>
 
-        <div th:if="${param.logout}" class="alert alert-primary w-75 mx-auto text-center font-weight-bold" role="alert">
-            <i class="fas fa-info-circle mr-1"></i> 로그아웃 되었습니다.
-        </div>
-		<div th:if="${param.expired}" class="alert alert-warning w-75 mx-auto text-center font-weight-bold" role="alert">
-		    <i class="fas fa-clock mr-1"></i> 로그인 세션이 만료되었습니다. <br> 다시 로그인해주세요.
+		<div th:if="${param.logout}" class="alert alert-primary w-75 mx-auto text-center font-weight-bold" role="alert">
+			<i class="fas fa-info-circle mr-1"></i> 로그아웃 되었습니다.
+		</div>
+		<div th:if="${param.expired}" class="alert alert-warning w-75 mx-auto text-center font-weight-bold"
+			role="alert">
+			<i class="fas fa-clock mr-1"></i> 로그인 세션이 만료되었습니다. <br> 다시 로그인해주세요.
+		</div>
+		<div th:if="${param.invalid}" class="alert alert-danger w-75 mx-auto text-center font-weight-bold" role="alert">
+			<i class="fas fa-ban mr-1"></i> 잘못된 접근입니다. 처음부터 다시 시도해주세요.
 		</div>
 		<form class="user" th:action="@{/login}" method="post">
-            <div class="form-group">
-                <input type="email" class="form-control form-control-user form-control-lg w-75 mx-auto"
-                       id="exampleInputEmail" aria-describedby="emailHelp"
-                       placeholder="이메일 (example@email.com)" name="email" required>
-            </div>
-            
-            <div class="form-group">
-                <input type="password" class="form-control form-control-user form-control-lg w-75 mx-auto"
-                       id="exampleInputPassword" placeholder="비밀번호" name="password" required>
-            </div>
-        
-            <button type="submit" class="btn btn-success btn-user w-75 mx-auto d-block font-weight-bold" 
-                    style="font-size: 1.3rem; padding-top: 0.5rem; padding-bottom: 0.5rem;">
-                로그인
-            </button>
-        </form>
+			<div class="form-group">
+				<input type="email" class="form-control form-control-user form-control-lg w-75 mx-auto"
+					id="exampleInputEmail" aria-describedby="emailHelp" placeholder="이메일 (example@email.com)"
+					name="email" required>
+			</div>
+
+			<div class="form-group">
+				<input type="password" class="form-control form-control-user form-control-lg w-75 mx-auto"
+					id="exampleInputPassword" placeholder="비밀번호" name="password" required>
+			</div>
+
+			<button type="submit" class="btn btn-success btn-user w-75 mx-auto d-block font-weight-bold"
+				style="font-size: 1.3rem; padding-top: 0.5rem; padding-bottom: 0.5rem;">
+				로그인
+			</button>
+		</form>
 		<div class="text-center mt-3">
-            <span class="small text-gray-600">혹시 QuizParty 이용은 처음이신가요?</span>
-            <a th:href="@{/signup}" class="small font-weight-bold ml-1 text-primary">계정 생성</a>
-        </div>
+			<span class="small text-gray-600">혹시 QuizParty 이용은 처음이신가요?</span>
+			<a th:href="@{/signup}" class="small font-weight-bold ml-1 text-primary">계정 생성</a>
+		</div>
 		<div class="text-center mt-1 mb-4">
-            <span class="small text-gray-600">혹시 로그인에 문제가 생겼나요?</span>
-            <a th:href="@{/forgot}" class="small font-weight-bold ml-1 text-primary">해결하기</a>
-        </div>
-        <div class="divider-text">
-            <span>또는 소셜 계정으로 로그인</span>
-        </div>
+			<span class="small text-gray-600">혹시 로그인에 문제가 생겼나요?</span>
+			<a th:href="@{/forgot}" class="small font-weight-bold ml-1 text-primary">해결하기</a>
+		</div>
+		<div class="divider-text">
+			<span>또는 소셜 계정으로 로그인</span>
+		</div>
 
 		<div class="row justify-content-center">
-            <div class="col-sm-5 mb-2">
-                <a href="/oauth2/authorization/google" class="btn btn-google btn-user btn-block">
-                    <i class="fab fa-google fa-fw"></i> Google
-                </a>
-            </div>
-            <div class="col-sm-5 mb-2">
-                <a href="/oauth2/authorization/kakao" class="btn btn-kakao btn-user btn-block font-weight-bold">
-                    <i class="fas fa-comment fa-fw"></i> Kakao
-                </a>
-            </div>
-        </div>
-    </div>
+			<div class="col-sm-5 mb-2">
+				<a href="/oauth2/authorization/google" class="btn btn-google btn-user btn-block">
+					<i class="fab fa-google fa-fw"></i> Google
+				</a>
+			</div>
+			<div class="col-sm-5 mb-2">
+				<a href="/oauth2/authorization/kakao" class="btn btn-kakao btn-user btn-block font-weight-bold">
+					<i class="fas fa-comment fa-fw"></i> Kakao
+				</a>
+			</div>
+		</div>
+	</div>
 </body>
+
 </html>
