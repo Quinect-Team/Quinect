@@ -23,7 +23,8 @@ public class SecurityConfig {
 				.requestMatchers("/", "/index", "/login", "/signup", "/register", "/api/user/check-email", "/guest/**",
 						"/css/**", "/js/**", "/images/**", "/vendor/**", "/joinroom", "/waitroom/**", "/ws/**",
 						"/forgot/**", "/send", "/verify", "/check", "/reset", "/success")
-				.permitAll()
+				.permitAll().requestMatchers("/api/**").authenticated()
+
 				// 2. 그 외 요청은 인증(로그인) 필요
 				.anyRequest().authenticated()).formLogin((form) -> form.loginPage("/login") // 로그인 페이지 URL
 						.usernameParameter("email") // HTML 폼의 input name (이메일로 로그인 시)
