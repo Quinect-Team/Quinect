@@ -1,0 +1,30 @@
+<th:block th:fragment="attendancedetail">
+
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            
+            <div class="col-lg-8 col-md-10">
+                
+                <div class="d-flex align-items-center mt-4 mb-4">
+                    <a href="javascript:history.back()" class="text-decoration-none text-gray-800 mr-3">
+                        <i class="fas fa-arrow-left fa-2x"></i>
+                    </a>
+                    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">나의 출석부</h1>
+                </div>
+
+                <div class="card shadow-lg border-0 mb-4" style="border-radius: 20px;">
+                    <div class="card-header py-3 bg-white border-0 d-flex flex-row align-items-center justify-content-between"
+                         style="border-radius: 20px 20px 0 0;">
+                        <h6 class="m-0 font-weight-bold text-success">
+                            <i class="fas fa-calendar-check mr-2"></i>출석 현황
+                        </h6>
+                        <span class="badge badge-success badge-pill px-3 py-2">Daily Check-in</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id='calendar'></div>
+                    </div>
+                </div>
+
+            </div> </div> </div>
+
+</th:block>

@@ -72,6 +72,46 @@ $(document).ready(function() {
 		}
 	});
 
+	$('#pointHistoryModal').on('show.bs.modal', function() {
+		var $tbody = $(this).find('tbody');
+		$tbody.html('<tr><td colspan="3" class="text-center">로딩 중...</td></tr>'); // 로딩 표시
+
+		$.ajax({
+			url: '/api/point/history',
+			type: 'GET',
+			success: function(data) {
+				$tbody.empty(); // 비우기
+
+				if (data.length === 0) {
+					$tbody.html('<tr><td colspan="3" class="text-center py-3">내역이 없습니다.</td></tr>');
+					return;
+				}
+
+				// 데이터 반복문으로 행(tr) 추가
+				data.forEach(function(history) {
+					var colorClass = (history.amount > 0) ? 'text-success' : 'text-danger';
+					var sign = (history.amount > 0) ? '+' : ''; // 양수면 + 붙이기
+
+					var row = `
+	                        <tr>
+	                            <td class="small align-middle">${history.date}</td>
+	                            <td class="align-middle">
+	                                <div class="font-weight-bold">${history.reason}</div>
+	                            </td>
+	                            <td class="text-right align-middle ${colorClass} font-weight-bold">
+	                                ${sign} ${history.amount.toLocaleString()}
+	                            </td>
+	                        </tr>
+	                    `;
+					$tbody.append(row);
+				});
+			},
+			error: function() {
+				$tbody.html('<tr><td colspan="3" class="text-center text-danger">불러오기 실패</td></tr>');
+			}
+		});
+	});
+
 	// (나머지 모달 닫힘 처리 및 스크롤 배지 코드는 그대로 유지)
 	$('#itemModal').on('hidden.bs.modal', function() {
 		$('body').css('padding-right', '');

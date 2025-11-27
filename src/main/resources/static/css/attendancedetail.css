@@ -1,0 +1,108 @@
+/* 1. 캘린더 컨테이너 */
+#calendar {
+    /* max-width 제거 (HTML 그리드로 제어함) */
+    font-family: 'Nunito', sans-serif;
+}
+
+/* 2. 상단 툴바 (년월 제목) */
+.fc-toolbar-title {
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    color: #5a5c69;
+}
+
+/* 3. 툴바 버튼 (오늘, 이전, 다음) - 심플하게 */
+.fc-button-primary {
+    background-color: white !important;
+    border: 1px solid #e3e6f0 !important;
+    color: #858796 !important;
+    font-weight: bold !important;
+    box-shadow: none !important;
+    transition: all 0.2s;
+}
+.fc-button-primary:hover {
+    background-color: #f8f9fc !important;
+    color: #1cc88a !important; /* 초록색 포인트 */
+}
+.fc-button-active {
+    background-color: #1cc88a !important;
+    color: white !important;
+    border-color: #1cc88a !important;
+}
+
+/* 4. 요일 헤더 (월, 화, 수...) */
+.fc-col-header-cell {
+    background-color: white;
+    border: none !important;
+    padding: 15px 0 !important;
+}
+.fc-col-header-cell-cushion {
+    text-decoration: none;
+    color: #b7b9cc; /* 회색 톤 */
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+/* 5. 날짜 그리드 (테두리 부드럽게) */
+.fc-scrollgrid {
+    border: none !important;
+}
+.fc-daygrid-day {
+    border: 1px solid #f8f9fc !important; /* 아주 연한 테두리 */
+}
+.fc-daygrid-day-frame {
+    min-height: 100px; /* 칸 높이 확보 */
+    padding: 5px;
+    transition: background-color 0.2s;
+}
+.fc-daygrid-day:hover {
+    background-color: #fafafa; /* 마우스 올리면 살짝 회색 */
+}
+
+/* 6. 오늘 날짜 강조 */
+.fc-day-today {
+    background-color: #e8f5e9 !important; /* 연한 초록 배경 */
+    border-radius: 10px;
+}
+
+/* 7. 날짜 숫자 (1, 2, 3...) */
+.fc-daygrid-day-number {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #5a5c69;
+    text-decoration: none;
+    margin: 5px;
+}
+
+/* 8. 요일별 색상 */
+.fc-day-sun .fc-daygrid-day-number { color: #e74a3b; } /* 일요일 빨강 */
+.fc-day-sat .fc-daygrid-day-number { color: #4e73df; } /* 토요일 파랑 */
+
+/* 9. 이벤트(도장) 디자인 수정 */
+.fc-event {
+    border: none !important;
+    background: transparent !important;
+    text-align: center;
+    margin-top: 2px !important; /* 여백 최소화 */
+    padding: 2px 0 !important;
+}
+
+.check-icon {
+    color: #1cc88a;
+    font-size: 1.2rem; /* 크기 축소 (1.8rem -> 1.2rem) */
+    vertical-align: middle; /* 텍스트와 수직 정렬 맞춤 */
+    
+    /* 그림자도 조금 더 은은하게 */
+    filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.1)); 
+    
+    /* 퐁! 하는 애니메이션 (원치 않으시면 이 줄을 삭제하세요) */
+    animation: popIn 0.3s ease-out; 
+}
+
+/* 도장 찍히는 애니메이션 (크기 변화폭을 줄임) */
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    80% { transform: scale(1.1); opacity: 1; } /* 1.2 -> 1.1로 과한 확대 방지 */
+    100% { transform: scale(1); }
+}
