@@ -27,4 +27,7 @@ public class UserInventory {
 
     @Column(name = "purchased_at")
     private LocalDateTime purchasedAt;
+    
+    @Column(name = "is_equipped", nullable = false)
+    private boolean isEquipped = false;
 }

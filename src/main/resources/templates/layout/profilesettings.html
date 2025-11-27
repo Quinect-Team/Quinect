@@ -2,18 +2,11 @@
 
 	<div class="d-flex align-items-center justify-content-between mb-3">
 		<div class="d-flex align-items-center">
-			<a href="javascript:history.back()" class="text-decoration-none text-gray-800 mr-3">
+			<a th:href="${source == 'main'} ? @{/main} : @{/profile}" class="text-decoration-none text-gray-800 mr-3">
 				<i class="fas fa-arrow-left fa-2x"></i>
 			</a>
 			<h1 class="h3 mb-0 text-gray-800 font-weight-bold">설정</h1>
 		</div>
-
-		<button type="submit" form="settingsForm" id="saveButton" class="btn btn-success btn-icon-split" disabled>
-			<span class="icon text-white-50">
-				<i class="fas fa-save"></i>
-			</span>
-			<span class="text font-weight-bold">저장</span>
-		</button>
 	</div>
 
 	<hr class="mb-4">
@@ -22,10 +15,7 @@
 		<div class="col-md-3 mb-4">
 			<div class="nav flex-column nav-pills settings-nav" id="v-pills-tab" role="tablist"
 				aria-orientation="vertical">
-
-				<span class="small text-gray-600 font-weight-bold text-uppercase px-3 mb-2 mt-2">
-					프로필 설정
-				</span>
+				<span class="small text-gray-600 font-weight-bold text-uppercase px-3 mb-2 mt-2">프로필 설정</span>
 
 				<a class="nav-link active" id="v-pills-profile-tab" data-toggle="pill" href="#v-pills-profile"
 					role="tab" aria-controls="v-pills-profile" aria-selected="true">
@@ -38,210 +28,111 @@
 
 				<hr class="w-100 my-3" style="border-color: #eaecf4;">
 
-				<span class="small text-gray-600 font-weight-bold text-uppercase px-3 mb-2">
-					일반 설정
-				</span>
-
+				<span class="small text-gray-600 font-weight-bold text-uppercase px-3 mb-2">일반 설정</span>
 				<a class="nav-link" id="v-pills-general-tab" data-toggle="pill" href="#v-pills-general" role="tab"
 					aria-controls="v-pills-general" aria-selected="false">
 					<i class="fas fa-cog mr-2"></i> 일반
 				</a>
-
 			</div>
 		</div>
 
 		<div class="col-md-9">
-			<form id="settingsForm" th:action="@{/profile/settings/save}" method="post" enctype="multipart/form-data">
-				<div class="tab-content settings-content" id="v-pills-tabContent">
+			<div class="tab-content settings-content" id="v-pills-tabContent">
 
-					<div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel"
-						aria-labelledby="v-pills-profile-tab">
+				<div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel"
+					aria-labelledby="v-pills-profile-tab">
+					<form id="settingsForm">
 						<h5 class="font-weight-bold text-gray-800 mb-4">기본 프로필 정보</h5>
 
 						<div class="form-group">
 							<label class="form-label">닉네임</label>
-							<input type="text" class="form-control check-change" name="username"
+							<input type="text" class="form-control" name="username"
 								th:value="${user.userProfile.username}" required>
 						</div>
 						<div class="form-group">
 							<label class="form-label">소속</label>
-							<input type="text" class="form-control check-change" name="organization"
+							<input type="text" class="form-control" name="organization"
 								th:value="${user.userProfile.organization}">
 						</div>
 						<div class="form-group">
 							<label class="form-label">한줄 소개 (Bio)</label>
-							<input type="text" class="form-control check-change" name="bio"
-								th:value="${user.userProfile.bio}">
-						</div>
-					</div>
-
-					<div class="tab-pane fade" id="v-pills-theme" role="tabpanel" aria-labelledby="v-pills-theme-tab">
-
-						<h5 class="font-weight-bold text-gray-800 mb-3">프로필 사진 변경</h5>
-						<div class="form-group mb-4">
-							<div class="d-flex align-items-center">
-								<div class="mr-3">
-									<div
-										style="width: 80px; height: 80px; border-radius: 50%; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;">
-										<i class="fas fa-user fa-2x text-gray-500"></i>
-									</div>
-								</div>
-								<div>
-									<input type="file" class="form-control-file" id="profileImageUpload"
-										name="profileImage">
-									<small class="text-muted d-block mt-1">JPG, PNG 파일만 업로드 가능합니다.</small>
-								</div>
-							</div>
+							<input type="text" class="form-control" name="bio" th:value="${user.userProfile.bio}">
 						</div>
 
-						<hr>
-
-						<h5 class="font-weight-bold text-gray-800 mb-3">테두리 선택</h5>
-						<div class="row mb-4">
-							<div class="col-3 mb-2">
-								<div class="selection-box active">
-									<i class="fas fa-user fa-2x mb-2"></i>
-									<div class="small">기본</div>
-								</div>
-							</div>
-							<div class="col-3 mb-2">
-								<div class="selection-box">
-									<i class="fas fa-cat fa-2x mb-2 text-warning"></i>
-									<div class="small">고양이</div>
-								</div>
-							</div>
-							<div class="col-3 mb-2">
-								<div class="selection-box">
-									<i class="fas fa-robot fa-2x mb-2 text-info"></i>
-									<div class="small">로봇</div>
-								</div>
-							</div>
-							<div class="col-3 mb-2">
-								<div class="selection-box">
-									<i class="fas fa-ghost fa-2x mb-2 text-dark"></i>
-									<div class="small">유령</div>
-								</div>
-							</div>
-						</div>
-
-						<hr>
-
-						<h5 class="font-weight-bold text-gray-800 mb-3">테마 선택</h5>
-						<div class="row">
-							<div class="col-3 mb-2">
-								<div class="selection-box active">
-									<div class="theme-color-circle mb-2" style="background-color: #1cc88a;">
-									</div>
-									<div class="small">Green</div>
-								</div>
-							</div>
-							<div class="col-3 mb-2">
-								<div class="selection-box">
-									<div class="theme-color-circle mb-2" style="background-color: #4e73df;">
-									</div>
-									<div class="small">Blue</div>
-								</div>
-							</div>
-							<div class="col-3 mb-2">
-								<div class="selection-box">
-									<div class="theme-color-circle mb-2" style="background-color: #f6c23e;">
-									</div>
-									<div class="small">Yellow</div>
-								</div>
-							</div>
-							<div class="col-3 mb-2">
-								<div class="selection-box">
-									<div class="theme-color-circle mb-2" style="background-color: #6f42c1;">
-									</div>
-									<div class="small">Purple</div>
-								</div>
-							</div>
-						</div>
-
-					</div>
-
-					<div class="tab-pane fade" id="v-pills-general" role="tabpanel"
-						aria-labelledby="v-pills-general-tab">
-						<h5 class="font-weight-bold text-gray-800 mb-4">일반 설정</h5>
-
-						<div class="card border-left-danger shadow-sm py-2">
-							<div class="card-body">
-								<div class="row no-gutters align-items-center">
-									<div class="col mr-2">
-										<div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-											Danger Zone
-										</div>
-										<div class="h5 mb-0 font-weight-bold text-gray-800">회원 탈퇴</div>
-										<p class="text-gray-600 mt-2 mb-0 small">
-											탈퇴 시 모든 데이터(포인트, 퀴즈 기록 등)가 영구적으로 삭제되며<br>
-											이 작업은 되돌릴 수 없습니다.
-										</p>
-									</div>
-									<div class="col-auto">
-										<button type="button" class="btn btn-danger btn-icon-split" data-toggle="modal"
-											data-target="#withdrawModal">
-											<span class="icon text-white-50">
-												<i class="fas fa-exclamation-triangle"></i>
-											</span>
-											<span class="text">회원 탈퇴</span>
-										</button>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-
-				</div>
-			</form>
-			<div class="modal fade" id="withdrawModal" tabindex="-1" role="dialog" aria-labelledby="withdrawModalLabel"
-				aria-hidden="true">
-				<div class="modal-dialog" role="document">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title text-gray-900 font-weight-bold" id="withdrawModalLabel">정말 떠나시나요? 😢
-							</h5>
-							<button class="close" type="button" data-dismiss="modal" aria-label="Close">
-								<span aria-hidden="true">×</span>
+						<div class="text-right mt-4">
+							<button type="button" onclick="saveViaAjax('settingsForm', '/profile/settings/profilesave')"
+								class="btn btn-success btn-icon-split">
+								<span class="icon text-white-50"><i class="fas fa-save"></i></span>
+								<span class="text">변경사항 저장</span>
 							</button>
 						</div>
-						<div class="modal-body text-gray-700">
-							탈퇴 버튼을 누르면 <b>모든 정보가 즉시 삭제</b>되며 로그아웃됩니다.<br>
-							나중에 같은 계정으로 로그인하더라도 데이터는 복구되지 않습니다.<br><br>
-							정말로 탈퇴하시겠습니까?
-						</div>
-						<div class="modal-footer">
-							<button class="btn btn-secondary" type="button" data-dismiss="modal">취소</button>
+					</form>
+				</div>
 
-							<form th:action="@{/withdraw}" method="post">
-								<button type="submit" class="btn btn-danger">네, 탈퇴하겠습니다</button>
-							</form>
+				<div class="tab-pane fade" id="v-pills-theme" role="tabpanel" aria-labelledby="v-pills-theme-tab">
+
+					<h5 class="font-weight-bold text-gray-800 mb-3">테두리 선택</h5>
+					<div class="row mb-4" id="borderSection">
+						<div class="col-3 mb-2">
+							<div class="selection-box default-box" onclick="selectItem('border', '', this)">
+								<div style="height: 50px; display: flex; align-items: center; justify-content: center;">
+									<i class="fas fa-ban fa-2x text-gray-400"></i>
+								</div>
+								<div class="small mt-2">기본</div>
+							</div>
+						</div>
+						<div class="col-3 mb-2" th:each="inven : ${myBorders}">
+							<div class="selection-box" th:classappend="${inven.equipped} ? 'active' : ''"
+								th:onclick="|selectItem('border', '${inven.item.id}', this)|">
+								<img th:if="${inven.item.imageUrl}" th:src="${inven.item.imageUrl}" class="mb-2"
+									style="width: 50px; height: 50px;">
+								<i th:unless="${inven.item.imageUrl}"
+									class="fas fa-certificate fa-2x mb-2 text-primary"></i>
+								<div class="small" th:text="${inven.item.itemName}">이름</div>
+							</div>
 						</div>
 					</div>
+
+					<hr>
+
+					<h5 class="font-weight-bold text-gray-800 mb-3">테마 선택</h5>
+					<div class="row" id="themeSection">
+						<div class="col-3 mb-2">
+							<div class="selection-box default-box" onclick="selectItem('theme', '', this)">
+								<div style="height: 50px; background-color: #f8f9fc; border: 1px solid #ddd;"></div>
+								<div class="small mt-2">기본</div>
+							</div>
+						</div>
+						<div class="col-3 mb-2" th:each="inven : ${myThemes}">
+							<div class="selection-box" th:classappend="${inven.equipped} ? 'active' : ''"
+								th:onclick="|selectItem('theme', '${inven.item.id}', this)|">
+								<img th:if="${inven.item.imageUrl}" th:src="${inven.item.imageUrl}" class="mb-2"
+									style="width: 100%; height: 50px; object-fit: cover;">
+								<div style="height: 50px; background-color: #eee;" th:unless="${inven.item.imageUrl}">
+								</div>
+								<div class="small" th:text="${inven.item.itemName}">이름</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="text-right mt-4">
+						<button type="button" onclick="submitEquipForm()" class="btn btn-success btn-icon-split">
+							<span class="icon text-white-50"><i class="fas fa-save"></i></span>
+							<span class="text">변경사항 저장</span>
+						</button>
+					</div>
 				</div>
-			</div>
-			<div class="modal fade" id="unsavedChangesModal" tabindex="-1" role="dialog" aria-hidden="true">
-			    <div class="modal-dialog" role="document">
-			        <div class="modal-content">
-			            <div class="modal-header">
-			                <h5 class="modal-title font-weight-bold text-warning">
-			                    <i class="fas fa-exclamation-triangle mr-2"></i>변경사항 알림
-			                </h5>
-			                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-			                    <span aria-hidden="true">×</span>
-			                </button>
-			            </div>
-			            <div class="modal-body text-gray-700">
-			                작성 중인 내용이 저장되지 않았습니다.<br>
-			                이동하면 변경된 내용은 <b>사라집니다.</b><br><br>
-			                그래도 이동하시겠습니까?
-			            </div>
-			            <div class="modal-footer">
-			                <button class="btn btn-secondary" type="button" data-dismiss="modal">취소 (머무르기)</button>
-			                <button class="btn btn-primary" type="button" id="confirmLeaveBtn">네, 이동합니다</button>
-			            </div>
-			        </div>
-			    </div>
+
+				<div class="tab-pane fade" id="v-pills-general" role="tabpanel" aria-labelledby="v-pills-general-tab">
+				</div>
+
 			</div>
 		</div>
 	</div>
+	<input type="hidden" id="inputBorderId">
+	<input type="hidden" id="inputThemeId">
+	<form id="equipForm" enctype="application/x-www-form-urlencoded"> 
+	    <input type="hidden" name="borderId" id="realBorderId">
+	    <input type="hidden" name="themeId" id="realThemeId">
+	</form>
 </div>

@@ -37,4 +37,7 @@ public class ShopItem {
 
     @Column(name = "is_available")
     private Boolean isAvailable; // 판매 중 여부
+    
+    @Column(length = 50)
+    private String category; // "BORDER" 또는 "THEME"
 }
