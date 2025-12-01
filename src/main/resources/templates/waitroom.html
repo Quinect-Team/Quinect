@@ -53,9 +53,9 @@
 	
 	    /* 투표 버튼 선택 상태 */
 	    .vote-agree-btn.selected {
-	        background-color: #28a745 !important;
+	        background-color: #435EE9 !important;
 	        color: white !important;
-	        border-color: #28a745 !important;
+	        border-color: #435EE9 !important;
 	    }
 	
 	    .vote-disagree-btn.selected {
@@ -123,7 +123,7 @@
 		            <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-users"></i> 참가자</h6>
 		        </div>
 		        <div class="card-body pb-1 d-flex flex-wrap">
-		            <div class="card border-primary m-2 text-center"
+		            <div class="card border-success m-2 text-center"
 		                 style="width: 114px; height: 180px; position: relative;"
 		                 th:each="user : ${participants}">
 		                <div class="mt-2">
@@ -215,7 +215,7 @@
 <div class="modal fade" id="participateVoteModal" tabindex="-1" role="dialog" aria-labelledby="participateLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="participateLabel">
                     <i class="fas fa-poll"></i> 투표
                 </h5>
@@ -233,7 +233,7 @@
                 <!-- 찬성/반대 버튼 -->
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <button class="btn btn-outline-success btn-lg btn-block vote-agree-btn" onclick="submitVoteChoice('AGREE')">
+                        <button class="btn btn-outline-primary btn-lg btn-block vote-agree-btn" onclick="submitVoteChoice('AGREE')">
                             <i class="fas fa-check-circle"></i><br/>
                             <span>찬성</span>
                         </button>
@@ -254,11 +254,11 @@
                     <!-- 찬성 -->
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-2">
-                            <span><i class="fas fa-check-circle text-success"></i> <strong>찬성</strong></span>
-                            <span id="agreeCount" class="badge badge-success">0표</span>
+                            <span><i class="fas fa-check-circle text-primary"></i> <strong>찬성</strong></span>
+                            <span id="agreeCount" class="badge badge-primary">0표</span>
                         </div>
                         <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-success" id="agreeBar" role="progressbar" style="width: 0%;">
+                            <div class="progress-bar bg-primary" id="agreeBar" role="progressbar" style="width: 0%;">
                                 <span id="agreePercent">0%</span>
                             </div>
                         </div>
