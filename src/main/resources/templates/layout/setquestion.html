@@ -54,11 +54,36 @@
 		padding-right: 20px;
 	}
 
+	/* 문제 추가 버튼 */
+	.submit-area {
+	    max-width: 900px;
+	    margin: 0 auto;
+	    display: flex;
+	    gap: 10px;
+	    justify-content: flex-end;
+		margin-top: 10px;
+	}
+	.submit-area button {
+	    width: 150px;
+	    height: 40px;
+	}
+	
+	#question-sub{
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 0 20px;
+		box-sizing: border-box;
+	}
 </style>
 
 
 <!-- 부트스트랩 -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<div id="question-sub" style="margin-bottom:20px;">
+    <input type="text" id="quiz-title" placeholder="퀴즈 제목을 입력하세요" style="width:100%; padding:10px; margin-bottom:10px;">
+    <textarea id="quiz-desc" placeholder="퀴즈 설명을 입력하세요(선택)" style="width:100%; padding:10px;"></textarea>
+</div>
 
 <div id="question-container">
 
@@ -66,12 +91,12 @@
 		<div class="d-flex align-items-center" style="gap:10px;">
 	        <label class="q-label" for="question" style="margin:0; font-weight:bold;">Q1.</label>
 
-	        <input type="text" name="question" 
-	               placeholder="문제를 입력하세요" style="flex:1;">
+	        <input type="text" name="question" placeholder="문제를 입력하세요" style="flex:1;">
+			
+			<input type="text" name="point" placeholder="점수" style="flex:0.1;">
 
 	        <div class="btn-group dropright">
-			  <button type="button" class="btn btn-secondary dropdown-toggle"
-			          data-toggle="dropdown">
+			  <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">
 			    문제 유형
 			  </button>
 			  <div class="dropdown-menu">
@@ -93,6 +118,10 @@
     <button id="add-question" class="btn btn-secondary">문제 추가</button>
     <button id="remove-question" class="btn btn-secondary">문제 제거</button>
 </div>
+<div class="submit-area">
+    <button id="temp-save" class="btn btn-secondary">임시 저장</button>
+    <button id="save" class="btn btn-secondary">저장</button>
+</div>
 
 <!-- Bootstrap & Script -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -100,130 +129,67 @@
 
 
 <script>
-/* ===============================
-   문제 유형 변경 (서술형/객관식)
-================================ */
-function activateDropdown(block) {
+	function collectQuizData() {
+	    const quizData = {
+	        title: document.getElementById('quiz-title').value,
+	        description: document.getElementById('quiz-desc').value,
+	        questions: []
+	    };
 
-    const typeOptions = block.querySelectorAll('.select-type');
-    const answerContainer = block.querySelector('.text-container');
+	    const blocks = document.querySelectorAll('.question-block');
 
-    typeOptions.forEach(option => {
-        option.addEventListener('click', function (e) {
-            e.preventDefault();
+	    blocks.forEach((block, i) => {
+	        const questionText = block.querySelector('input[name="question"]').value;
+	        const typeMenu = block.querySelector('.dropdown-toggle').innerText.trim();
+	        const isObjective = typeMenu.includes("객관식");
 
-            const type = this.dataset.type;
-            answerContainer.innerHTML = "";
+	        const subContainer = block.querySelector('.text-container');
+	        const inputs = subContainer.querySelectorAll('input');
 
-            // ▣ 서술형 --------------------
-            if (type === "short_answer") {
-                const input = document.createElement('input');
-                input.type = "text";
-                input.placeholder = "지문을 작성하세요";
-                input.style = "width:100%; padding:5px;";
-                answerContainer.appendChild(input);
-            }
+	        let options = [];
+	        if (isObjective) {
+	            inputs.forEach((inp, idx) => {
+	                options.push({
+	                    optionNumber: idx + 1,
+	                    optionText: inp.value
+	                });
+	            });
+	        }
 
-            // 객관식
-            else if (type === "multiple_choice") {
+	        quizData.questions.push({
+	            questionText: questionText,
+	            quizTypeCode: isObjective ? 2 : 1,
+	            options: options
+	        });
+	    });
 
-                // 기본 3개 생성
-                for (let i = 1; i <= 3; i++) {
-                    const choice = document.createElement("input");
-                    choice.type = "text";
-                    choice.placeholder = `선택지 ${i}`;
-                    choice.style.marginTop = "5px";
-                    answerContainer.appendChild(choice);
-                }
+	    return quizData;
+	}
 
-                // 선택지 + / - 버튼 영역
-                const btnBox = document.createElement("div");
-                btnBox.className = "choice-buttons";
+	/* 버튼 클릭> 서버 전송 */
+	document.getElementById('save').addEventListener('click', function () {
+	    const quizData = collectQuizData();
 
-                const addBtn = document.createElement("button");
-                addBtn.className = "btn btn-secondary";
-                addBtn.textContent = "+";
+	    fetch("/quiz/save", {
+	        method: "POST",
+	        headers: {"Content-Type": "application/json"},
+	        body: JSON.stringify(quizData)
+	    })
+	    .then(res => res.text())
+	    .then(msg => alert(msg));
+	});
 
-                const removeBtn = document.createElement("button");
-                removeBtn.className = "btn btn-secondary";
-                removeBtn.textContent = "-";
+	document.getElementById('temp-save').addEventListener('click', function () {
+	    const quizData = collectQuizData();
+	    fetch("/quiz/temp-save", {
+	        method: "POST",
+	        headers: {"Content-Type": "application/json"},
+	        body: JSON.stringify(quizData)
+	    })
+	    .then(res => res.text())
+	    .then(msg => alert(msg));
+	});
 
-                btnBox.appendChild(addBtn);
-                btnBox.appendChild(removeBtn);
-                answerContainer.appendChild(btnBox);
-
-                // + 버튼 클릭 → 선택지 추가
-                addBtn.addEventListener('click', () => {
-                    const newChoice = document.createElement("input");
-                    newChoice.type = "text";
-                    newChoice.placeholder = `선택지`;
-                    newChoice.style.marginTop = "5px";
-                    answerContainer.insertBefore(newChoice, btnBox);
-                });
-
-                // - 버튼 클릭 → 마지막 선택지 제거
-                removeBtn.addEventListener('click', () => {
-                    const inputs = answerContainer.querySelectorAll("input");
-                    if (inputs.length > 0) {
-                        inputs[inputs.length - 1].remove();
-                    }
-                });
-            }
-        });
-    });
-}
-
-
-/* ===============================
-   문제 추가 기능
-================================ */
-document.getElementById('add-question').addEventListener('click', function () {
-
-    const container = document.getElementById('question-container');
-    const blocks = container.querySelectorAll('.question-block');
-    const last = blocks[blocks.length - 1];
-
-    const clone = last.cloneNode(true);
-
-    // 번호 재설정
-    const newIndex = blocks.length + 1;
-    clone.querySelector('.q-label').innerText = `Q${newIndex}.`;
-
-    // 입력값 초기화
-    clone.querySelectorAll('input').forEach(el => el.value = '');
-
-    // Dropdown 다시 연결
-    activateDropdown(clone);
-
-    container.appendChild(clone);
-});
-
-
-/* ===============================
-   문제 제거 기능
-================================ */
-document.getElementById('remove-question').addEventListener('click', function () {
-
-    const container = document.getElementById('question-container');
-    const blocks = container.querySelectorAll('.question-block');
-
-    if (blocks.length <= 1) {
-        alert("최소 1개 이상의 문제는 남아 있어야 합니다.");
-        return;
-    }
-
-    blocks[blocks.length - 1].remove();
-
-    // 번호 재정렬
-    const reBlocks = container.querySelectorAll('.question-block');
-    reBlocks.forEach((b, i) => {
-        b.querySelector('.q-label').innerText = `Q${i + 1}.`;
-    });
-});
-
-
-/* ===============================
-   최초 로딩 시 실행
-================================ */
+	/* 최초 로딩 시 실행 */
 activateDropdown(document.querySelector('.question-block'));
 </script>
