@@ -4,9 +4,100 @@
     <meta charset="UTF-8">
     <title>퀴즈 대기실</title>
     <link rel="stylesheet" th:href="@{/css/sb-admin-2.css}" />
+	<style>
+	    /* 투표 메시지 스타일 (채팅에서) */
+	    .vote-message {
+	        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	        color: white;
+	        padding: 12px 15px;
+	        border-radius: 8px;
+	        margin: 10px 0;
+	        cursor: pointer;
+	        transition: all 0.3s ease;
+	        border-left: 4px solid rgba(255,255,255,0.3);
+	    }
+	
+	    .vote-message:hover {
+	        transform: translateX(5px);
+	        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+	    }
+	
+	    .vote-message-title {
+	        font-weight: bold;
+	        font-size: 14px;
+	        margin-bottom: 8px;
+	    }
+	
+	    .vote-message-desc {
+	        font-size: 12px;
+	        opacity: 0.9;
+	        margin-bottom: 10px;
+	    }
+	
+	    .vote-message-button {
+	        display: inline-block;
+	        background: white;
+	        color: #667eea;
+	        padding: 6px 14px;
+	        border-radius: 4px;
+	        font-size: 12px;
+	        font-weight: bold;
+	        cursor: pointer;
+	        transition: all 0.2s;
+	    }
+	
+	    .vote-message-button:hover {
+	        background: #f0f0f0;
+	        transform: scale(1.05);
+	    }
+	
+	    /* 투표 버튼 선택 상태 */
+	    .vote-agree-btn.selected {
+	        background-color: #28a745 !important;
+	        color: white !important;
+	        border-color: #28a745 !important;
+	    }
+	
+	    .vote-disagree-btn.selected {
+	        background-color: #dc3545 !important;
+	        color: white !important;
+	        border-color: #dc3545 !important;
+	    }
+	
+	    /* 진행률 바 텍스트 */
+	    .progress-bar span {
+	        display: flex;
+	        align-items: center;
+	        justify-content: center;
+	        height: 100%;
+	        color: white;
+	        font-weight: bold;
+	        font-size: 12px;
+	    }
+	
+	    /* 모달 헤더 */
+	    .modal-header.bg-danger {
+	        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+	    }
+	
+	    .modal-header.bg-primary {
+	        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+	    }
+	
+	    /* 투표 버튼 스타일 */
+	    .vote-btn-container {
+	        display: flex;
+	        gap: 10px;
+	        justify-content: flex-end;
+	    }
+	</style>
 </head>
+<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
 <body class="bg-gradient-success">
 <div class="container-fluid py-4">
 
@@ -53,6 +144,7 @@
 		        </div>
 		    </div>
 		</div>
+		
         <!-- 채팅창 -->
         <div class="col-md-5">
             <div class="card shadow mb-4 h-100 d-flex flex-column">
@@ -73,42 +165,179 @@
     </div>
 
     <!-- 하단 READY/팀선택 등 -->
-    <div class="row mt-3">
-        <div class="col text-right">
+	 <div class="row mt-3">
+        <div class="col text-right vote-btn-container">
+            <!-- 투표 시작 버튼 (방장만 보임) -->
+            <button id="voteBtn" class="btn btn-danger btn-lg mr-2" style="display:none;">
+                <i class="fas fa-poll"></i> 투표 시작
+            </button>
+            
+            <!-- 기존 버튼들 -->
             <button class="btn btn-secondary btn-lg mr-2"><i class="fas fa-users-cog"></i> 팀 선택</button>
             <button class="btn btn-primary btn-lg font-weight-bold"><i class="fas fa-flag-checkered"></i> READY</button>
         </div>
     </div>
 </div>
-<script th:inline="javascript">
-    // 타임리프로 roomCode와 username 변수를 채우는 예시
-    let roomCode = /*[[${room.roomCode}]]*/ 'ABCD';
-	let username = /*[[${guestNickname}]]*/ 'Guest';
 
+<!-- ==================== 방장용 투표 시작 모달 ==================== -->
+<div class="modal fade" id="createVoteModal" tabindex="-1" role="dialog" aria-labelledby="createVoteLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="createVoteLabel">
+                    <i class="fas fa-poll"></i> 투표 만들기
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="voteTitle"><strong>투표 제목</strong></label>
+                    <input type="text" class="form-control" id="voteTitle" placeholder="예: 게임 규칙 변경에 찬성하나요?" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label for="voteContent"><strong>투표 내용 (선택사항)</strong></label>
+                    <textarea class="form-control" id="voteContent" rows="3" placeholder="투표에 대한 자세한 설명을 입력하세요."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger" onclick="submitVoteCreate()">
+                    <i class="fas fa-check"></i> 투표 시작
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 사용자용 투표 참가 모달 ==================== -->
+<div class="modal fade" id="participateVoteModal" tabindex="-1" role="dialog" aria-labelledby="participateLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="participateLabel">
+                    <i class="fas fa-poll"></i> 투표
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- 투표 제목과 설명 -->
+                <div id="voteQuestion" class="mb-3">
+                    <h6 class="font-weight-bold text-dark"></h6>
+                </div>
+                <div id="voteDescription" class="mb-4 text-muted small"></div>
+
+                <!-- 찬성/반대 버튼 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-success btn-lg btn-block vote-agree-btn" onclick="submitVoteChoice('AGREE')">
+                            <i class="fas fa-check-circle"></i><br/>
+                            <span>찬성</span>
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button class="btn btn-outline-danger btn-lg btn-block vote-disagree-btn" onclick="submitVoteChoice('DISAGREE')">
+                            <i class="fas fa-times-circle"></i><br/>
+                            <span>반대</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 실시간 결과 -->
+                <div id="voteResults" style="display:none;">
+                    <hr>
+                    <h6 class="font-weight-bold mb-3">실시간 투표 결과</h6>
+
+                    <!-- 찬성 -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-check-circle text-success"></i> <strong>찬성</strong></span>
+                            <span id="agreeCount" class="badge badge-success">0표</span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-success" id="agreeBar" role="progressbar" style="width: 0%;">
+                                <span id="agreePercent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 반대 -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-times-circle text-danger"></i> <strong>반대</strong></span>
+                            <span id="disagreeCount" class="badge badge-danger">0표</span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-danger" id="disagreeBar" role="progressbar" style="width: 0%;">
+                                <span id="disagreePercent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    // ========== 전역 변수 ==========
+    let roomCode = /*[[${room.roomCode}]]*/ 'ABCD';
+    let username = /*[[${guestNickname}]]*/ 'Guest';
+    let isRoomMaster = /*[[${isRoomMaster}]]*/ false;
+
+    let currentVoteId = null;
+    let currentVoteChoice = null;
+    let voteResults = { AGREE: 0, DISAGREE: 0 };
+
+    // ========== WebSocket 설정 ==========
     let socket = new SockJS('/ws');
     let stompClient = Stomp.over(socket);
 
-    // 접속 및 구독하기
+    // WebSocket 접속 및 구독
     stompClient.connect({}, function(frame) {
         console.log('Connected: ' + frame);
+        
+        // 채팅 구독
         stompClient.subscribe('/topic/chat/' + roomCode, function(message) {
             let msg = JSON.parse(message.body);
             displayMessage(msg.sender, msg.content);
         });
+
+        // 투표 구독
+        stompClient.subscribe('/topic/vote/' + roomCode, function(message) {
+            let voteData = JSON.parse(message.body);
+            handleVoteUpdate(voteData);
+        });
+
+        // 방장 버튼 표시
+        if (isRoomMaster) {
+            document.getElementById('voteBtn').style.display = 'inline-block';
+            document.getElementById('voteBtn').onclick = function() {
+                openCreateVoteModal();
+            };
+        }
     }, function(error) {
         console.error('Error: ' + error);
     });
 
-    // 메시지 출력 함수
+    // ========== 1. 기존 채팅 기능 ==========
     function displayMessage(sender, content) {
         let messagesDiv = document.getElementById('messages');
         let msgDiv = document.createElement('div');
         msgDiv.innerHTML = '<strong>' + sender + ':</strong> ' + content;
+        msgDiv.style.padding = '8px';
+        msgDiv.style.marginBottom = '8px';
+        msgDiv.style.borderBottom = '1px solid #eee';
         messagesDiv.appendChild(msgDiv);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // 스크롤 최하단 유지
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    // 메시지 전송 함수
     function sendMessage() {
         let input = document.getElementById('chat-input');
         let text = input.value.trim();
@@ -122,26 +351,173 @@
         }
     }
 
-    // 폼 submit에 이벤트 연결
+    function copyCode() {
+        const code = document.querySelector('.display-4').textContent;
+        navigator.clipboard.writeText(code)
+            .then(() => alert("방 코드가 복사되었습니다: " + code));
+    }
+
+    function setReadyStatus(status) {
+        stompClient.send('/app/ready/' + roomCode, {}, JSON.stringify({
+            sender: username,
+            ready: status
+        }));
+    }
+
+    // 폼 submit 이벤트
     document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
         sendMessage();
     });
 
-    function copyCode() {
-        const code = document.querySelector('.display-4').textContent;
-        navigator.clipboard.writeText(code)
-            .then(()=>alert("방 코드가 복사되었습니다: " + code));
-    }
-	// WebSocket 준비 상태 전송
-	function setReadyStatus(status) {
-	    stompClient.send('/app/ready/' + roomCode, {}, JSON.stringify({
-	        sender: username,
-	        ready: status
-	    }));
-	}
-	</script>
+    // ========== 2. 투표 기능 ==========
 
+    // 방장용 투표 시작 모달 열기
+    function openCreateVoteModal() {
+        document.getElementById('voteTitle').value = '';
+        document.getElementById('voteContent').value = '';
+        $('#createVoteModal').modal('show');
+        document.getElementById('voteTitle').focus();
+    }
+
+    // 투표 생성 제출
+    function submitVoteCreate() {
+        let title = document.getElementById('voteTitle').value.trim();
+        let content = document.getElementById('voteContent').value.trim();
+
+        if (!title) {
+            alert('투표 제목을 입력해주세요.');
+            return;
+        }
+
+        if (stompClient.connected) {
+            let voteData = {
+                type: 'START',
+                voteId: Date.now(),
+                question: title,
+                description: content,
+                creator: username,
+                timestamp: new Date().getTime()
+            };
+
+            stompClient.send('/app/vote/start/' + roomCode, {}, JSON.stringify(voteData));
+            $('#createVoteModal').modal('hide');
+        } else {
+            alert('WebSocket이 연결되지 않았습니다.');
+        }
+    }
+
+    // 사용자용 투표 참가 모달 열기
+    function openParticipateVoteModal(voteId, question, description) {
+        currentVoteId = voteId;
+        currentVoteChoice = null;
+
+        // 투표 정보 표시
+        document.querySelector('#voteQuestion h6').textContent = question;
+        document.getElementById('voteDescription').textContent = description || '';
+
+        // 버튼 초기화
+        document.querySelectorAll('.vote-agree-btn, .vote-disagree-btn').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+
+        // 결과 표시
+        document.getElementById('voteResults').style.display = 'block';
+        updateVoteResults(voteResults);
+
+        $('#participateVoteModal').modal('show');
+    }
+
+    // 투표 선택 제출
+    function submitVoteChoice(choice) {
+        if (choice === 'AGREE') {
+            document.querySelector('.vote-agree-btn').classList.add('selected');
+            document.querySelector('.vote-disagree-btn').classList.remove('selected');
+        } else {
+            document.querySelector('.vote-disagree-btn').classList.add('selected');
+            document.querySelector('.vote-agree-btn').classList.remove('selected');
+        }
+
+        currentVoteChoice = choice;
+
+        if (stompClient.connected) {
+            let voteSubmission = {
+                type: 'VOTE',
+                voteId: currentVoteId,
+                voter: username,
+                choice: choice,
+                timestamp: new Date().getTime()
+            };
+
+            stompClient.send('/app/vote/submit/' + roomCode, {}, JSON.stringify(voteSubmission));
+        }
+    }
+
+    // 채팅에 투표 메시지 표시
+    function displayVoteMessageInChat(voteData) {
+        let messagesDiv = document.getElementById('messages');
+        let msgDiv = document.createElement('div');
+        
+        msgDiv.className = 'vote-message';
+        msgDiv.innerHTML = `
+            <div class="vote-message-title">${escapeHtml(voteData.question)}</div>
+            ${voteData.description ? '<div class="vote-message-desc">' + escapeHtml(voteData.description) + '</div>' : ''}
+            <div class="vote-message-button" onclick="openParticipateVoteModal(
+                ${voteData.voteId}, 
+                '${voteData.question.replace(/'/g, "\\'")}',
+                '${(voteData.description || '').replace(/'/g, "\\'")}'
+            )">
+                투표에 참가하세요 →
+            </div>
+        `;
+        
+        messagesDiv.appendChild(msgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    // 투표 업데이트 처리
+    function handleVoteUpdate(voteData) {
+        console.log('투표 업데이트:', voteData);
+
+        if (voteData.type === 'START') {
+            displayVoteMessageInChat(voteData);
+            currentVoteId = voteData.voteId;
+            voteResults = { AGREE: 0, DISAGREE: 0 };
+        } else if (voteData.type === 'UPDATE') {
+            updateVoteResults(voteData.results);
+        }
+    }
+
+    // 투표 결과 업데이트
+    function updateVoteResults(results) {
+        voteResults = results;
+        const total = results.AGREE + results.DISAGREE || 1;
+        
+        const agreePercentage = ((results.AGREE / total) * 100).toFixed(1);
+        const disagreePercentage = ((results.DISAGREE / total) * 100).toFixed(1);
+
+        document.getElementById('agreeCount').textContent = results.AGREE + '표';
+        document.getElementById('disagreeCount').textContent = results.DISAGREE + '표';
+        
+        document.getElementById('agreeBar').style.width = agreePercentage + '%';
+        document.getElementById('agreePercent').textContent = agreePercentage + '%';
+        
+        document.getElementById('disagreeBar').style.width = disagreePercentage + '%';
+        document.getElementById('disagreePercent').textContent = disagreePercentage + '%';
+    }
+
+    // XSS 방지
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
 </script>
+
 </body>
 </html>

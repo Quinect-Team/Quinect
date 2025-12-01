@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +17,13 @@ import com.project.quiz.domain.CodeTable;
 import com.project.quiz.domain.Room;
 import com.project.quiz.domain.User;
 import com.project.quiz.dto.GuestUserDto;
+import com.project.quiz.dto.VoteRequest;
+import com.project.quiz.dto.VoteResponse;
 import com.project.quiz.repository.CodeTableRepository;
 import com.project.quiz.service.ParticipantService;
 import com.project.quiz.service.RoomService;
 import com.project.quiz.service.UserService;
+import com.project.quiz.service.VoteManager;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -38,6 +44,9 @@ public class RoomController {
 	@Autowired
 	private ParticipantService participantService;
 
+	@Autowired
+	private VoteManager voteManager;
+
 	@GetMapping("/waitroom/form")
 	public String showRoomForm(Model model, Principal principal, HttpSession session) {
 		if (principal == null && session.getAttribute("guestUser") == null) {
@@ -49,12 +58,20 @@ public class RoomController {
 	}
 
 	@PostMapping("/waitroom/create")
-	public String createRoomPost(@RequestParam(name = "hostUserId") Long hostUserId,
-			@RequestParam(name = "roomTypeCode") String roomTypeCode, Principal principal, HttpSession session) {
+	public String createRoomPost(@RequestParam(name = "roomTypeCode") String roomTypeCode, Principal principal,
+			HttpSession session) {
 		if (principal == null) {
 			return "redirect:/login";
 		}
-		Room room = roomService.createRoom(hostUserId, roomTypeCode, "opened");
+
+		// 현재 로그인한 유저 정보에서 ID 가져오기
+		User user = userService.findByEmail(principal.getName());
+		if (user == null) {
+			return "redirect:/login";
+		}
+
+		// user.getId()를 호스트유저아이디로 사용
+		Room room = roomService.createRoom(user.getId(), roomTypeCode, "opened");
 		return "redirect:/guest/setup?next=/waitroom/" + room.getRoomCode();
 	}
 
@@ -85,7 +102,7 @@ public class RoomController {
 
 			System.out.println("방 참가: guestId=" + guestId + ", nickname=" + nickname + ", avatarUrl=" + avatarUrl);
 		}
-		
+
 		if (principal != null) {
 			user = userService.findByEmail(principal.getName());
 		}
@@ -97,6 +114,12 @@ public class RoomController {
 		model.addAttribute("participants", participantService.findByRoom(room));
 		model.addAttribute("guestNickname", nickname);
 		model.addAttribute("guestAvatarUrl", avatarUrl);
+
+		boolean isRoomMaster = (user != null && room.getHostUserId().equals(user.getId()));
+		System.out.println("isRoomMaster=" + isRoomMaster + ", userId=" + (user != null ? user.getId() : null)
+				+ ", hostUserId=" + room.getHostUserId());
+		model.addAttribute("isRoomMaster", isRoomMaster);
+		model.addAttribute("isRoomMaster", isRoomMaster);
 
 		try {
 			String url2 = "https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query="
@@ -126,5 +149,33 @@ public class RoomController {
 			return "redirect:/guest/setup?next=/waitroom/" + roomCode;
 		}
 		return "redirect:/waitroom/" + roomCode;
+	}
+
+	// ==================== WebSocket: 투표 시작 ====================
+
+	@MessageMapping("/vote/start/{roomCode}")
+	@SendTo("/topic/vote/{roomCode}")
+	public VoteResponse startVote(@DestinationVariable("roomCode") String roomCode, VoteRequest request) {
+
+		// duration 기본값/최대값 처리
+		int duration = (request.getDuration() != null) ? request.getDuration() : 30;
+		if (duration > 300)
+			duration = 300; // 최대 5분
+
+		// VoteManager에 실제 투표 시작 위임 (타이머 포함)
+		voteManager.startVote(roomCode, request.getVoteId(), request.getQuestion(), request.getDescription(),
+				request.getCreator(), duration);
+
+		// 클라이언트들에게 브로드캐스트할 정보
+		return VoteResponse.builder().type("START").voteId(request.getVoteId()).question(request.getQuestion())
+				.description(request.getDescription()).creator(request.getCreator()).duration(duration).build();
+	}
+
+	// ==================== WebSocket: 투표 제출 ====================
+
+	@MessageMapping("/vote/submit/{roomCode}")
+	public void submitVote(@DestinationVariable("roomCode") String roomCode, VoteRequest request) {
+		// 여기서는 반환값 없이, VoteManager가 내부에서 UPDATE 브로드캐스트
+		voteManager.submitVote(roomCode, request.getVoteId(), request.getVoter(), request.getChoice());
 	}
 }
