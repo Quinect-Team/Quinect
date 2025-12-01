@@ -156,3 +156,88 @@
 	margin-top: -40px;
 	/* 위로 끌어올려서 그라데이션 영역에 배치 */
 }
+
+/* [추가] 프로필 + 테두리를 감싸는 래퍼 */
+.profile-avatar-wrapper {
+    position: relative; /* 자식 요소들의 절대 위치 기준점이 됨 */
+    width: 150px;       /* 프로필 사진 크기와 동일하게 고정 */
+    height: 150px;
+    display: flex;      /* 내부 요소 정렬을 위해 Flexbox 사용 */
+    align-items: center; 
+    justify-content: center;
+    margin: 0 auto;     /* 래퍼 자체를 부모 가운데 정렬 */
+}
+
+/* [추가] 테두리 이미지 스타일 */
+.profile-border-bg {
+    position: absolute; /* 겹치기 위해 절대 위치 사용 */
+    
+    /* [핵심] 상위 50%, 좌측 50% 지점에 이미지의 '시작점'을 둠 */
+    top: 50%;
+    left: 50%;
+    
+    /* [핵심] 이미지 크기의 절반만큼 다시 왼쪽/위로 당겨서 '중심점'을 맞춤 */
+    transform: translate(-50%, -50%);
+    
+    /* 크기 조절: 프로필 사진보다 커야 하므로 100%보다 크게 설정 */
+    /* 이미지가 너무 크면 이 숫자를 줄이고(예: 120%), 작으면 키우세요(예: 150%) */
+    width: 120%;  
+    height: 120%; 
+    
+    z-index: 0;           /* 프로필 사진 뒤로 */
+    pointer-events: none; /* 마우스 클릭 통과 */
+    object-fit: contain;  /* 이미지 비율 유지하며 박스 안에 맞춤 */
+}
+
+/* [수정] 기존 프로필 사진 컨테이너 */
+.profile-img-container {
+    width: 100%;   /* 래퍼 크기(150px)를 가득 채움 */
+    height: 100%;
+    border-radius: 50%; /* 원형 */
+    
+    /* 배경색이 있어야 뒤에 있는 테두리 중앙 부분이 가려짐 */
+    background-color: #e9ecef; 
+    
+    position: relative;
+    z-index: 1;    /* 테두리보다 앞으로 */
+    
+    /* 기존 테두리선이 있다면 제거하거나 유지 (디자인 선택) */
+    border: 2px solid #ccc; 
+    
+    /* 내용물(아이콘) 중앙 정렬 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* 이미지가 튀어나가지 않게 */
+}
+
+/* 1. card-body 배경 설정 */
+.card-body {
+    /* 배경 이미지 위치/크기 기본 설정 */
+    background-size: cover;      /* 이미지가 영역을 꽉 채우도록 */
+    background-position: center; /* 이미지 중앙이 보이도록 */
+    background-repeat: no-repeat; /* 반복 방지 */
+    
+    position: relative; /* [중요] 필터(가상요소) 위치 기준점 */
+    z-index: 1;         /* 내용물이 배경보다 위에 오도록 */
+    overflow: hidden;   /* 둥근 모서리 밖으로 배경이 튀어나가지 않게 */
+    
+    /* 기존 스타일 유지 (혹시 있다면) */
+    transition: background-image 0.3s ease; /* 테마 변경 시 부드럽게 */
+}
+
+/* 2. [꿀팁] 배경 위에 반투명 흰색 막 씌우기 (글씨 가독성 확보) */
+/* 테마 이미지가 너무 화려해도 글씨가 잘 보이게 해줍니다 */
+.card-body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* 흰색 70% 투명도 (조절 가능: 0.5 ~ 0.9) */
+    background-color: rgba(255, 255, 255, 0.7); 
+    
+    z-index: -1; /* 글씨(내용물)보다는 뒤, 배경 이미지보다는 앞 */
+}

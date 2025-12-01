@@ -7,31 +7,38 @@
 	</div>
 
 	<div class="card shadow mb-4">
-		<div class="card-body">
+		<div class="card-body"
+			th:style="${equippedThemeUrl != null} ? 'background-image: url(' + @{${equippedThemeUrl}} + ');' : ''">
 			<div class="row align-items-center">
 				<div class="col-auto mr-4">
-					<div class="profile-img-container">
-						<i class="fas fa-user profile-img-placeholder"></i>
+					<div class="profile-avatar-wrapper">
+
+						<img th:if="${equippedBorderUrl != null}" th:src="@{${equippedBorderUrl}}"
+							class="profile-border-bg" alt="Border Frame">
+
+						<div class="profile-img-container">
+							<i class="fas fa-user profile-img-placeholder"></i>
+						</div>
 					</div>
 				</div>
 				<div class="col">
-				    <div class="d-flex align-items-center mb-2">
-				        <h2 class="h3 font-weight-bold mb-0 mr-2" 
-				            th:text="${user.userProfile.username}">사용자명</h2>
-				        
-				        <a th:href="@{/profile/settings(source='profile')}" class="text-gray-600 text-decoration-none" title="설정">
-				            <i class="fas fa-cog fa-lg"></i>
-				        </a>
-				    </div>
-				    <p class="text-gray-700 mb-1" 
-				       th:text="${user.userProfile.organization != null ? user.userProfile.organization : '소속 없음'}">
-				       소속
-				    </p>
+					<div class="d-flex align-items-center mb-2">
+						<h2 class="h3 font-weight-bold mb-0 mr-2" th:text="${user.userProfile.username}">사용자명</h2>
 
-				    <p class="text-gray-600 font-weight-bold mb-0"
-				       th:text="${user.userProfile.bio != null ? user.userProfile.bio : '상태 메시지가 없습니다.'}">
-				       바이오
-				    </p>
+						<a th:href="@{/profile/settings(source='profile')}" class="text-gray-600 text-decoration-none"
+							title="설정">
+							<i class="fas fa-cog fa-lg"></i>
+						</a>
+					</div>
+					<p class="text-gray-700 mb-1"
+						th:text="${user.userProfile.organization != null ? user.userProfile.organization : '소속 없음'}">
+						소속
+					</p>
+
+					<p class="text-gray-600 font-weight-bold mb-0"
+						th:text="${user.userProfile.bio != null ? user.userProfile.bio : '상태 메시지가 없습니다.'}">
+						바이오
+					</p>
 				</div>
 			</div>
 		</div>

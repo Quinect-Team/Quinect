@@ -40,4 +40,11 @@ public class InventoryService {
                 .ifPresent(target -> target.setEquipped(true));
         }
     }
+    
+    @Transactional(readOnly = true)
+    public String getEquippedItemUrl(User user, String category) {
+        return userInventoryRepository.findByUserAndItem_CategoryAndIsEquippedTrue(user, category)
+                .map(inventory -> inventory.getItem().getImageUrl())
+                .orElse(null);
+    }
 }

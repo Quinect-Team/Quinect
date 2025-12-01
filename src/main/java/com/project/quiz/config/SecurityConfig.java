@@ -22,7 +22,7 @@ public class SecurityConfig {
 				// 1. 허용할 URL: 인덱스, 로그인, 회원가입, 정적 리소스(css, js, 이미지)
 				.requestMatchers("/", "/index", "/login", "/signup", "/register", "/api/user/check-email", "/guest/**",
 						"/css/**", "/js/**", "/images/**", "/vendor/**", "/joinroom", "/waitroom/**", "/ws/**",
-						"/forgot/**", "/send", "/verify", "/check", "/reset", "/success")
+						"/forgot/**", "/send", "/verify", "/check", "/reset", "/success", "/img/**")
 				.permitAll().requestMatchers("/api/**").authenticated()
 
 				// 2. 그 외 요청은 인증(로그인) 필요

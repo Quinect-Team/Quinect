@@ -28,8 +28,21 @@ public class ProfileController {
 
 	// 프로필 페이지 이동
 	@GetMapping("/profile")
-	public String profilePage() {
-		return "profile";
+	public String profilePage(Model model, Principal principal) {
+	    if (principal != null) {
+	         User user = userRepository.findByEmail(principal.getName()).orElse(null);
+	         
+	         if (user != null) {
+	             // 1. 테두리 (기존 코드)
+	             String borderUrl = inventoryService.getEquippedItemUrl(user, "BORDER");
+	             model.addAttribute("equippedBorderUrl", borderUrl);
+
+	             // 2. [추가] 테마 (배경) 이미지 URL 가져오기
+	             String themeUrl = inventoryService.getEquippedItemUrl(user, "THEME");
+	             model.addAttribute("equippedThemeUrl", themeUrl);
+	         }
+	    }
+	    return "profile";
 	}
 
 	// 설정 페이지 이동 // 이제 목록 불러오기 추가됨
