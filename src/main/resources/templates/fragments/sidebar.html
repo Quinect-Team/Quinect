@@ -116,7 +116,7 @@
 	            </a>
 	        </div>
 	        <div class="col-4 mb-2 px-2">
-	            <a href="#" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
+	            <a th:href="@{/list}" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
 	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
 	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
 	                <i class="fas fa-fw fa-star"></i>
@@ -124,12 +124,13 @@
 	            </a>
 	        </div>
 	        
+			<!-- 페이지를 임시로 연결해둠/이 메뉴는 최종적으로 나중에 빼든 말든 해야할듯-->
 	        <div class="col-4 mb-2 px-2">
-	            <a href="#" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
+	            <a th:href="@{/setquestion}" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
 	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
 	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
 	                <i class="fas fa-fw fa-user"></i>
-	                <span style="font-size: 0.7rem;">메뉴4</span>
+	                <span style="font-size: 0.7rem;">퀴즈 출제</span>
 	            </a>
 	        </div>
 	        <div class="col-4 mb-2 px-2">
