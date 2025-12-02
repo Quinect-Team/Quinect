@@ -2,12 +2,18 @@ package com.project.quiz.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @Entity
+@Table(name = "quiz")
+@Getter
+@Setter
 public class Quiz {
 
     @Id
@@ -24,6 +30,6 @@ public class Quiz {
 
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
-    private List<QuizQuestion> questions = new ArrayList<>();
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizQuestion> questions;
 }

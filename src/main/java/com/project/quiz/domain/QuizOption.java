@@ -2,9 +2,14 @@ package com.project.quiz.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
 @Entity
+@Table(name = "quiz_option")
+@Getter
+@Setter
 public class QuizOption {
 
     @Id

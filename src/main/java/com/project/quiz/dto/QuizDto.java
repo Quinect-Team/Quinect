@@ -20,4 +20,10 @@ public class QuizDto {
         private String image;
         private List<String> options;
     }
+    
+    @Data
+    public static class OptionDto {
+        private Integer optionNumber;
+        private String optionText;
+    }
 }
