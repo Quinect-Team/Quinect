@@ -8,7 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserInventory;
@@ -74,15 +74,20 @@ public class ProfileController {
 
 	// ▼▼▼ [POST] 프로필 저장 로직 추가 ▼▼▼
 	@PostMapping("/profile/settings/profilesave")
-	public String saveProfile(@RequestParam("username") String username,
-			@RequestParam("organization") String organization, @RequestParam("bio") String bio, Principal principal) {
+	public String saveProfile(
+	        @RequestParam("username") String username,
+	        @RequestParam("organization") String organization,
+	        @RequestParam("bio") String bio,
+	        @RequestParam(value = "profileImageFile", required = false) MultipartFile profileImageFile,
+	        @RequestParam(value = "defaultProfileImage", required = false) String defaultProfileImage, // [추가]
+	        Principal principal) {
 
-		if (principal != null) {
-			userService.updateProfile(principal.getName(), username, organization, bio);
-		}
+	    if (principal != null) {
+	        // 파라미터 5개 모두 서비스로 전달
+	        userService.updateProfile(principal.getName(), username, organization, bio, profileImageFile, defaultProfileImage);
+	    }
 
-		// ▼▼▼ [Next] 성공 신호 + 이동할 목적지(profile) 지정 ▼▼▼
-		return "redirect:/profile/settings?status=success&next=/profile";
+	    return "redirect:/profile/settings?status=success&next=/profile";
 	}
 
 	// [POST] 장착 저장

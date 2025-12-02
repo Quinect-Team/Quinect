@@ -2,54 +2,52 @@
 <div class="navbar-nav bg-gradient-success sidebar sidebar-dark accordion" id="accordionSidebar" th:fragment="sidebar">
 
 	<div class="text-center p-3" th:if="${user != null}">
-        <img class="img-profile rounded-circle mb-2"
-             th:src="${user.userProfile.profileImage != null ? user.userProfile.profileImage : '/img/undraw_profile.svg'}"
-             alt="User Profile Picture"
-             style="width: 80px; height: 80px; border: 2px solid #fff;">
-        
-		 <div class="d-flex justify-content-center align-items-center mb-1">
-		     
-		     <div class="font-weight-bold text-white" style="font-size: 1.1rem;"
-		          th:text="${user.userProfile.username}">
-		          사용자명
-		     </div>
+		<img class="img-profile rounded-circle mb-2"
+			th:src="${user.userProfile.profileImage != null ? user.userProfile.profileImage : '/img/undraw_profile.svg'}"
+			alt="User Profile Picture" style="width: 80px; height: 80px; border: 2px solid #fff; object-fit: cover;">
 
-		     <a th:href="@{/profile/settings(source='main')}" class="text-white-50 ml-2" title="프로필 설정">
-		         <i class="fas fa-cog fa-sm"></i>
-		     </a>
-		     
-		 </div> 
-        
-        <div class="small text-white-50 mb-2">
-            보유 포인트 : <span th:text="${#numbers.formatInteger(user.userProfile.pointBalance, 0, 'COMMA')}">0</span> P
-        </div>
-        
-		<div class="mt-2 d-flex justify-content-center"> 
-			<a th:href="@{/profile}" class="text-white text-decoration-none d-flex align-items-center mx-2" style="opacity: 0.8;"
-             onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-		        <i class="fas fa-fw fa-user mr-2"></i>
-		        <span>프로필</span>
-		    </a>
-		    <a th:href="@{/logout}" class="text-white text-decoration-none d-flex align-items-center mx-2" style="opacity: 0.8;"
-             onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-		        <i class="fas fa-fw fa-sign-out-alt mr-2"></i>
-		        <span>로그아웃</span>
-		    </a>
+		<div class="d-flex justify-content-center align-items-center mb-1">
+
+			<div class="font-weight-bold text-white" style="font-size: 1.1rem;" th:text="${user.userProfile.username}">
+				사용자명
+			</div>
+
+			<a th:href="@{/profile/settings(source='main')}" class="text-white-50 ml-2" title="프로필 설정">
+				<i class="fas fa-cog fa-sm"></i>
+			</a>
+
 		</div>
-    </div>
 
-    <div class="text-center p-3" th:if="${user == null}">
-        <p class="text-white-50">로그인이 필요합니다.</p>
-        <a th:href="@{/login}" class="btn btn-light btn-sm">로그인</a>
-    </div>
-	
+		<div class="small text-white-50 mb-2">
+			보유 포인트 : <span th:text="${#numbers.formatInteger(user.userProfile.pointBalance, 0, 'COMMA')}">0</span> P
+		</div>
+
+		<div class="mt-2 d-flex justify-content-center">
+			<a th:href="@{/profile}" class="text-white text-decoration-none d-flex align-items-center mx-2"
+				style="opacity: 0.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
+				<i class="fas fa-fw fa-user mr-2"></i>
+				<span>프로필</span>
+			</a>
+			<a th:href="@{/logout}" class="text-white text-decoration-none d-flex align-items-center mx-2"
+				style="opacity: 0.8;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
+				<i class="fas fa-fw fa-sign-out-alt mr-2"></i>
+				<span>로그아웃</span>
+			</a>
+		</div>
+	</div>
+
+	<div class="text-center p-3" th:if="${user == null}">
+		<p class="text-white-50">로그인이 필요합니다.</p>
+		<a th:href="@{/login}" class="btn btn-light btn-sm">로그인</a>
+	</div>
+
 	<!-- Heading -->
 	<li class="nav-item active">
-        <div class="nav-link"> 
-            <span>메뉴</span> 
-        </div>
-    </li>
-	
+		<div class="nav-link">
+			<span>메뉴</span>
+		</div>
+	</li>
+
 	<!-- Nav Item - Pages Collapse Menu -->
 	<!-- <li class="nav-item">
 		        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages"
@@ -70,7 +68,7 @@
 		            </div>
 		        </div>
 		    </li> -->
-	
+
 	<!-- Nav Item - Point Store -->
 	<li class="nav-item">
 		<a th:href="@{/shop}" class="nav-link">
@@ -78,7 +76,7 @@
 			<span>포인트 상점</span>
 		</a>
 	</li>
-	
+
 	<!-- Nav Item - Friends -->
 	<li class="nav-item">
 		<a href="javascript:void(0);" class="nav-link modal_btn" onclick="openFriendModal(event)">
@@ -88,92 +86,101 @@
 	</li>
 	<!-- Divider -->
 	<hr class="sidebar-divider d-none d-md-block">
-	
-    <!-- Nav Item - Shortcut -->
+
+	<!-- Nav Item - Shortcut -->
 	<li class="nav-item active">
-        <div class="nav-link"> 
-            <span>빠른 메뉴</span> 
-        </div>
-    </li>
-	
+		<div class="nav-link">
+			<span>빠른 메뉴</span>
+		</div>
+	</li>
+
 	<!-- Nav Item - Buttons -->
 	<div class="sidebar-grid px-3 pt-2">
-	    <div class="row">
-	        <div class="col-4 mb-2 px-2">
-				<a th:href="@{/waitroom/form}" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
-				   style="aspect-ratio: 1 / 1; opacity: 0.8;"
-				   onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-				    <i class="fas fa-fw fa-home"></i>
-				    <span style="font-size: 0.7rem;">방 생성</span>
+		<div class="row">
+			<div class="col-4 mb-2 px-2">
+				<a th:href="@{/waitroom/form}"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-home"></i>
+					<span style="font-size: 0.7rem;">방 생성</span>
 				</a>
-	        </div>
-	        <div class="col-4 mb-2 px-2">
-	            <a th:href="@{/joinroom}" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-cog"></i>
-	                <span style="font-size: 0.7rem;">방 참가</span>
-	            </a>
-	        </div>
-	        <div class="col-4 mb-2 px-2">
-	            <a th:href="@{/list}" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-star"></i>
-	                <span style="font-size: 0.7rem;">퀴즈 참가</span>
-	            </a>
-	        </div>
-	        
+			</div>
+			<div class="col-4 mb-2 px-2">
+				<a th:href="@{/joinroom}"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-cog"></i>
+					<span style="font-size: 0.7rem;">방 참가</span>
+				</a>
+			</div>
+			<div class="col-4 mb-2 px-2">
+				<a th:href="@{/list}"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-star"></i>
+					<span style="font-size: 0.7rem;">퀴즈 참가</span>
+				</a>
+			</div>
+
 			<!-- 페이지를 임시로 연결해둠/이 메뉴는 최종적으로 나중에 빼든 말든 해야할듯-->
-	        <div class="col-4 mb-2 px-2">
-	            <a th:href="@{/setquestion}" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-user"></i>
-	                <span style="font-size: 0.7rem;">퀴즈 출제</span>
-	            </a>
-	        </div>
-	        <div class="col-4 mb-2 px-2">
-	            <a href="#" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-bell"></i>
-	                <span style="font-size: 0.7rem;">메뉴5</span>
-	            </a>
-	        </div>
-	        <div class="col-4 mb-2 px-2">
-	            <a href="#" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-envelope"></i>
-	                <span style="font-size: 0.7rem;">메뉴6</span>
-	            </a>
-	        </div>
-	        
-	        <div class="col-4 mb-2 px-2">
-	            <a href="#" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-camera"></i>
-	                <span style="font-size: 0.7rem;">메뉴7</span>
-	            </a>
-	        </div>
-	        <div class="col-4 mb-2 px-2">
-	            <a href="#" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-video"></i>
-	                <span style="font-size: 0.7rem;">메뉴8</span>
-	            </a>
-	        </div>
-	        <div class="col-4 mb-2 px-2">
-	            <a href="#" class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center" 
-	               style="aspect-ratio: 1 / 1; opacity: 0.8;"
-	               onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
-	                <i class="fas fa-fw fa-gift"></i>
-	                <span style="font-size: 0.7rem;">메뉴9</span>
-	            </a>
-	        </div>
-		</div> 
-	</div> 
+			<div class="col-4 mb-2 px-2">
+				<a th:href="@{/setquestion}"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-user"></i>
+					<span style="font-size: 0.7rem;">퀴즈 출제</span>
+				</a>
+			</div>
+			<div class="col-4 mb-2 px-2">
+				<a href="#"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-bell"></i>
+					<span style="font-size: 0.7rem;">메뉴5</span>
+				</a>
+			</div>
+			<div class="col-4 mb-2 px-2">
+				<a href="#"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-envelope"></i>
+					<span style="font-size: 0.7rem;">메뉴6</span>
+				</a>
+			</div>
+
+			<div class="col-4 mb-2 px-2">
+				<a href="#"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-camera"></i>
+					<span style="font-size: 0.7rem;">메뉴7</span>
+				</a>
+			</div>
+			<div class="col-4 mb-2 px-2">
+				<a href="#"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-video"></i>
+					<span style="font-size: 0.7rem;">메뉴8</span>
+				</a>
+			</div>
+			<div class="col-4 mb-2 px-2">
+				<a href="#"
+					class="text-white text-decoration-none d-flex flex-column align-items-center justify-content-center"
+					style="aspect-ratio: 1 / 1; opacity: 0.8;" onmouseover="this.style.opacity=1"
+					onmouseout="this.style.opacity=0.8">
+					<i class="fas fa-fw fa-gift"></i>
+					<span style="font-size: 0.7rem;">메뉴9</span>
+				</a>
+			</div>
+		</div>
+	</div>
 </div>

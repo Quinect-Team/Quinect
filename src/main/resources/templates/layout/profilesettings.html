@@ -49,36 +49,86 @@
 							<input type="text" class="form-control" name="username"
 								th:value="${user.userProfile.username}" required>
 						</div>
-
 						<div class="form-group">
 							<label class="form-label">소속</label>
 							<input type="text" class="form-control" name="organization"
 								th:value="${user.userProfile.organization}">
 						</div>
-
 						<div class="form-group">
 							<label class="form-label">한줄 소개 (Bio)</label>
 							<input type="text" class="form-control" name="bio" th:value="${user.userProfile.bio}">
 						</div>
 
-						<div class="form-group mt-4">
-							<label class="form-label">프로필 사진 변경</label>
-							<div class="d-flex align-items-center">
-								<div class="mr-3">
-									<img id="profilePreview"
-										th:src="${user.userProfile.profileImage != null ? user.userProfile.profileImage : '/img/default_profile.png'}"
-										class="rounded-circle"
-										style="width: 80px; height: 80px; object-fit: cover; border: 1px solid #ddd;">
+						<hr class="my-4">
+
+						<h5 class="font-weight-bold text-gray-800 mb-4">프로필 이미지 선택</h5>
+
+						<label class="form-label text-success small">기본 캐릭터 선택</label>
+						<div class="row mb-3" id="defaultProfileSection">
+							<div class="col-3 mb-2">
+								<div class="selection-box"
+									th:classappend="${user.userProfile.profileImage == '/img/undraw_profile.svg'} ? 'active' : ''"
+									onclick="selectDefaultProfile('/img/undraw_profile.svg', this)">
+									<img src="/img/undraw_profile.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
 								</div>
+							</div>
+							<div class="col-3 mb-2">
+								<div class="selection-box"
+									th:classappend="${user.userProfile.profileImage == '/img/undraw_profile_1.svg'} ? 'active' : ''"
+									onclick="selectDefaultProfile('/img/undraw_profile_1.svg', this)">
+									<img src="/img/undraw_profile_1.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
+								</div>
+							</div>
+							<div class="col-3 mb-2">
+								<div class="selection-box"
+									th:classappend="${user.userProfile.profileImage == '/img/undraw_profile_2.svg'} ? 'active' : ''"
+									onclick="selectDefaultProfile('/img/undraw_profile_2.svg', this)">
+									<img src="/img/undraw_profile_2.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
+								</div>
+							</div>
+							<div class="col-3 mb-2">
+								<div class="selection-box"
+									th:classappend="${user.userProfile.profileImage == '/img/undraw_profile_3.svg'} ? 'active' : ''"
+									onclick="selectDefaultProfile('/img/undraw_profile_3.svg', this)">
+									<img src="/img/undraw_profile_3.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
+								</div>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label class="form-label text-gray-600 small">또는 직접 업로드</label>
+							<div class="d-flex align-items-center">
+
+								<div class="mr-3 position-relative">
+
+									<img id="profilePreview"
+										th:src="${user.userProfile.profileImage != null ? user.userProfile.profileImage : '/img/undraw_profile.svg'}"
+										class="rounded-circle"
+										th:style="${user.userProfile.profileImage != null and #strings.startsWith(user.userProfile.profileImage, '/img/')} ? 'width: 60px; height: 60px; object-fit: cover; border: 1px solid #ddd; display: none;' : 'width: 60px; height: 60px; object-fit: cover; border: 1px solid #ddd; display: block;'">
+
+									<div id="profileIconPlaceholder"
+										class="rounded-circle bg-gray-200 align-items-center justify-content-center"
+										th:style="${user.userProfile.profileImage != null and #strings.startsWith(user.userProfile.profileImage, '/img/')} ? 'width: 60px; height: 60px; border: 1px solid #ddd; display: flex;' : 'width: 60px; height: 60px; border: 1px solid #ddd; display: none;'">
+										<i class="fas fa-user fa-2x text-gray-400"></i>
+									</div>
+
+								</div>
+
 								<div class="custom-file">
 									<input type="file" class="custom-file-input" id="profileImageFile"
 										name="profileImageFile" accept="image/*" onchange="previewImage(this)">
-									<label class="custom-file-label" for="profileImageFile" data-browse="찾기">사진
+									<label class="custom-file-label" for="profileImageFile" data-browse="찾기">파일
 										선택...</label>
 								</div>
 							</div>
-							<small class="text-muted ml-2">권장 크기: 500x500px, 2MB 이하</small>
+							<small class="text-muted ml-2">직접 업로드 시 선택한 기본 캐릭터는 무시됩니다.</small>
 						</div>
+
+						<input type="hidden" name="defaultProfileImage" id="inputDefaultProfileImage">
 
 						<div class="text-right mt-4">
 							<button type="button" onclick="saveViaAjax('settingsForm', '/profile/settings/profilesave')"

@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserProfile;
@@ -23,6 +24,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final FileStorageService fileStorageService;
 
     public User create(String username, String email, String password) {
         User user = new User();
@@ -146,5 +148,35 @@ public class UserService {
         Random random = new Random();
         int code = 100000 + random.nextInt(900000); // 100000 ~ 999999
         return String.valueOf(code);
+    }
+    
+    // 프로필 사진 업로드
+    @Transactional
+    public void updateProfile(String email, String nickname, String organization, String bio, 
+                              MultipartFile profileImageFile, String defaultProfileImage) {
+        
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
+        UserProfile profile = user.getUserProfile();
+
+        // 1. 텍스트 정보 업데이트
+        profile.setUsername(nickname);
+        profile.setOrganization(organization);
+        profile.setBio(bio);
+
+        // 2. 이미지 처리 로직 (우선순위: 파일 업로드 > 기본 이미지 선택)
+        if (profileImageFile != null && !profileImageFile.isEmpty()) {
+            // (A) 파일이 업로드된 경우 -> 파일 저장 후 URL 사용
+            String imageUrl = fileStorageService.storeFile(profileImageFile);
+            profile.setProfileImage(imageUrl);
+            
+        } else if (defaultProfileImage != null && !defaultProfileImage.isEmpty()) {
+            // (B) 파일은 없는데 기본 이미지를 선택한 경우 -> 해당 경로 그대로 사용
+            // (보안상 /img/ 로 시작하는지 체크하는 것이 좋음)
+            if(defaultProfileImage.startsWith("/img/")) {
+                profile.setProfileImage(defaultProfileImage);
+            }
+        }
+        // (C) 둘 다 없으면 -> 기존 이미지 유지
     }
 }

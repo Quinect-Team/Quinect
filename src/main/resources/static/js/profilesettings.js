@@ -102,15 +102,44 @@ function saveViaAjax(formId, url) {
     });
 }
 
+// [기본 프로필 선택 로직]
+function selectDefaultProfile(path, element) {
+    // 1. 선택 박스 UI 처리
+    $('#defaultProfileSection .selection-box').removeClass('active');
+    $(element).addClass('active');
+
+    // 2. 값 주입
+    $('#inputDefaultProfileImage').val(path);
+    
+    // 3. 파일 업로드 초기화
+    $('#profileImageFile').val('');
+    $('.custom-file-label').text('파일 선택...');
+
+    // 4. [핵심] 미리보기 영역 교체 (이미지 숨김 -> 아이콘 표시)
+    $('#profilePreview').hide();          // 이미지 숨기기
+    $('#profileIconPlaceholder').css('display', 'flex'); // 아이콘 보이기 (flex로 해야 중앙 정렬됨)
+}
+
+// [파일 업로드 미리보기 로직] (기존 코드 유지하되 조금 보완)
 function previewImage(input) {
     if (input.files && input.files[0]) {
+        // 1. 기본 캐릭터 선택 해제
+        $('#defaultProfileSection .selection-box').removeClass('active');
+        $('#inputDefaultProfileImage').val('');
+
         var reader = new FileReader();
         reader.onload = function(e) {
-            // 미리보기 이미지 태그의 src를 변경
+            // 2. 이미지 데이터 주입
             $('#profilePreview').attr('src', e.target.result);
-            // 라벨 텍스트 변경
-            $('.custom-file-label').text(input.files[0].name);
+
+            // 3. [핵심] 미리보기 영역 교체 (아이콘 숨김 -> 이미지 표시)
+            $('#profileIconPlaceholder').hide(); // 아이콘 숨기기
+            $('#profilePreview').show();         // 이미지 보이기
         }
         reader.readAsDataURL(input.files[0]);
+
+        // 4. 라벨 변경
+        var fileName = input.files[0].name;
+        $(input).next('.custom-file-label').html(fileName);
     }
 }
