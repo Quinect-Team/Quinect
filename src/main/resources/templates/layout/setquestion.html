@@ -1,3 +1,8 @@
+<head>
+	<meta name="_csrf" th:content="${_csrf.token}"/>
+	<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+
 <style>
 	/* 문제 블록 전체 */
 	#question-container {
@@ -170,13 +175,24 @@
 	document.getElementById('save').addEventListener('click', function () {
 	    const quizData = collectQuizData();
 
+	    // 1. HTML 헤더에 심어둔 토큰과 헤더 이름을 가져옵니다.
+	    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+	    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
 	    fetch("/quiz/save", {
 	        method: "POST",
-	        headers: {"Content-Type": "application/json"},
+	        headers: {
+	            "Content-Type": "application/json",
+	            [csrfHeader]: csrfToken // 2. 헤더에 토큰을 추가합니다. (예: "X-CSRF-TOKEN": "abcd-1234...")
+	        },
 	        body: JSON.stringify(quizData)
 	    })
-	    .then(res => res.text())
-	    .then(msg => alert(msg));
+	    .then(res => {
+	        if (!res.ok) throw new Error("서버 에러 발생"); // 에러 처리 추가 권장
+	        return res.text();
+	    })
+	    .then(msg => alert(msg))
+	    .catch(err => console.error(err));
 	});
 
 	document.getElementById('temp-save').addEventListener('click', function () {
