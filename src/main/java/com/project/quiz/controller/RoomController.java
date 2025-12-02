@@ -82,6 +82,10 @@ public class RoomController {
 		if (room == null) {
 			return "error/404"; // 방 없음 처리 페이지
 		}
+		
+		if ("CLOSED".equals(room.getStatusCode())) {
+	        return "room_closed"; // "이 방은 종료되었습니다" 같은 안내 템플릿 만들기
+	    }
 
 		// codeTableRepository를 활용하여 roomTypeCode에 해당하는 이름 조회
 		CodeTable codeInfo = codeTableRepository.findById(room.getRoomTypeCode()).orElse(null);
@@ -178,4 +182,26 @@ public class RoomController {
 		// 여기서는 반환값 없이, VoteManager가 내부에서 UPDATE 브로드캐스트
 		voteManager.submitVote(roomCode, request.getVoteId(), request.getVoter(), request.getChoice());
 	}
+	
+	@PostMapping("/waitroom/{roomCode}/close")
+	@ResponseBody
+	public String closeRoom(@PathVariable("roomCode") String roomCode, Principal principal) {
+	    Room room = roomService.getRoomByCode(roomCode);
+	    if (room == null) {
+	        return "NOT_FOUND";
+	    }
+
+	    if (principal == null) {
+	        return "UNAUTHORIZED";
+	    }
+
+	    User user = userService.findByEmail(principal.getName());
+	    if (user == null || !room.getHostUserId().equals(user.getId())) {
+	        return "FORBIDDEN";
+	    }
+
+	    roomService.closeRoom(roomCode);
+	    return "OK";
+	}
+
 }

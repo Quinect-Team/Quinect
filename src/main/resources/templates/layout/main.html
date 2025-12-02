@@ -1,7 +1,53 @@
 <div class="container-lg py-4" th:fragment="main">
 	<div class="row">
+		
+		<!-- 출석 이벤트 -->
+		<div class="col-xl-3 col-md-6 mb-4">
+					<div class="card shadow h-100 py-2"
+						th:classappend="${checkedIn} ? 'border-left-success' : 'border-left-info'">
 
-		<!-- Earnings (Monthly) Card Example -->
+						<div class="card-body">
+							<div class="row no-gutters align-items-center">
+								<div class="col mr-2">
+
+									<div class="mb-2 d-flex align-items-baseline">
+										<span class="text-s font-weight-bold text-success text-uppercase mr-2">
+											오늘의 출석
+										</span>
+										<span class="text-s  font-weight-bold text-gray-800"
+											th:text="${#temporals.format(#temporals.createNow(), 'MM월 dd일')}">
+											요일
+										</span>
+									</div>
+
+									<div class="d-flex">
+										<button th:if="${checkedIn}"
+											class="btn btn-success btn-sm font-weight-bold shadow-sm mr-2" style="flex: 1;"
+											disabled>
+											<i class="fas fa-check mr-1"></i>완료
+										</button>
+
+										<button th:unless="${checkedIn}" id="btnCheckIn"
+											class="btn btn-info btn-sm font-weight-bold shadow-sm mr-2" style="flex: 1;">
+											출석하기
+										</button>
+
+										<a th:href="@{/attendance/detail}" class="btn btn-light btn-sm font-weight-bold text-gray-600 shadow-sm">
+										    <i class="fas fa-list-alt"></i> 상세
+										</a>
+									</div>
+								</div>
+
+								<div class="col-auto pl-2">
+									<i class="fas fa-calendar-check fa-2x"
+										th:classappend="${checkedIn} ? 'text-success' : 'text-gray-300'"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+		<!-- 보유 포인트 -->
 		<div class="col-xl-3 col-md-6 mb-4">
 		    <div class="card border-left-primary shadow h-100 py-2">
 		        <div class="card-body">
@@ -24,7 +70,7 @@
 		    </div>
 		</div>
 
-		<!-- Earnings (Monthly) Card Example -->
+		<!-- 출제한 퀴즈 수 -->
 		<div class="col-xl-3 col-md-6 mb-4">
 			<div class="card border-left-success shadow h-100 py-2">
 				<div class="card-body">
@@ -42,50 +88,7 @@
 			</div>
 		</div>
 
-		<div class="col-xl-3 col-md-6 mb-4">
-			<div class="card shadow h-100 py-2"
-				th:classappend="${checkedIn} ? 'border-left-success' : 'border-left-info'">
-
-				<div class="card-body">
-					<div class="row no-gutters align-items-center">
-						<div class="col mr-2">
-
-							<div class="mb-2 d-flex align-items-baseline">
-								<span class="text-s font-weight-bold text-success text-uppercase mr-2">
-									오늘의 출석
-								</span>
-								<span class="text-s  font-weight-bold text-gray-800"
-									th:text="${#temporals.format(#temporals.createNow(), 'MM월 dd일')}">
-									요일
-								</span>
-							</div>
-
-							<div class="d-flex">
-								<button th:if="${checkedIn}"
-									class="btn btn-success btn-sm font-weight-bold shadow-sm mr-2" style="flex: 1;"
-									disabled>
-									<i class="fas fa-check mr-1"></i>완료
-								</button>
-
-								<button th:unless="${checkedIn}" id="btnCheckIn"
-									class="btn btn-info btn-sm font-weight-bold shadow-sm mr-2" style="flex: 1;">
-									출석하기
-								</button>
-
-								<a th:href="@{/attendance/detail}" class="btn btn-light btn-sm font-weight-bold text-gray-600 shadow-sm">
-								    <i class="fas fa-list-alt"></i> 상세
-								</a>
-							</div>
-						</div>
-
-						<div class="col-auto pl-2">
-							<i class="fas fa-calendar-check fa-2x"
-								th:classappend="${checkedIn} ? 'text-success' : 'text-gray-300'"></i>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+		
 
 		<!-- Pending Requests Card Example -->
 		<div class="col-xl-3 col-md-6 mb-4">

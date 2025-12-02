@@ -3,6 +3,8 @@ package com.project.quiz.service;
 import com.project.quiz.domain.Room;
 import com.project.quiz.repository.RoomRepository;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,4 +31,12 @@ public class RoomService {
 	public Room getRoomByCode(String code) {
 		return roomRepository.findByRoomCode(code).orElse(null);
 	}
+	
+	@Transactional
+    public void closeRoom(String roomCode) {
+        Room room = roomRepository.findByRoomCode(roomCode)
+                .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다."));
+        room.setStatusCode("CLOSED");
+        room.setClosedAt(LocalDateTime.now());
+    }
 }
