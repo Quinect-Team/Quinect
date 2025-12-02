@@ -1,9 +1,14 @@
 package com.project.quiz.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserActivityLog;
-import org.springframework.data.jpa.repository.JpaRepository;
-import java.time.LocalDateTime;
 
 public interface UserActivityLogRepository extends JpaRepository<UserActivityLog, Long> {
     
@@ -15,4 +20,6 @@ public interface UserActivityLogRepository extends JpaRepository<UserActivityLog
         LocalDateTime start, 
         LocalDateTime end
     );
+    
+    Page<UserActivityLog> findAllByUserAndActivityTypeIn(User user, List<String> activityTypes, Pageable pageable);
 }

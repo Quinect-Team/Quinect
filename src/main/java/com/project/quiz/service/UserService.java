@@ -12,7 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.project.quiz.domain.User;
+import com.project.quiz.domain.UserActivityLog;
 import com.project.quiz.domain.UserProfile;
+import com.project.quiz.repository.UserActivityLogRepository;
 import com.project.quiz.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final FileStorageService fileStorageService;
+    private final UserActivityLogRepository logRepository;
 
     public User create(String username, String email, String password) {
         User user = new User();
@@ -50,7 +53,7 @@ public class UserService {
 		return userRepository.findByEmail(name).orElse(null);
 	}
     
-    @Transactional // DB 변경이 일어나므로 트랜잭션 필수
+    /* @Transactional // DB 변경이 일어나므로 트랜잭션 필수
     public void updateProfile(String email, String newNickname, String newOrganization, String newBio) {
         // 1. 유저 조회
         User user = userRepository.findByEmail(email)
@@ -66,7 +69,7 @@ public class UserService {
             profile.setBio(newBio);
         }
         // (만약 profile이 null일 경우는 회원가입 로직상 없겠지만, 필요하다면 여기서 생성 로직 추가 가능)
-    }
+    } */
     
     // 여기서부터 이메일 인증
     private static class VerificationInfo {
@@ -158,7 +161,20 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
         UserProfile profile = user.getUserProfile();
+        
+        if (!profile.getUsername().equals(nickname)) {
+            String logDesc = String.format("%s님이 닉네임을 %s(으)로 변경했습니다.", 
+                                           profile.getUsername(), nickname); // "홍길동님이 닉네임을 고길동(으)로..."
 
+            UserActivityLog log = UserActivityLog.builder()
+                    .user(user)
+                    .activityType("UPDATE_NICKNAME") // 새로운 타입
+                    .description(logDesc)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            
+            logRepository.save(log);
+        }
         // 1. 텍스트 정보 업데이트
         profile.setUsername(nickname);
         profile.setOrganization(organization);

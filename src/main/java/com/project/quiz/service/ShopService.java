@@ -40,8 +40,10 @@ public class ShopService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
         ShopItem item = shopItemRepository.findById(itemId)
                 .orElseThrow(() -> new IllegalArgumentException("아이템 없음"));
-
-        pointService.usePoint(user, item.getPrice(), "아이템 구매 (" + item.getItemName() + ")");
+        
+        String logDescription = user.getUserProfile().getUsername() + "님이 상점에서 [" + item.getItemName() + "] 아이템을 구매했습니다.";
+        
+        pointService.usePoint(user, item.getPrice(), logDescription);
 
         // 인벤토리 지급 로직은 그대로 ShopService가 담당
         UserInventory inventory = UserInventory.builder()
@@ -52,6 +54,8 @@ public class ShopService {
         
         userInventoryRepository.save(inventory);
     }
+    
+    
     
     @Transactional(readOnly = true)
     public List<ShopItemResponse> getAvailableItems(String email) {

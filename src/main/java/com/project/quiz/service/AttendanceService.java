@@ -48,29 +48,31 @@ public class AttendanceService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
 
-        // 1. 중복 검사
         if (hasCheckedInToday(email)) {
             throw new IllegalStateException("이미 출석했습니다.");
         }
 
-        // 2. 활동 로그 생성 (부모)
+        // [수정] 로그 메시지를 구체적으로 변경
+        String logDescription = user.getUserProfile().getUsername() + "님이 출석체크를 완료했습니다.";
+
+        // 1. 활동 로그 생성 (부모 테이블: user_activity_log)
         UserActivityLog log = UserActivityLog.builder()
                 .user(user)
-                .activityType("ATTENDANCE")
-                .description("일일 출석체크")
+                .activityType("ATTENDANCE") // 타입: 출석
+                .description(logDescription) // "OOO님이 출석체크를..."
                 .createdAt(LocalDateTime.now())
                 .build();
-        logRepository.save(log); // ID 생성됨
+        logRepository.save(log);
 
-        // 3. 출석 상세 기록 저장 (자식 - 로그와 연결)
+        // 2. 출석 상세 기록 저장 (자식 테이블: user_activity_attendance)
         UserActivityAttendance attendance = UserActivityAttendance.builder()
-                .userActivityLog(log) // 연결!
+                .userActivityLog(log) // 부모 로그와 연결
                 .checkInDate(LocalDate.now())
                 .pointsEarned(100)
                 .build();
         attendanceRepository.save(attendance);
 
-        // 4. 포인트 지급 (PointService가 별도 로그 생성함 - 정상)
+        // 3. 포인트 지급 (PointService가 별도 로그 생성함 -> "POINT_EARN" 로그도 같이 쌓임)
         pointService.addPoint(user, 100, "일일 출석체크 보상");
     }
     

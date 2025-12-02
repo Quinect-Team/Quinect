@@ -12,8 +12,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserInventory;
+import com.project.quiz.dto.TimelineDto;
 import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.InventoryService;
+import com.project.quiz.service.TimelineService;
 import com.project.quiz.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class ProfileController {
 	private final UserService userService;
 	private final InventoryService inventoryService;
 	private final UserRepository userRepository;// 서비스 주입
+	private final TimelineService timelineService;
 
 	// 프로필 페이지 이동
 	@GetMapping("/profile")
@@ -41,6 +44,8 @@ public class ProfileController {
 	             String themeUrl = inventoryService.getEquippedItemUrl(user, "THEME");
 	             model.addAttribute("equippedThemeUrl", themeUrl);
 	         }
+	         List<TimelineDto> timeline = timelineService.getProfileTimeline(principal.getName());
+	         model.addAttribute("timelineList", timeline);
 	    }
 	    return "profile";
 	}
@@ -69,7 +74,7 @@ public class ProfileController {
 	// ▼▼▼ 타임라인 페이지 (기존에 있었으므로 유지) ▼▼▼
 	@GetMapping("/profile/timeline")
 	public String timelinePage() {
-		return "timeline";
+	    return "timeline"; // timeline.html 껍데기만 렌더링
 	}
 
 	// ▼▼▼ [POST] 프로필 저장 로직 추가 ▼▼▼

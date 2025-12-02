@@ -69,24 +69,19 @@
 	<h5 class="font-weight-bold text-gray-800 mb-3">타임라인</h5>
 
 	<div class="timeline-section mb-5" style="padding-bottom: 60px;">
-		<div class="timeline-item">
-			<div class="timeline-icon bg-timeline-quiz shadow-sm">
-				<i class="fas fa-gift"></i>
+
+		<div th:each="log : ${timelineList}" class="timeline-item">
+			<div class="timeline-icon shadow-sm" th:classappend="${log.colorClass}">
+				<i class="fas" th:classappend="${log.iconClass}"></i>
 			</div>
 			<div class="timeline-content">
-				<div class="timeline-date">2025.11.17</div>
-				<p class="timeline-text">김OO님이 OO퀴즈를 완료했습니다.</p>
+				<div class="timeline-date" th:text="${log.date}">2025.11.17</div>
+				<p class="timeline-text" th:text="${log.description}">활동 내용</p>
 			</div>
 		</div>
 
-		<div class="timeline-item">
-			<div class="timeline-icon bg-timeline-attend shadow-sm">
-				<i class="fas fa-calendar-check"></i>
-			</div>
-			<div class="timeline-content">
-				<div class="timeline-date">2025.11.16</div>
-				<p class="timeline-text">김OO님이 출석하였습니다.</p>
-			</div>
+		<div th:if="${#lists.isEmpty(timelineList)}" class="text-center py-4">
+			<p class="text-gray-500 mb-0">아직 활동 기록이 없습니다.</p>
 		</div>
 
 		<div class="text-center more-btn-wrapper" style="padding-left: 80px; text-align: left !important; top: 30px;">
