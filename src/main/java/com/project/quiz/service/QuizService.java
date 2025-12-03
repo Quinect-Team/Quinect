@@ -1,11 +1,14 @@
 package com.project.quiz.service;
 
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.project.quiz.domain.Quiz;
 import com.project.quiz.domain.QuizOption;
@@ -70,4 +73,29 @@ public class QuizService {
 
         return quiz.getQuizId();
     }
+    public String storeImage(MultipartFile file) throws Exception {
+
+        if (file.isEmpty()) {
+            throw new Exception("Empty file");
+        }
+
+        // 저장 경로 (프로젝트 내부)
+        String uploadDir = System.getProperty("user.dir") + "/uploads/quiz/";
+
+        // 폴더 없으면 생성
+        File dir = new File(uploadDir);
+        if (!dir.exists()) dir.mkdirs();
+
+        // 파일명 생성 (UUID + 원본 확장자)
+        String original = file.getOriginalFilename();
+        String ext = original.substring(original.lastIndexOf("."));
+        String fileName = UUID.randomUUID().toString() + ext;
+
+        // 실제 저장
+        File target = new File(uploadDir + fileName);
+        file.transferTo(target);
+
+        return fileName; // DB에는 파일명만 저장
+    }
+
 }

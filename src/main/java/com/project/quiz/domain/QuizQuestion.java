@@ -25,9 +25,15 @@ public class QuizQuestion {
 
     private String quizTypeCode;
     private String questionText;
-    private String answerOption;
     private Integer point;
+    
+    @Column(name = "answer_option")
+    private String answerOption;
+
+    @Column(name = "subjective_answer")
     private String subjectiveAnswer;
+
+    @Column(name = "image")
     private String image;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)

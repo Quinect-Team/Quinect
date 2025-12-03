@@ -111,8 +111,13 @@
 			</div>
 	    </div>
 
+		<div class="image-container" style="margin-top:10px;">
+		        <input type="file" name="image" accept="image/*">
+		</div>
+			
+			
 	    <div class="text-container" style="margin-top:10px;">
-	        <input type="text" name="sub" placeholder="지문을 작성하세요" style="width:100%; padding:5px;">
+	        <input type="text" name="sub" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
 
 	    </div>
 	</div>
@@ -121,6 +126,7 @@
 <!-- 문제 추가 -->
 <div class="add-question-area">
     <button id="add-question" class="btn btn-secondary">문제 추가</button>
+	<button id="add-question" class="btn btn-secondary">불러오기</button>
     <button id="remove-question" class="btn btn-secondary">문제 제거</button>
 </div>
 <div class="submit-area">
@@ -133,11 +139,25 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
 
-<script>
+<script type="module">
+	async function uploadImage(file) {
+	    const formData = new FormData();
+	    formData.append("file", file);
+
+	    const res = await fetch("/quiz/upload-image", {
+	        method: "POST",
+	        body: formData
+	    });
+
+	    return await res.text(); // 서버가 반환한 파일명
+	}
+
+	
 	function collectQuizData() {
 	    const quizData = {
 	        title: document.getElementById('quiz-title').value,
 	        description: document.getElementById('quiz-desc').value,
+	        userId: 1,   // 필요시 변경
 	        questions: []
 	    };
 
@@ -148,28 +168,34 @@
 	        const typeMenu = block.querySelector('.dropdown-toggle').innerText.trim();
 	        const isObjective = typeMenu.includes("객관식");
 
-	        const subContainer = block.querySelector('.text-container');
-	        const inputs = subContainer.querySelectorAll('input');
+	        // ⭐ point 값 수집
+	        const pointElement = block.querySelector('input[name="point"]');
+	        const point = pointElement ? Number(pointElement.value) : null;
 
+	        // 객관식 옵션들
 	        let options = [];
 	        if (isObjective) {
+	            const subContainer = block.querySelector('.text-container');
+	            const inputs = subContainer.querySelectorAll('input');
 	            inputs.forEach((inp, idx) => {
-	                options.push({
-	                    optionNumber: idx + 1,
-	                    optionText: inp.value
-	                });
+	                options.push(inp.value);
 	            });
 	        }
 
-	        quizData.questions.push({
-	            questionText: questionText,
-	            quizTypeCode: isObjective ? 2 : 1,
-	            options: options
-	        });
+			quizData.questions.push({
+			    questionText: questionText,
+			    quizTypeCode: isObjective ? 2 : 1,
+			    point: point,
+			    answerOption: null,
+			    subjectivenullAnswer: null,
+			    image: null,
+			    options: options
+			});
 	    });
 
-	    return quizData;
+	    return quizData;	
 	}
+
 
 	/* 버튼 클릭> 서버 전송 */
 	document.getElementById('save').addEventListener('click', function () {
@@ -206,6 +232,4 @@
 	    .then(msg => alert(msg));
 	});
 
-	/* 최초 로딩 시 실행 */
-activateDropdown(document.querySelector('.question-block'));
 </script>
