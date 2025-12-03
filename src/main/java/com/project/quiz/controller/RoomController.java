@@ -1,7 +1,7 @@
 package com.project.quiz.controller;
 
 import java.security.Principal;
-import java.util.List;
+import java.util.*;
 
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,11 +49,18 @@ public class RoomController {
 
 	@GetMapping("/waitroom/form")
 	public String showRoomForm(Model model, Principal principal, HttpSession session) {
-		if (principal == null && session.getAttribute("guestUser") == null) {
+		if (principal != null) {
+			List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
+			model.addAttribute("roomTypes", roomTypes);
+			return "waitroom_form";
+		}
+
+		if (session.getAttribute("guestUser") == null) {
 			return "redirect:/guest/setup?next=/waitroom/form";
 		}
+
 		List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
-		model.addAttribute("roomTypes", roomTypes); // 드롭다운용
+		model.addAttribute("roomTypes", roomTypes);
 		return "waitroom_form";
 	}
 
@@ -72,7 +79,8 @@ public class RoomController {
 
 		// user.getId()를 호스트유저아이디로 사용
 		Room room = roomService.createRoom(user.getId(), roomTypeCode, "opened");
-		return "redirect:/guest/setup?next=/waitroom/" + room.getRoomCode();
+
+		return "redirect:/waitroom/" + room.getRoomCode();
 	}
 
 	@GetMapping("/waitroom/{roomCode}")
@@ -82,10 +90,10 @@ public class RoomController {
 		if (room == null) {
 			return "error/404"; // 방 없음 처리 페이지
 		}
-		
+
 		if ("CLOSED".equals(room.getStatusCode())) {
-	        return "room_closed"; // "이 방은 종료되었습니다" 같은 안내 템플릿 만들기
-	    }
+			return "room_closed"; // "이 방은 종료되었습니다" 같은 안내 템플릿 만들기
+		}
 
 		// codeTableRepository를 활용하여 roomTypeCode에 해당하는 이름 조회
 		CodeTable codeInfo = codeTableRepository.findById(room.getRoomTypeCode()).orElse(null);
@@ -118,6 +126,7 @@ public class RoomController {
 		model.addAttribute("participants", participantService.findByRoom(room));
 		model.addAttribute("guestNickname", nickname);
 		model.addAttribute("guestAvatarUrl", avatarUrl);
+		model.addAttribute("currentUser", user);
 
 		boolean isRoomMaster = (user != null && room.getHostUserId().equals(user.getId()));
 		System.out.println("isRoomMaster=" + isRoomMaster + ", userId=" + (user != null ? user.getId() : null)
@@ -149,9 +158,14 @@ public class RoomController {
 
 	@PostMapping("/waitroom/join")
 	public String joinRoom(@RequestParam("roomCode") String roomCode, Principal principal, HttpSession session) {
-		if (principal == null && session.getAttribute("guestUser") == null) {
+		if (principal != null) {
+			return "redirect:/waitroom/" + roomCode;
+		}
+
+		if (session.getAttribute("guestUser") == null) {
 			return "redirect:/guest/setup?next=/waitroom/" + roomCode;
 		}
+
 		return "redirect:/waitroom/" + roomCode;
 	}
 
@@ -182,26 +196,38 @@ public class RoomController {
 		// 여기서는 반환값 없이, VoteManager가 내부에서 UPDATE 브로드캐스트
 		voteManager.submitVote(roomCode, request.getVoteId(), request.getVoter(), request.getChoice());
 	}
-	
+
 	@PostMapping("/waitroom/{roomCode}/close")
 	@ResponseBody
 	public String closeRoom(@PathVariable("roomCode") String roomCode, Principal principal) {
-	    Room room = roomService.getRoomByCode(roomCode);
-	    if (room == null) {
-	        return "NOT_FOUND";
-	    }
+		Room room = roomService.getRoomByCode(roomCode);
+		if (room == null) {
+			return "NOT_FOUND";
+		}
 
-	    if (principal == null) {
-	        return "UNAUTHORIZED";
-	    }
+		if (principal == null) {
+			return "UNAUTHORIZED";
+		}
 
-	    User user = userService.findByEmail(principal.getName());
-	    if (user == null || !room.getHostUserId().equals(user.getId())) {
-	        return "FORBIDDEN";
-	    }
+		User user = userService.findByEmail(principal.getName());
+		if (user == null || !room.getHostUserId().equals(user.getId())) {
+			return "FORBIDDEN";
+		}
 
-	    roomService.closeRoom(roomCode);
-	    return "OK";
+		roomService.closeRoom(roomCode);
+		return "OK";
+	}
+
+	@MessageMapping("/ready/{roomCode}")
+	@SendTo("/topic/ready/{roomCode}")
+	public Map<String, Object> handleReadyStatus(@DestinationVariable("roomCode") String roomCode,
+			Map<String, Object> readyData) {
+
+		System.out.println("Ready status received from room: " + roomCode);
+		System.out.println("Ready data: " + readyData);
+
+		// 그대로 모든 참가자에게 브로드캐스트
+		return readyData;
 	}
 
 }

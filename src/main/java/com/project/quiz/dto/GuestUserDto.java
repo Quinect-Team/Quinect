@@ -11,9 +11,9 @@ import java.time.format.DateTimeFormatter;
 @AllArgsConstructor
 @Builder
 public class GuestUserDto {
+	private String guestId;
 	private String nickname;
 	private String characterImageUrl; // 캐릭터 이미지 경로/URL
-	private String guestId;
 
 	// 빌더나 생성자에서 ID 자동 생성하고 싶으면 추가
 	public GuestUserDto(String nickname, String characterImageUrl) {

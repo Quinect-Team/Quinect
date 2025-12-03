@@ -7,11 +7,11 @@
     <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
 	<style>
-	.character-card-group { display: flex; justify-content: space-between; gap: 10px; }
+	.character-card-group { display: flex; justify-content: space-between; gap: 2px; }
 	.character-card {
 	    border: 2px solid #cccccc;
 	    border-radius: 16px;
-	    padding: 20px;
+	    padding: 10px;
 	    display: flex;
 	    justify-content: center;
 	    align-items: center;
@@ -33,10 +33,11 @@
         <!-- 로고 영역 -->
         <div class="d-flex align-items-center justify-content-center mb-4" style="gap:18px;">
             <div class="rotate-n-15">
-                <i class="fas fa-laugh-wink fa-3x text-light"></i>
+                <img src="/img/app_icon.png" style="width: 50px; height: 50px;">
             </div>
-            <div class="font-weight-bold text-light mt-2" style="font-size: 2rem;">
-                QuizParty Guest
+			<div class="ml-3 font-weight-bold text-white"
+							style="font-size: 3.6rem; font-family: 'Fredoka', sans-serif;">
+                Quinect
             </div>
         </div>
         <!-- 폼 카드 -->
@@ -56,30 +57,34 @@
 				        <div class="character-card-group">
 				            <div class="character-card" onclick="selectCharacter('char1')"
 				                 id="card-char1">
-				                <input type="radio" name="characterImageUrl" value="/img/char1.png" id="char1" required>
+				                <input type="radio" name="characterImageUrl" value="/img/undraw_profile.svg" id="char1" required>
 				                <label for="char1" style="margin:0;">
-				                    <i class="fas fa-user-astronaut text-primary"></i>
+									<img src="/img/undraw_profile.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
 				                </label>
 				            </div>
 				            <div class="character-card" onclick="selectCharacter('char2')"
 				                 id="card-char2">
-				                <input type="radio" name="characterImageUrl" value="/img/char2.png" id="char2" required>
+				                <input type="radio" name="characterImageUrl" value="/img/undraw_profile_1.svg" id="char2" required>
 				                <label for="char2" style="margin:0;">
-				                    <i class="fas fa-user-graduate text-danger"></i>
+									<img src="/img/undraw_profile_1.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
 				                </label>
 				            </div>
 							<div class="character-card" onclick="selectCharacter('char3')"
 				                 id="card-char3">
-				                <input type="radio" name="characterImageUrl" value="/img/char3.png" id="char4" required>
+				                <input type="radio" name="characterImageUrl" value="/img/undraw_profile_2.svg" id="char3" required>
 				                <label for="char3" style="margin:0;">
-				                    <i class="fas fa-user-tie text-warning"></i>
+									<img src="/img/undraw_profile_2.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
 				                </label>
 				            </div>
 							<div class="character-card" onclick="selectCharacter('char4')"
 				                 id="card-char4">
-				                <input type="radio" name="characterImageUrl" value="/img/char4.png" id="char4" required>
+				                <input type="radio" name="characterImageUrl" value="/img/undraw_profile_3.svg" id="char4" required>
 				                <label for="char4" style="margin:0;">
-				                    <i class="fas fa-user-ninja text-dark"></i>
+									<img src="/img/undraw_profile_3.svg" class="rounded-circle"
+										style="width: 50px; height: 50px; object-fit: cover;">
 				                </label>
 				            </div>
 				            <!-- 더 추가 가능 -->

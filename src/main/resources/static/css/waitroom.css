@@ -87,3 +87,50 @@
     gap: 10px;
     justify-content: flex-end;
 }
+
+.draggable-participant {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: move;
+    user-select: none;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    margin: 5px;
+}
+
+.draggable-participant:hover {
+    opacity: 0.8;
+}
+
+.team-box {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    min-height: 150px;
+    background-color: #f8f9fa;
+}
+
+.team-box.drag-over {
+    background-color: #e9ecef;
+    border-color: #007bff;
+    border-width: 2px;
+}
+
+.team-member {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.gap-2 {
+    gap: 8px;
+}
