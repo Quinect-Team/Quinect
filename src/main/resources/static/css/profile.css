@@ -184,7 +184,7 @@
     width: 120%;  
     height: 120%; 
     
-    z-index: 0;           /* 프로필 사진 뒤로 */
+    z-index: 2;           /* 프로필 사진 뒤로 */
     pointer-events: none; /* 마우스 클릭 통과 */
     object-fit: contain;  /* 이미지 비율 유지하며 박스 안에 맞춤 */
 }
