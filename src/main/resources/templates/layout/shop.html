@@ -81,20 +81,30 @@
 	<div class="row">
 		<div class="col-lg-3 col-md-4 col-6 mb-4" th:each="item : ${items}">
 			<div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal" th:data-id="${item.id}"
-				th:data-name="${item.itemName}" th:data-price="${item.price}" th:data-desc="${item.description}" th:data-owned="${item.isOwned}" style="cursor: pointer;">
+				th:data-name="${item.itemName}" th:data-price="${item.price}" th:data-desc="${item.description}"
+				th:data-owned="${item.isOwned}" th:data-img="${item.imageUrl}"
+				th:data-category="${item.itemName.contains('테마') ? 'THEME' : 'BORDER'}" style="cursor: pointer;">
 
 				<div class="item-img-placeholder">
-					<img th:if="${item.imageUrl != null}" th:src="${item.imageUrl}" style="max-width: 60px;">
-					<i th:unless="${item.imageUrl != null}" class="fas fa-gift fa-3x"></i>
+					<th:block th:if="${item.imageUrl != null}">
+
+						<img th:if="${#strings.contains(item.itemName, '테마')}" th:src="${item.imageUrl}"
+							class="shop-thumb-img thumb-theme" alt="Theme Item">
+
+						<img th:unless="${#strings.contains(item.itemName, '테마')}" th:src="${item.imageUrl}"
+							class="shop-thumb-img thumb-border" alt="Border Item">
+
+					</th:block>
+
+					<i th:unless="${item.imageUrl != null}" class="fas fa-gift fa-3x text-gray-300"></i>
 				</div>
 
 				<div class="item-info">
-					<h6 class="font-weight-bold text-gray-900 mb-1" th:text="${item.itemName}">아이템명</h6>
+					<h6 class="font-weight-bold text-gray-900 mb-2" th:text="${item.itemName}">아이템명</h6>
 
-					<div th:if="${item.isOwned}" class="text-secondary font-weight-bold">
-						<i class="fas fa-check-circle"></i> 보유중
+					<div th:if="${item.isOwned}" class="badge badge-secondary px-2 py-1">
+						<i class="fas fa-check mr-1"></i>보유중
 					</div>
-
 					<div th:unless="${item.isOwned}" class="text-success font-weight-bold"
 						th:text="${#numbers.formatInteger(item.price, 0, 'COMMA') + ' P'}">
 						500 P

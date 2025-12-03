@@ -1,96 +1,155 @@
 .shop-container {
-     max-width: 1000px; /* 상점은 아이템 나열을 위해 좀 더 넓게 */
-     width: 100%;
-     margin: 0 auto;
-     padding-top: 0.5rem;
-     padding-bottom: 3rem;
- }
+	max-width: 1000px;
+	/* 상점은 아이템 나열을 위해 좀 더 넓게 */
+	width: 100%;
+	margin: 0 auto;
+	padding-top: 0.5rem;
+	padding-bottom: 3rem;
+}
 
- /* 배너 스타일 */
- .shop-banner {
-     height: 200px;
-     background-color: #4e73df; /* Primary Color */
-     border-radius: 1rem;
-     position: relative;
-     overflow: hidden;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     color: white;
-     margin-bottom: 2rem;
-     box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
- }
- 
- /* 아이템 카드 스타일 */
- .item-card {
-     cursor: pointer;
-     transition: transform 0.2s, box-shadow 0.2s;
-     border: 1px solid #e3e6f0;
-     border-radius: 0.5rem;
-     overflow: hidden;
-     background: #fff;
-     height: 100%; /* 높이 맞춤 */
- }
- .item-card:hover {
-     transform: translateY(-5px);
-     box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
-     border-color: #4e73df;
- }
- .item-img-placeholder {
-     height: 150px;
-     background-color: #2c3e50; /* 스케치의 진한 남색 느낌 */
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     color: rgba(255,255,255,0.5);
- }
- .item-info {
-     padding: 1rem;
-     text-align: center;
- }
+/* 배너 스타일 */
+.shop-banner {
+	height: 200px;
+	background-color: #4e73df;
+	/* Primary Color */
+	border-radius: 1rem;
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	margin-bottom: 2rem;
+	box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+}
 
- /* 모달 스타일 */
- .modal-item-img {
-     width: 100%;
-     height: 200px;
-     background-color: #2c3e50;
-     border-radius: 0.5rem;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     color: white;
-     font-size: 3rem;
- }
+/* 아이템 카드 스타일 */
+.item-card {
+	cursor: pointer;
+	transition: transform 0.2s, box-shadow 0.2s;
+	border: 1px solid #e3e6f0;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	background: #fff;
+	height: 100%;
+	display: flex;
+	/* [추가] Flex로 변경 */
+	flex-direction: column;
+	/* 세로 정렬 */
+}
 
- /* 플로팅 포인트 배지 스타일 (우측 상단) */
- .point-badge-floating {
-     position: fixed;
-     top: 1.5rem;
-     right: 1rem;
-     z-index: 1000;
-     display: none;
-     
-     padding: 0.8rem 1.2rem;
-     border-radius: 50rem;
-     background-color: #fff;
-     color: #1cc88a;
-     border: 2px solid #1cc88a;
-     
-     box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
-     font-weight: 800;
-     font-size: 1rem;
-     
-     /* jQuery fadeIn/Out 충돌 방지를 위해 transition은 특정 속성만 지정 */
-     transition: transform 0.2s, background-color 0.2s;
- }
+.item-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+	border-color: #4e73df;
+}
 
- .point-badge-floating:hover {
-     background-color: #1cc88a;
-     color: #fff;
-     text-decoration: none;
-     transform: translateY(-3px);
- }
-/* 부트스트랩 자체 내에서 모달오픈될때 padding을 넣게 설정되어 있어서 이걸 방지하는 장치 */ 
+.item-img-placeholder {
+	height: 180px;
+	/* 기존 150px -> 180px 확대 */
+	background-color: #f8f9fc;
+	/* 배경 밝게 변경 */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	/* 이미지 넘침 방지 */
+	position: relative;
+	padding: 1rem;
+	/* 내부 여백 추가 */
+}
+
+.item-info {
+	padding: 1.2rem;
+	text-align: center;
+	flex-grow: 1;
+	/* [추가] 남은 공간 채우기 */
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	border-top: 1px solid #f1f1f1;
+}
+
+/* 모달 스타일 */
+.modal-item-img {
+    width: 100%;
+    height: 250px; /* 높이 고정 */
+    background-color: #f8f9fc;
+    border: 1px solid #eaecf4;
+    border-radius: 0.5rem;
+    
+    /* [핵심] 내부 내용물(이미지)을 상하좌우 정중앙에 배치 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    overflow: hidden; /* 둥근 모서리 밖으로 튀어나가는 것 방지 */
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+/* 플로팅 포인트 배지 스타일 (우측 상단) */
+.point-badge-floating {
+	position: fixed;
+	top: 1.5rem;
+	right: 1rem;
+	z-index: 1000;
+	display: none;
+
+	padding: 0.8rem 1.2rem;
+	border-radius: 50rem;
+	background-color: #fff;
+	color: #1cc88a;
+	border: 2px solid #1cc88a;
+
+	box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+	font-weight: 800;
+	font-size: 1rem;
+
+	/* jQuery fadeIn/Out 충돌 방지를 위해 transition은 특정 속성만 지정 */
+	transition: transform 0.2s, background-color 0.2s;
+}
+
+.point-badge-floating:hover {
+	background-color: #1cc88a;
+	color: #fff;
+	text-decoration: none;
+	transform: translateY(-3px);
+}
+
+.shop-thumb-img {
+	transition: transform 0.3s;
+}
+
+.item-card:hover .shop-thumb-img {
+	transform: scale(1.05);
+	/* 호버 시 살짝 확대 */
+}
+
+/* [추가] 테두리 아이템용 스타일 (동그랗게) */
+.thumb-border {
+	width: 100px;
+	height: 100px;
+	object-fit: contain;
+	/* 테두리는 프로필 사진처럼 보이게 가상의 원 추가 가능 */
+	background-color: #e9ecef;
+	border-radius: 50%;
+	padding: 5px;
+	/* 테두리 안쪽 여백 */
+}
+
+/* [추가] 테마 아이템용 스타일 (가로로 길게) */
+.thumb-theme {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	/* 꽉 채우기 */
+	border-radius: 0.3rem;
+	/* 살짝 둥글게 */
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 부트스트랩 자체 내에서 모달오픈될때 padding을 넣게 설정되어 있어서 이걸 방지하는 장치 */
 body.modal-open {
-    padding-right: 0 !important;
+	padding-right: 0 !important;
 }
