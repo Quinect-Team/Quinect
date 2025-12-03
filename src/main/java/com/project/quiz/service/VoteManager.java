@@ -59,10 +59,9 @@ public class VoteManager {
 			return;
 		}
 
-		// 이미 투표한 사람은 무시 (한 사람 한 표)
-		if (session.hasVoted(voter)) {
-			log.info("이미 투표한 사용자입니다. voter={}", voter);
-			return;
+		String oldChoice = session.getVotes().get(voter);
+		if (oldChoice != null) {
+			log.info("투표 변경: voter={}, oldChoice={}, newChoice={}", voter, oldChoice, choice);
 		}
 
 		// 투표 반영
@@ -125,9 +124,6 @@ public class VoteManager {
 	private static class VoteSession {
 		private final Long voteId;
 		private final String question;
-		private final String description;
-		private final String creator;
-
 		// 누가 어떤 선택을 했는지 (voter -> choice)
 		private final ConcurrentHashMap<String, String> votes = new ConcurrentHashMap<>();
 		// 투표 종료 예약 타이머
@@ -136,8 +132,6 @@ public class VoteManager {
 		VoteSession(Long voteId, String question, String description, String creator) {
 			this.voteId = voteId;
 			this.question = question;
-			this.description = description;
-			this.creator = creator;
 		}
 
 		Long getVoteId() {
@@ -156,8 +150,8 @@ public class VoteManager {
 			this.timer = timer;
 		}
 
-		boolean hasVoted(String voter) {
-			return votes.containsKey(voter);
+		ConcurrentHashMap<String, String> getVotes() {
+			return votes;
 		}
 
 		void addVote(String voter, String choice) {

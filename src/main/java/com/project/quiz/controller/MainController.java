@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.project.quiz.service.AttendanceService;
-import com.project.quiz.service.UserService;
-
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

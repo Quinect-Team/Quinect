@@ -13,6 +13,6 @@ public class GuestUserService {
 
     public boolean validateCharacter(String characterImageUrl) {
         // 예시: 허용된 이미지 목록, URL 패턴 등
-        return characterImageUrl != null && characterImageUrl.endsWith(".png");
+        return characterImageUrl != null && characterImageUrl.endsWith(".svg");
     }
 }

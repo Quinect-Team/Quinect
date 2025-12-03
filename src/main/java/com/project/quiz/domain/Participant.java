@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "participant")
 @Getter
@@ -25,6 +27,7 @@ public class Participant {
     private Room room;
 
     // FK: user 테이블 (nullable 허용)
+    @JsonIgnore  
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = true)
     private User user;
@@ -41,7 +44,4 @@ public class Participant {
     private Long score;
 
     private Long ranking;
-
-    @Column(columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private Boolean ready;
 }

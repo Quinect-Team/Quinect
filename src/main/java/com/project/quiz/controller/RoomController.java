@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import com.project.quiz.config.QRCodeService;
 import com.project.quiz.domain.CodeTable;
 import com.project.quiz.domain.Room;
 import com.project.quiz.domain.User;
+import com.project.quiz.domain.UserProfile;
 import com.project.quiz.dto.GuestUserDto;
 import com.project.quiz.dto.VoteRequest;
 import com.project.quiz.dto.VoteResponse;
@@ -46,6 +48,9 @@ public class RoomController {
 
 	@Autowired
 	private VoteManager voteManager;
+	
+	@Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
 	@GetMapping("/waitroom/form")
 	public String showRoomForm(Model model, Principal principal, HttpSession session) {
@@ -111,12 +116,25 @@ public class RoomController {
 			guestId = guestUser.getGuestId();
 			nickname = guestUser.getNickname();
 			avatarUrl = guestUser.getCharacterImageUrl();
-
 			System.out.println("방 참가: guestId=" + guestId + ", nickname=" + nickname + ", avatarUrl=" + avatarUrl);
 		}
 
 		if (principal != null) {
 			user = userService.findByEmail(principal.getName());
+		}
+
+		if (user != null) {
+			UserProfile userProfile = user.getUserProfile();
+			if (userProfile != null) {
+				nickname = userProfile.getUsername(); // UserProfile의 username 사용
+				avatarUrl = userProfile.getProfileImage(); // UserProfile의 profileImage 사용
+				System.out.println("로그인 사용자 프로필: username=" + nickname + ", profileImage=" + avatarUrl);
+			} else {
+				// UserProfile이 없으면 email 사용
+				nickname = user.getEmail();
+				avatarUrl = null;
+				System.out.println("UserProfile이 없음, email 사용: " + nickname);
+			}
 		}
 
 		participantService.joinRoomIfNotExists(room, user, guestId, nickname, avatarUrl);
@@ -129,9 +147,6 @@ public class RoomController {
 		model.addAttribute("currentUser", user);
 
 		boolean isRoomMaster = (user != null && room.getHostUserId().equals(user.getId()));
-		System.out.println("isRoomMaster=" + isRoomMaster + ", userId=" + (user != null ? user.getId() : null)
-				+ ", hostUserId=" + room.getHostUserId());
-		model.addAttribute("isRoomMaster", isRoomMaster);
 		model.addAttribute("isRoomMaster", isRoomMaster);
 
 		try {
@@ -145,7 +160,25 @@ public class RoomController {
 			// 에러시 기본 값 등 처리
 			model.addAttribute("qrCodeBase64", null);
 		}
-		return "waitroom";
+
+		String joinMessage = nickname + "님이 입장하셨습니다.";
+	    Map<String, Object> joinNotification = new HashMap<>();
+	    joinNotification.put("type", "SYSTEM");
+	    joinNotification.put("sender", "시스템");
+	    joinNotification.put("content", joinMessage);
+	    joinNotification.put("timestamp", System.currentTimeMillis());
+	    
+	    // WebSocket으로 모든 클라이언트에 브로드캐스트
+	    messagingTemplate.convertAndSend("/topic/chat/" + roomCode, joinNotification);
+
+	    // ✅ 참가자 목록 업데이트 알림
+	    Map<String, Object> participantUpdate = new HashMap<>();
+	    participantUpdate.put("type", "PARTICIPANT_UPDATE");
+	    participantUpdate.put("participants", participantService.findByRoom(room));
+	    
+	    messagingTemplate.convertAndSend("/topic/participants/" + roomCode, participantUpdate);
+
+	    return "waitroom";
 	}
 
 	@GetMapping("/joinroom")

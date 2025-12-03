@@ -51,7 +51,12 @@ function initWebSocket() {
 
 		stompClient.subscribe('/topic/chat/' + roomCode, function(message) {
 			var msg = JSON.parse(message.body);
-			displayMessage(msg.sender, msg.content);
+
+			if (msg.type === 'SYSTEM') {
+				displaySystemMessage(msg.sender, msg.content);
+			} else {
+				displayMessage(msg.sender, msg.content);
+			}
 		});
 
 		stompClient.subscribe('/topic/vote/' + roomCode, function(message) {
@@ -63,6 +68,13 @@ function initWebSocket() {
 		stompClient.subscribe('/topic/ready/' + roomCode, function(message) {
 			var readyData = JSON.parse(message.body);
 			handleReadyUpdate(readyData);
+		});
+
+		stompClient.subscribe('/topic/participants/' + roomCode, function(message) {
+			var data = JSON.parse(message.body);
+			if (data.type === 'PARTICIPANT_UPDATE') {
+				updateParticipantUI(data.participants);
+			}
 		});
 
 		if (isRoomMaster) {
@@ -81,6 +93,66 @@ function initWebSocket() {
 		}
 	}, function(error) {
 		console.error('Error: ' + error);
+	});
+}
+
+// ✅ 시스템 메시지 표시 함수
+function displaySystemMessage(sender, content) {
+	var messagesDiv = document.getElementById('messages');
+	var msgDiv = document.createElement('div');
+	msgDiv.innerHTML = '<strong style="color: #28a745;">✓ ' + sender + ':</strong> <em>' + content + '</em>';
+	msgDiv.style.padding = '8px';
+	msgDiv.style.marginBottom = '8px';
+	msgDiv.style.borderBottom = '1px solid #eee';
+	msgDiv.style.color = '#666';
+	msgDiv.style.fontStyle = 'italic';
+	messagesDiv.appendChild(msgDiv);
+	messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+	// localStorage에도 저장
+	var chatMessages = JSON.parse(localStorage.getItem('chatMessages_' + roomCode) || '[]');
+	chatMessages.push({
+		sender: sender,
+		content: content,
+		type: 'SYSTEM',
+		timestamp: new Date().getTime()
+	});
+	localStorage.setItem('chatMessages_' + roomCode, JSON.stringify(chatMessages));
+}
+
+// ✅ 참가자 UI 실시간 업데이트 함수
+function updateParticipantUI(participants) {
+	console.log('Updating participant UI with:', participants);
+
+	var cardBody = document.querySelector('.card.shadow.mb-4 .card-body');
+
+	if (!cardBody) {
+		console.warn('Participant card body not found');
+		return;
+	}
+
+	// 기존 카드 제거 (기존 데이터 남기고 새로 추가)
+	// 대신 동적으로 새로운 카드 추가
+	participants.forEach(function(participant) {
+		// 이미 있는 카드인지 확인
+		var existingCard = document.querySelector('[data-user-id="' + participant.id + '"]');
+
+		if (!existingCard) {
+			// 새로운 참가자 카드 생성
+			var newCard = document.createElement('div');
+			newCard.className = 'card border-success m-2 text-center';
+			newCard.style.cssText = 'width: 114px; height: 180px; position: relative;';
+			newCard.setAttribute('data-user-id', participant.id);
+
+			newCard.innerHTML =
+				'<div class="mt-2">' +
+				'<img src="' + (participant.avatarUrl ? participant.avatarUrl : '/img/default-avatar.png') + '" ' +
+				'class="rounded-circle mb-2" width="55" height="55" alt="avatar">' +
+				'</div>' +
+				'<div class="font-weight-bold text-primary">' + participant.nickname + '</div>';
+
+			cardBody.appendChild(newCard);
+		}
 	});
 }
 
@@ -269,7 +341,6 @@ function escapeHtml(text) {
 
 // ========== 5단계: 팀 선택 함수 ==========
 function openTeamSelectModal() {
-	console.log('=== OPENING TEAM MODAL ===');
 
 	participants = [];
 	teamAssignment = {};
@@ -289,8 +360,10 @@ function openTeamSelectModal() {
 		var userId = el.getAttribute('data-user-id');
 		var nicknameEl = el.querySelector('.font-weight-bold');
 		var nickname = nicknameEl ? nicknameEl.textContent : 'Unknown';
-		if (userId && nickname) {
+
+		if (userId && nickname && el.tagName !== 'BODY') {
 			participants.push({ id: parseInt(userId), nickname: nickname });
+			console.log('Added participant:', { id: userId, nickname: nickname });
 		}
 	});
 
@@ -379,14 +452,24 @@ function setupDragDrop(teamCount) {
 	var teamsContainer = document.getElementById('teamsContainer');
 	teamsContainer.innerHTML = '';
 
+	var savedTeamNames = {};
+	var savedTeamNamesJson = localStorage.getItem('teamNames_' + roomCode);
+	if (savedTeamNamesJson) {
+		savedTeamNames = JSON.parse(savedTeamNamesJson);
+	}
+
 	for (var i = 1; i <= teamCount; i++) {
 		var colDiv = document.createElement('div');
 		colDiv.className = 'col-md-6 mb-3';
 
+		var teamName = savedTeamNames[i] || ('팀 ' + i);
+
 		var teamBox = document.createElement('div');
-		teamBox.className = 'team-box';
-		teamBox.setAttribute('data-team-number', i);
-		teamBox.innerHTML = '<h6 class="font-weight-bold mb-3">팀 ' + i + '</h6>' +
+
+		teamBox.innerHTML =
+			'<div class="form-group mb-2">' +
+			'<input type="text" id="teamName_' + i + '" class="form-control font-weight-bold text-center" value="' + teamName + '" placeholder="팀 이름 입력">' +
+			'</div>' +
 			'<div class="team-members" data-team="' + i + '" style="min-height: 100px; padding: 10px; border: 2px dashed #ccc; border-radius: 6px;"></div>';
 
 		colDiv.appendChild(teamBox);
@@ -483,7 +566,7 @@ function updateParticipantList() {
 	teamAssignment = JSON.parse(savedTeamAssignment);
 	var teamNames = JSON.parse(savedTeamNames);
 
-	var participantCards = document.querySelectorAll('[data-user-id]');
+	var participantCards = document.querySelectorAll('.card[data-user-id]');
 
 	participantCards.forEach(function(card) {
 		var userId = parseInt(card.getAttribute('data-user-id'));
@@ -524,7 +607,7 @@ function submitTeamAssignment() {
 
 		var unassignedCount = participants.length - Object.keys(teamAssignment).length;
 		if (unassignedCount > 0) {
-			alert('모든 참가자를 팀에 배정해주세요. (미배정: ' + unassignedCount + '명)');
+			alert('모든 참가자를 팀에 배정해주세요. (' + unassignedCount + '명)');
 			return;
 		}
 
@@ -632,7 +715,7 @@ function updateReadyButton() {
 			readyBtn.classList.remove('active');
 			readyBtn.style.backgroundColor = '#4e73df';
 			readyBtn.style.border = '';
-			readyBtn.innerHTML = '<i class="fas fa-hourglass-half" style="width: 20px; height: 20px;"></i>  READY';
+			readyBtn.innerHTML = '<i class="far fa-square" style="width: 20px; height: 20px;"></i>  READY';
 		}
 	}
 }

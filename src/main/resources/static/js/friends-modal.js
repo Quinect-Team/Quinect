@@ -304,12 +304,21 @@
 
 		} else if (user.friendshipStatus === 'ACCEPTED') {
 			buttonHtml = `
-	            <button type="button" 
-	                    class="btn btn-outline-secondary btn-sm remove-friend-btn" 
-	                    data-friendship-id="${user.id}"
-	                    title="친구 삭제">
-	                <i class="fas fa-user-minus"></i> 친구 삭제
-	            </button>
+				<div class="d-flex gap-2">
+					<button type="button"
+		                    class="btn btn-info btn-sm send-message-btn"
+		                    data-user-id="${user.id}"
+		                    data-username="${user.username}"
+		                    title="메시지 보내기">
+		                <i class="fas fa-comments"></i> 메시지
+		            </button>
+		            <button type="button" 
+		                    class="btn btn-outline-secondary btn-sm remove-friend-btn" 
+		                    data-friendship-id="${user.id}"
+		                    title="친구 삭제">
+		                <i class="fas fa-user-minus"></i> 친구 삭제
+	            	</button>
+				</div>
 	        `;
 			statusBadge = '<span class="badge badge-success ml-2 small">친구</span>';
 
@@ -609,6 +618,19 @@
 				removeFriend(friendshipId);
 			}
 		});
+		
+		$(document).on('click', '.send-message-btn', function() {
+	        const userId = $(this).data('user-id');
+	        const username = $(this).data('username');
+	        
+	        console.log('메시지 보내기 클릭 - userId:', userId, 'username:', username);
+	        
+	        // TODO: 메시지 전송 모달 열기 또는 채팅 페이지로 이동
+	        alert(username + '님에게 메시지를 보냅니다.');
+	        
+	        // 예: 채팅 페이지로 이동
+	        // window.location.href = '/chat/' + userId;
+	    });		
 
 		// ⭐ 거절/차단 드롭다운 이벤트
 		$(document).on('click', '.reject-friend-btn, .ban-friend-btn', function() {

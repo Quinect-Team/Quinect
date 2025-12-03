@@ -25,7 +25,7 @@
 th:attr="data-room-code=${room.roomCode},
            data-guest-nickname=${guestNickname},
            data-is-room-master=${isRoomMaster},
-		   data-user-id=${currentUser.id}"> 
+		   data-user-id=${currentUser != null ? currentUser.id : 0}">
 <div class="container-fluid py-4">
 
     <!-- 상단 정보 영역 -->
@@ -215,10 +215,9 @@ th:attr="data-room-code=${room.roomCode},
 
                 <div id="dragDropArea" style="display:none;">
                     <hr>
-                    <h6 class="font-weight-bold mb-3">참가자를 팀으로 배정하세요 (드래그 앤 드롭)</h6>
+                    <h6 class="font-weight-bold mb-3">참가자를 팀으로 배정하세요</h6>
                     <div class="mb-3">
                         <div class="border rounded p-3" style="min-height: 100px; background-color: #f8f9fa;">
-                            <small class="text-muted d-block mb-2"><strong>미배정</strong></small>
                             <div id="unassignedArea" class="d-flex flex-wrap gap-2"></div>
                         </div>
                     </div>
