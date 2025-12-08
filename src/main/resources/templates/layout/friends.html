@@ -1,40 +1,87 @@
-<!--친구창 모달 팝업-->
+<!--친구창 + 채팅창 모달 팝업-->
 <div class="modalPOP" th:fragment="friends">
-    <div class="modalpopup bg-white rounded-lg shadow-lg" style="width: 800px; max-height: 1000px; overflow: hidden;">
-        <!-- 헤더 -->
-        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-            <h3 class="mb-0 h5 text-gray-800">
-                <i class="fas fa-user-friends mr-2 text-success"></i>친구 검색
-            </h3>
-            <button type="button" class="closebtn btn btn-link text-gray-600 p-0 text-decoration-none" style="font-size: 28px; line-height: 1;">
-                &times;
-            </button>
+    <div class="modalpopup bg-white rounded-lg shadow-lg" style="width: 800px; max-height: 1000px; overflow: hidden; display: flex; flex-direction: column;">
+
+        <!-- ✅ 친구 영역 래퍼 -->
+        <div id="friendsModal" style="display: flex; flex-direction: column; height: 100%;">
+            <!-- 친구 헤더 -->
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <h3 class="mb-0 h5 text-gray-800">
+                    <i class="fas fa-user-friends mr-2 text-success"></i>친구 검색
+                </h3>
+                <button type="button" class="closebtn btn btn-link text-gray-600 p-0 text-decoration-none" style="font-size: 28px; line-height: 1;">
+                    &times;
+                </button>
+            </div>
+
+            <!-- 검색창 -->
+            <div class="mb-3">
+                <div class="input-group">
+                    <input type="text" 
+                           id="friendSearch" 
+                           class="form-control" 
+                           placeholder="이메일로 검색...">
+                    <div class="input-group-append">
+                        <button class="btn btn-success" type="button" id="searchBtn">
+                            <i class="fas fa-search"></i> 검색
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 친구 목록 -->
+            <div id="friendshipContainer" class="friends-list" style="flex: 1; overflow-y: auto; overflow-x: hidden;">
+                <!-- 초기 상태 메시지 -->
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-search mb-3" style="font-size: 48px; opacity: 0.3;"></i>
+                    <p class="mb-1">이메일로 친구를 검색하세요</p>
+                    <p class="small mb-0">검색창에 친구의 이메일을 입력해주세요.</p>
+                </div>
+            </div>
         </div>
 
-        <!-- 검색창 -->
-        <div class="mb-3">
+        <!-- ✅ 채팅 영역 -->
+        <div id="chatModal" style="display: none; flex-direction: column; height: 100%;">
+            <!-- 헤더 (뒤로가기 + 친구 이름) -->
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-link text-gray-600 p-0 mr-3" 
+                            onclick="backToFriendsList()"
+                            style="font-size: 24px; cursor: pointer;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h5 class="mb-0" id="chatFriendName">-</h5>
+                        <small class="text-muted" id="chatFriendEmail">-</small>
+                    </div>
+                </div>
+                <button type="button" class="closebtn btn btn-link text-gray-600 p-0 text-decoration-none" 
+                        onclick="closeFriendModal()"
+                        style="font-size: 28px; line-height: 1;">
+                    &times;
+                </button>
+            </div>
+
+            <!-- 메시지 영역 -->
+            <div id="messageHistory" class="border rounded p-3 mb-3" 
+                 style="flex: 1; overflow-y: auto; background-color: #f8f9fa;">
+                <p class="text-center text-muted small">메시지가 없습니다.</p>
+            </div>
+
+            <!-- 메시지 입력 -->
             <div class="input-group">
                 <input type="text" 
-                       id="friendSearch" 
+                       id="messageInput"
                        class="form-control" 
-                       placeholder="이메일로 검색...">
+                       placeholder="메시지를 입력하세요..."
+                       onkeypress="if(event.key==='Enter') sendMessage()">
                 <div class="input-group-append">
-                    <button class="btn btn-success" type="button" id="searchBtn">
-                        <i class="fas fa-search"></i> 검색
+                    <button class="btn btn-primary" type="button" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i> 전송
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- ⭐ ID 추가! -->
-        <div id="friendshipContainer" class="friends-list" style="max-height: 820px; overflow-y: auto; overflow-x: hidden;">
-            <!-- 초기 상태 메시지 -->
-            <div class="text-center py-5 text-muted">
-                <i class="fas fa-search mb-3" style="font-size: 48px; opacity: 0.3;"></i>
-                <p class="mb-1">이메일로 친구를 검색하세요</p>
-                <p class="small mb-0">검색창에 친구의 이메일을 입력해주세요.</p>
-            </div>
-        </div>
-    </div>
-</div>
-<!--end 친구창 모달 팝업-->
+    </div> <!-- ✅ modalpopup 닫힘 -->
+</div> <!-- modalPOP 닫힘 -->

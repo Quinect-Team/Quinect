@@ -4,7 +4,7 @@
 		<!-- 출석 이벤트 -->
 		<div class="col-xl-3 col-md-6 mb-4">
 					<div class="card shadow h-100 py-2"
-						th:classappend="${checkedIn} ? 'border-left-success' : 'border-left-info'">
+						th:classappend="${checkedIn} ? 'border-left-success' : 'border-left-success'">
 
 						<div class="card-body">
 							<div class="row no-gutters align-items-center">
@@ -28,7 +28,7 @@
 										</button>
 
 										<button th:unless="${checkedIn}" id="btnCheckIn"
-											class="btn btn-info btn-sm font-weight-bold shadow-sm mr-2" style="flex: 1;">
+											class="btn btn-success btn-sm font-weight-bold shadow-sm mr-2" style="flex: 1;">
 											출석하기
 										</button>
 
@@ -72,11 +72,11 @@
 
 		<!-- 출제한 퀴즈 수 -->
 		<div class="col-xl-3 col-md-6 mb-4">
-			<div class="card border-left-success shadow h-100 py-2">
+			<div class="card border-left-info shadow h-100 py-2">
 				<div class="card-body">
 					<div class="row no-gutters align-items-center">
 						<div class="col mr-2">
-							<div class="text-s font-weight-bold text-success text-uppercase mb-1">
+							<div class="text-s font-weight-bold text-info text-uppercase mb-1">
 								내가 출제한 퀴즈</div>
 							<div class="h5 mb-0 font-weight-bold text-gray-800">215,000</div>
 						</div>

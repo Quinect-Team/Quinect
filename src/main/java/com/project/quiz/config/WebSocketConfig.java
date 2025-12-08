@@ -14,14 +14,22 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+	
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
+		// 1️⃣ 방 진행 (저장 X)
 		registry.addEndpoint("/ws").withSockJS();
+
+		// 2️⃣ 투표 기능 (저장 X)
+		registry.addEndpoint("/ws/vote").withSockJS();
+
+		// 3️⃣ 친구 채팅 (DB 저장 O)
+		registry.addEndpoint("/ws/chat").withSockJS();
 	}
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
-		registry.enableSimpleBroker("/topic");
+		registry.enableSimpleBroker("/topic", "/queue");
 		registry.setApplicationDestinationPrefixes("/app");
 	}
 
@@ -34,7 +42,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 				if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 					Authentication user = SecurityContextHolder.getContext().getAuthentication();
 					if (user == null || !user.isAuthenticated()) {
-						// 필요 시 게스트 인증 처리 또는 예외 던짐
+						// 필요 시 게스트 인증 처리
 					}
 				}
 				return message;
