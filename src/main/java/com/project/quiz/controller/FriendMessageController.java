@@ -1,6 +1,5 @@
 package com.project.quiz.controller;
 
-import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;

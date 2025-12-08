@@ -652,6 +652,9 @@
 	/**
 	 * 메시지 기록 조회 및 표시
 	 */
+	/**
+	 * 메시지 기록 조회 및 표시
+	 */
 	function loadMessageHistory(friendUserId) {
 		console.log('메시지 기록 조회:', friendUserId);
 
@@ -660,7 +663,7 @@
 		const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
 
 		$.ajax({
-			url: '/api/friend-messages/' + friendUserId,  // ⭐ API 경로
+			url: '/api/friend-messages/' + friendUserId,
 			type: 'GET',
 			beforeSend: function(xhr) {
 				if (csrfToken && csrfHeader) {
@@ -668,17 +671,21 @@
 				}
 			},
 			success: function(messages) {
-				console.log('✅ 메시지 기록 조회 성공!', messages);
+				console.log('✅ 메시지 기록 조회 성공!');
+				console.log('전체 응답:', JSON.stringify(messages, null, 2));  // ⭐ 전체 구조 출력
 
-				// 메시지 히스토리 초기화
-				$('#messageHistory').empty();
-
-				if (messages.length === 0) {
+				if (!messages || messages.length === 0) {
 					$('#messageHistory').html(
 						'<p class="text-center text-muted small">메시지가 없습니다.</p>'
 					);
 					return;
 				}
+
+				// 첫 번째 메시지 구조 상세히 출력
+				console.log('첫 번째 메시지 상세:', JSON.stringify(messages[0], null, 2));
+
+				// 메시지 히스토리 초기화
+				$('#messageHistory').empty();
 
 				// 메시지 표시
 				messages.forEach(function(msg) {
@@ -699,25 +706,34 @@
 		});
 	}
 
+
+	/**
+	 * 메시지 하나 표시
+	 */
 	/**
 	 * 메시지 하나 표시
 	 */
 	function displayMessage(msg) {
-		const currentUserEmail = $('body').data('user-email');  // ← 현재 사용자 이메일 필요
+		console.log('메시지 표시:', JSON.stringify(msg, null, 2));
 
-		const messageTime = new Date(msg.createdAt).toLocaleTimeString('ko-KR', {
+		const currentUserId = $('body').data('user-id');
+		console.log('현재 사용자 ID:', currentUserId);
+		console.log('메시지 발신자 ID:', msg.senderId);
+
+		// ⭐ sentAt을 Date 객체로 변환
+		const messageTime = new Date(msg.sentAt).toLocaleTimeString('ko-KR', {
 			hour: '2-digit',
 			minute: '2-digit'
 		});
 
 		// 내 메시지는 오른쪽, 상대 메시지는 왼쪽
-		if (msg.senderEmail === currentUserEmail) {
+		if (msg.senderId === currentUserId) {
 			// 내 메시지
 			$('#messageHistory').append(`
 	            <div class="mb-2 d-flex justify-content-end">
 	                <div class="card bg-primary text-white" style="max-width: 70%; word-break: break-word;">
 	                    <div class="card-body p-2">
-	                        <p class="mb-0">${escapeHtml(msg.content)}</p>
+	                        <p class="mb-0">${escapeHtml(msg.messageText)}</p>
 	                        <small class="text-white-50" style="font-size: 0.75rem;">
 	                            ${messageTime}
 	                        </small>
@@ -731,7 +747,7 @@
 	            <div class="mb-2 d-flex justify-content-start">
 	                <div class="card bg-light" style="max-width: 70%; word-break: break-word;">
 	                    <div class="card-body p-2">
-	                        <p class="mb-0 text-dark">${escapeHtml(msg.content)}</p>
+	                        <p class="mb-0 text-dark">${escapeHtml(msg.messageText)}</p>
 	                        <small class="text-muted" style="font-size: 0.75rem;">
 	                            ${messageTime}
 	                        </small>
@@ -741,6 +757,7 @@
 	        `);
 		}
 	}
+
 
 
 	/**
@@ -801,7 +818,19 @@
 	 */
 	$(document).ready(function() {
 
-		$('body').data('user-email', 'Test1234@ruu.kr');
+		$.ajax({
+			url: '/api/user/current',  // ← 이 API 만들어야 함
+			type: 'GET',
+			success: function(user) {
+				$('body').data('user-id', user.id);
+				$('body').data('user-email', user.email);
+
+				console.log('✅ 현재 사용자:', user.id, user.email);
+			},
+			error: function(xhr) {
+				console.error('❌ 사용자 정보를 가져올 수 없습니다');
+			}
+		});
 
 		console.log('friends-modal.js 로드됨');
 

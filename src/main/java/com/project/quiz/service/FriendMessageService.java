@@ -33,31 +33,22 @@ public class FriendMessageService {
 	/**
 	 * 메시지 전송
 	 */
-	public FriendMessageDTO sendMessage(Long friendshipId, Long senderId, String content) {
-		// 1. friendship 조회
+	public FriendMessageDTO sendMessage(Long friendshipId, Long userId, String content) {
+		// ✅ 친구 관계 존재 여부만 확인
 		Friendship friendship = friendshipRepository.findById(friendshipId)
 				.orElseThrow(() -> new IllegalArgumentException("친구 관계가 없습니다"));
 
-		// 2. status 확인 (accepted만 메시지 가능)
-		if (!"accepted".equals(friendship.getStatus())) {
-			throw new IllegalStateException("친구 관계가 아닙니다");
-		}
-
-		// 3. 메시지 생성
+		// ✅ 메시지만 저장 (friendship 업데이트 X)
 		FriendMessage message = new FriendMessage();
 		message.setFriendship(friendship);
-		message.setSenderId(senderId);
+		message.setSenderId(userId);
 		message.setMessageText(content);
 		message.setIsRead(false);
+		message.setSentAt(LocalDateTime.now());
 
-		// 4. 메시지 저장
 		FriendMessage saved = friendMessageRepository.save(message);
 
-		// 5. friendship 업데이트 시간
-		friendship.setUpdatedAt(LocalDateTime.now());
-		friendshipRepository.save(friendship);
-
-		return convertToDTO(saved);
+		return new FriendMessageDTO(saved);
 	}
 
 	/**
