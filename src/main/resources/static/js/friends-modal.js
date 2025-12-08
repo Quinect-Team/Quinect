@@ -731,7 +731,7 @@
 			// 내 메시지
 			$('#messageHistory').append(`
 	            <div class="mb-2 d-flex justify-content-end">
-	                <div class="card bg-primary text-white" style="max-width: 70%; word-break: break-word;">
+	                <div class="card bg-success text-white" style="max-width: 70%; word-break: break-word;">
 	                    <div class="card-body p-2">
 	                        <p class="mb-0">${escapeHtml(msg.messageText)}</p>
 	                        <small class="text-white-50" style="font-size: 0.75rem;">

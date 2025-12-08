@@ -48,9 +48,9 @@ public class RoomController {
 
 	@Autowired
 	private VoteManager voteManager;
-	
+
 	@Autowired
-    private SimpMessagingTemplate messagingTemplate;
+	private SimpMessagingTemplate messagingTemplate;
 
 	@GetMapping("/waitroom/form")
 	public String showRoomForm(Model model, Principal principal, HttpSession session) {
@@ -162,23 +162,23 @@ public class RoomController {
 		}
 
 		String joinMessage = nickname + "님이 입장하셨습니다.";
-	    Map<String, Object> joinNotification = new HashMap<>();
-	    joinNotification.put("type", "SYSTEM");
-	    joinNotification.put("sender", "시스템");
-	    joinNotification.put("content", joinMessage);
-	    joinNotification.put("timestamp", System.currentTimeMillis());
-	    
-	    // WebSocket으로 모든 클라이언트에 브로드캐스트
-	    messagingTemplate.convertAndSend("/topic/chat/" + roomCode, joinNotification);
+		Map<String, Object> joinNotification = new HashMap<>();
+		joinNotification.put("type", "SYSTEM");
+		joinNotification.put("sender", "시스템");
+		joinNotification.put("content", joinMessage);
+		joinNotification.put("timestamp", System.currentTimeMillis());
 
-	    // ✅ 참가자 목록 업데이트 알림
-	    Map<String, Object> participantUpdate = new HashMap<>();
-	    participantUpdate.put("type", "PARTICIPANT_UPDATE");
-	    participantUpdate.put("participants", participantService.findByRoom(room));
-	    
-	    messagingTemplate.convertAndSend("/topic/participants/" + roomCode, participantUpdate);
+		// WebSocket으로 모든 클라이언트에 브로드캐스트
+		messagingTemplate.convertAndSend("/topic/chat/" + roomCode, joinNotification);
 
-	    return "waitroom";
+		// ✅ 참가자 목록 업데이트 알림
+		Map<String, Object> participantUpdate = new HashMap<>();
+		participantUpdate.put("type", "PARTICIPANT_UPDATE");
+		participantUpdate.put("participants", participantService.findByRoom(room));
+
+		messagingTemplate.convertAndSend("/topic/participants/" + roomCode, participantUpdate);
+
+		return "waitroom";
 	}
 
 	@GetMapping("/joinroom")
@@ -261,6 +261,73 @@ public class RoomController {
 
 		// 그대로 모든 참가자에게 브로드캐스트
 		return readyData;
+	}
+
+	/**
+	 * 친구를 대기방으로 초대 (email 사용)
+	 */
+	@PostMapping("/api/quiz/room/{roomCode}/invite") // ⭐ 경로 수정
+	@ResponseBody
+	public Map<String, Object> inviteFriendToRoom(@PathVariable("roomCode") String roomCode,
+			@RequestParam("friendEmail") String friendEmail // ⭐ email로 변경
+	) {
+		Map<String, Object> response = new HashMap<>();
+
+		try {
+			// 1. 대기방 조회
+			Room room = roomService.getRoomByCode(roomCode);
+			if (room == null) {
+				response.put("success", false);
+				response.put("message", "대기방을 찾을 수 없습니다");
+				return response;
+			}
+
+			// 2. 초대받는 사용자 조회 (email로)
+			User invitedUser = userService.findByEmail(friendEmail); // ⭐ email 사용
+			if (invitedUser == null) {
+				response.put("success", false);
+				response.put("message", "사용자를 찾을 수 없습니다");
+				return response;
+			}
+
+			System.out.println("✅ 친구 초대 - roomCode: " + roomCode + ", email: " + friendEmail);
+
+			// 3. 참가자 추가 (중복 제거)
+			participantService.joinRoomIfNotExists(room, invitedUser, null,
+					invitedUser.getUserProfile() != null ? invitedUser.getUserProfile().getUsername()
+							: invitedUser.getEmail(),
+					invitedUser.getUserProfile() != null ? invitedUser.getUserProfile().getProfileImage() : null);
+
+			// 4. WebSocket으로 참가자 업데이트 브로드캐스트
+			Map<String, Object> participantUpdate = new HashMap<>();
+			participantUpdate.put("type", "PARTICIPANT_UPDATE");
+			participantUpdate.put("participants", participantService.findByRoom(room));
+			messagingTemplate.convertAndSend("/topic/participants/" + roomCode, participantUpdate);
+
+			// 5. 입장 알림 메시지
+			String userName = invitedUser.getUserProfile() != null ? invitedUser.getUserProfile().getUsername()
+					: invitedUser.getEmail();
+			String joinMessage = userName + "님이 입장하셨습니다.";
+
+			Map<String, Object> joinNotification = new HashMap<>();
+			joinNotification.put("type", "SYSTEM");
+			joinNotification.put("sender", "시스템");
+			joinNotification.put("content", joinMessage);
+			joinNotification.put("timestamp", System.currentTimeMillis());
+
+			messagingTemplate.convertAndSend("/topic/chat/" + roomCode, joinNotification);
+
+			response.put("success", true);
+			response.put("message", joinMessage);
+
+		} catch (Exception e) {
+			System.err.println("❌ 친구 초대 실패: " + e.getMessage());
+			e.printStackTrace();
+			response.put("success", false);
+			response.put("message", "초대 중 오류가 발생했습니다: " + e.getMessage());
+		}
+
+		return response;
 	}
 
 }
