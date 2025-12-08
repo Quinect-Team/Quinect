@@ -85,53 +85,61 @@
 <!-- 부트스트랩 -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
-<div id="question-sub" style="margin-bottom:20px;">
-    <input type="text" id="quiz-title" placeholder="퀴즈 제목을 입력하세요" style="width:100%; padding:10px; margin-bottom:10px;">
+<body>
+<div id="question-sub" style="max-width:900px; margin:20px auto;">
+    <input id="quiz-title" type="text" placeholder="퀴즈 제목을 입력하세요" style="width:100%; padding:10px; margin-bottom:10px;">
     <textarea id="quiz-desc" placeholder="퀴즈 설명을 입력하세요(선택)" style="width:100%; padding:10px;"></textarea>
 </div>
 
 <div id="question-container">
 
-	<div class="question-block">
-		<div class="d-flex align-items-center" style="gap:10px;">
-	        <label class="q-label" for="question" style="margin:0; font-weight:bold;">Q1.</label>
+  <!-- 템플릿 문항 (첫 문항, 삭제버튼은 Q1에서 막음) -->
+  <div class="question-block" data-qid="1">
+    <div class="d-flex align-items-center" style="gap:10px;">
+      <label class="q-label" style="margin:0; font-weight:bold;">Q1.</label>
 
-	        <input type="text" name="question" placeholder="문제를 입력하세요" style="flex:1;">
-			
-			<input type="text" name="point" placeholder="점수" style="flex:0.1;">
+      <input type="text" class="q-title" placeholder="문제를 입력하세요" style="flex:1;">
+      <input type="number" class="q-point" placeholder="점수" style="width:80px;">
 
-	        <div class="btn-group dropright">
-			  <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">
-			    문제 유형
-			  </button>
-			  <div class="dropdown-menu">
-			    <a class="dropdown-item select-type" data-type="short_answer" href="#">서술형</a>
-			    <a class="dropdown-item select-type" data-type="multiple_choice" href="#">객관식</a>
-			  </div>
-			</div>
-	    </div>
+      <div class="btn-group dropright">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">문제 유형</button>
+        <div class="dropdown-menu">
+          <a class="dropdown-item select-type" data-type="short_answer" href="#">서술형</a>
+          <a class="dropdown-item select-type" data-type="multiple_choice" href="#">객관식</a>
+        </div>
+      </div>
 
-		<div class="image-container" style="margin-top:10px;">
-		        <input type="file" name="image" accept="image/*">
-		</div>
-			
-			
-	    <div class="text-container" style="margin-top:10px;">
-	        <input type="text" name="sub" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
+      <button class="btn btn-danger delete-question" style="display:none;">삭제</button>
+    </div>
 
-	    </div>
-	</div>
+    <div class="image-container" style="margin-top:10px;">
+      <input type="file" class="image-input" accept="image/*">
+    </div>
+
+    <!-- 서술형 블록 (기본 노출) -->
+    <div class="short-answer-block" style="margin-top:10px;">
+      <input type="text" class="q-answer" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
+    </div>
+
+    <!-- 객관식 블록 (기본 숨김) -->
+    <div class="multiple-choice-block" style="margin-top:10px; display:none;">
+      <div class="option-list"></div>
+      <button type="button" class="btn btn-primary add-option" style="margin-top:10px;">+ 보기 추가</button>
+    </div>
+  </div>
+
 </div>
 
-<!-- 문제 추가 -->
-<div class="add-question-area">
-    <button id="add-question" class="btn btn-secondary">문제 추가</button>
-	<button id="load-question" class="btn btn-secondary">불러오기</button>
-    <button id="remove-question" class="btn btn-secondary">문제 제거</button>
+<!-- 조작 버튼들 -->
+<div class="add-question-area" style="max-width:900px; margin:10px auto;">
+  <button id="add-question" class="btn btn-secondary">문제 추가</button>
+  <button id="load-question" class="btn btn-secondary">불러오기</button>
+  <button id="remove-question" class="btn btn-secondary">문제 제거</button>
 </div>
-<div class="submit-area">
-    <button id="temp-save" class="btn btn-secondary">임시 저장</button>
-    <button id="save" class="btn btn-secondary">저장</button>
+
+<div class="submit-area" style="max-width:900px; margin:10px auto;">
+  <button id="temp-save" class="btn btn-secondary">임시 저장</button>
+  <button id="save" class="btn btn-primary">저장</button>
 </div>
 
 <!-- Bootstrap & Script -->
@@ -139,174 +147,594 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-	document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-	    const container = document.getElementById("question-container");
+  // 요소 참조
+  const container = document.getElementById("question-container");
+  const addBtn = document.getElementById("add-question");
+  const loadBtn = document.getElementById("load-question");
+  const removeBtn = document.getElementById("remove-question");
+  const tempSaveBtn = document.getElementById("temp-save");
+  const saveBtn = document.getElementById("save");
+  const quizTitle = document.getElementById("quiz-title");
+  const quizDesc = document.getElementById("quiz-desc");
 
-	    // ===========================================================
-	    // ⭐ 문항 추가
-	    // ===========================================================
-	    document.getElementById("add-question").addEventListener("click", () => {
+  // CSRF
+  const csrfTokenMeta = document.querySelector("meta[name='_csrf']");
+  const csrfHeaderMeta = document.querySelector("meta[name='_csrf_header']");
+  const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute("content") : null;
+  const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute("content") : null;
 
-	        const first = container.querySelector(".question-block");
-	        const clone = first.cloneNode(true);
+  // 초기 설정: 첫 문항 이벤트 바인딩, qid 세팅
+  setQidsAndAttachAll();
 
-	        const index = container.children.length + 1;
+  // ========== 이벤트: 문제 추가 ==========
+  addBtn.addEventListener("click", () => {
+    const first = container.querySelector(".question-block");
+    const clone = first.cloneNode(true);
 
-	        // 번호 변경
-	        clone.querySelector(".q-label").innerText = `Q${index}.`;
+    // qid 설정 (unique)
+    const newIndex = container.querySelectorAll(".question-block").length + 1;
+    clone.dataset.qid = newIndex;
 
-	        // 입력 초기화
-	        clone.querySelector('input[name="question"]').value = "";
-	        clone.querySelector('input[name="point"]').value = "";
-	        clone.querySelector('input[name="image"]').value = "";
-	        clone.querySelector(".text-container").innerHTML = `
-	            <input type="text" name="sub" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
-	        `;
+    // 초기화
+    clone.querySelector(".q-title").value = "";
+    clone.querySelector(".q-point").value = "";
+    const shortBlock = clone.querySelector(".short-answer-block");
+    const multiBlock = clone.querySelector(".multiple-choice-block");
+    shortBlock.style.display = "block";
+    multiBlock.style.display = "none";
+    clone.querySelector(".q-answer").value = "";
+    clone.querySelector(".image-input").value = "";
+    clone.querySelector(".option-list").innerHTML = "";
 
-	        // 기존 삭제 버튼 제거 후 다시 생성 (Q1은 제거됨)
-	        const delBtn = clone.querySelector(".delete-question");
-	        if (delBtn) delBtn.remove();
+    // show delete for new ones
+    const delBtn = clone.querySelector(".delete-question");
+    delBtn.style.display = "inline-block";
 
-	        // Q2 이상에만 삭제 버튼 추가
-	        if (index > 1) {
-	            const btn = document.createElement("button");
-	            btn.className = "btn btn-danger delete-question";
-	            btn.innerText = "문항 삭제";
-	            btn.style.marginTop = "10px";
+    container.appendChild(clone);
+    attachEventsToBlock(clone);
+    renumber();
+  });
 
-	            btn.addEventListener("click", () => {
-	                clone.remove();
-	                reIndex();
-	            });
+  // ========== 이벤트: 문제 제거(맨끝) ==========
+  removeBtn.addEventListener("click", () => {
+    const blocks = container.querySelectorAll(".question-block");
+    if (blocks.length <= 1) { alert("문항은 최소 1개 이상이어야 합니다."); return; }
+    blocks[blocks.length -1].remove();
+    renumber();
+  });
 
-	            clone.appendChild(btn);
-	        }
+  /* ================================
+     임시 저장 / 불러오기 (localStorage)
+  ================================ */
 
-	        container.appendChild(clone);
-	    });
+  // 임시저장 버튼
+  tempSaveBtn.addEventListener("click", () => {
+      const data = collectQuizDataForLocal();
+      localStorage.setItem("quiz_temp_v1", JSON.stringify(data));
+      alert("임시 저장 완료! (이미지 파일은 저장되지 않습니다)");
+  });
 
+  // 불러오기 버튼
+  loadBtn.addEventListener("click", () => {
+      const saved = localStorage.getItem("quiz_temp_v1");
 
-	    // ===========================================================
-	    // ⭐ 문항 재번호 부여
-	    // ===========================================================
-	    function reIndex() {
-	        [...container.children].forEach((block, idx) => {
-	            block.querySelector(".q-label").innerText = `Q${idx + 1}.`;
+      if (!saved) {
+          alert("임시 저장된 내용이 없습니다.");
+          return;
+      }
 
-	            // Q1은 삭제 버튼 제거
-	            const del = block.querySelector(".delete-question");
-	            if (idx === 0 && del) del.remove();
+      const confirmLoad = confirm("임시 저장된 문제를 불러오시겠습니까?");
+      if (!confirmLoad) return;
 
-	            // Q2+는 삭제 버튼 없으면 생성
-	            if (idx > 0 && !del) {
-	                const btn = document.createElement("button");
-	                btn.className = "btn btn-danger delete-question";
-	                btn.innerText = "문항 삭제";
-	                btn.style.marginTop = "10px";
-
-	                btn.addEventListener("click", () => {
-	                    block.remove();
-	                    reIndex();
-	                });
-
-	                block.appendChild(btn);
-	            }
-	        });
-	    }
-
-
-	    // ===========================================================
-	    // ⭐ 문제 유형 전환 (서술형 ↔ 객관식)
-	    // ===========================================================
-	    container.addEventListener("click", (e) => {
-	        if (!e.target.classList.contains("select-type")) return;
-
-	        const type = e.target.dataset.type;
-	        const block = e.target.closest(".question-block");
-	        const textContainer = block.querySelector(".text-container");
-
-	        // 🔹 서술형
-	        if (type === "short_answer") {
-	            textContainer.innerHTML = `
-	                <input type="text" name="sub" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
-	            `;
-	        }
-
-	        // 🔹 객관식
-	        if (type === "multiple_choice") {
-	            const qIndex = [...container.children].indexOf(block) + 1;
-
-	            textContainer.innerHTML = `
-	                <div class="choice-item" style="display:flex; gap:5px; align-items:center; margin-bottom:5px;">
-	                    <input type="radio" name="choice-${qIndex}">
-	                    <input type="text" class="form-control" placeholder="선지를 입력하세요" style="flex:1;">
-	                    <button class="btn btn-sm btn-danger delete-choice">X</button>
-	                </div>
-
-	                <button class="btn btn-primary btn-sm add-choice" style="margin-top:5px;">선지 추가</button>
-	            `;
-	        }
-	    });
+      const list = JSON.parse(saved);
+      loadQuizFromLocal(list);
+      alert("임시 저장본을 불러왔습니다!");
+  });
 
 
-	    // ===========================================================
-	    // ⭐ 객관식 — 선지 추가 / 삭제
-	    // ===========================================================
-	    container.addEventListener("click", (e) => {
+  /* ================================
+     1) 현재 화면 입력을 localStorage 저장용으로 수집
+  ================================ */
+  function collectQuizDataForLocal() {
+      const blocks = document.querySelectorAll(".question-block");
+      let result = [];
 
-	        // 🔸 선지 추가
-	        if (e.target.classList.contains("add-choice")) {
+      blocks.forEach((b, idx) => {
 
-	            const block = e.target.closest(".question-block");
-	            const index = [...container.children].indexOf(block) + 1;
-	            const textContainer = block.querySelector(".text-container");
+          const type = b.querySelector(".multiple-choice-block").style.display === "block"
+                      ? "multiple_choice"
+                      : "short_answer";
 
-	            const div = document.createElement("div");
-	            div.className = "choice-item";
-	            div.style = "display:flex; gap:5px; align-items:center; margin-bottom:5px;";
+          const item = {
+              number: idx + 1,
+              title: b.querySelector(".q-title").value,
+              point: b.querySelector(".q-point").value,
+              type: type,
+              image: null,            // localStorage에 파일 저장은 불가
+              answer: null,
+              options: []
+          };
 
-	            div.innerHTML = `
-	                <input type="radio" name="choice-${index}">
-	                <input type="text" class="form-control" placeholder="선지를 입력하세요" style="flex:1;">
-	                <button class="btn btn-sm btn-danger delete-choice">X</button>
-	            `;
+          // 서술형
+          if (type === "short_answer") {
+              item.answer = b.querySelector(".q-answer").value;
+          }
 
-	            textContainer.insertBefore(div, e.target);
-	        }
+          // 객관식
+          else {
+              const options = b.querySelectorAll(".option-item");
+
+              options.forEach((opt, i) => {
+                  const text = opt.querySelector(".option-text").value;
+                  const checked = opt.querySelector("input[type=radio]").checked;
+
+                  item.options.push({ number: i + 1, text });
+
+                  if (checked) item.answer = i + 1;
+              });
+          }
+
+          result.push(item);
+      });
+
+      return result;
+  }
 
 
-	        // 🔸 선지 삭제
-	        if (e.target.classList.contains("delete-choice")) {
-	            e.target.closest(".choice-item").remove();
-	        }
-	    });
+  /* ================================
+     2) localStorage에 저장된 내용을 화면에 복원
+  ================================ */
+  function loadQuizFromLocal(list) {
+
+      // 기존 문제 삭제
+      const container = document.getElementById("question-container");
+      container.innerHTML = "";
+
+      list.forEach((q, idx) => {
+          const block = createQuestionBlock();
+          container.appendChild(block);
+
+          block.querySelector(".q-title").value = q.title || "";
+          block.querySelector(".q-point").value = q.point || "";
+
+          // 서술형
+          if (q.type === "short_answer") {
+              block.querySelector(".short-answer-block").style.display = "block";
+              block.querySelector(".multiple-choice-block").style.display = "none";
+              block.querySelector(".q-answer").value = q.answer || "";
+          }
+
+          // 객관식
+          else {
+              block.querySelector(".short-answer-block").style.display = "none";
+              block.querySelector(".multiple-choice-block").style.display = "block";
+
+              const wrap = block.querySelector(".option-list");
+              wrap.innerHTML = "";
+
+              q.options.forEach((opt) => {
+                  const option = createOptionItem();
+                  option.querySelector(".option-text").value = opt.text;
+
+                  // 정답 체크
+                  if (q.answer === opt.number) {
+                      option.querySelector("input[type=radio]").checked = true;
+                  }
+
+                  wrap.appendChild(option);
+              });
+          }
+
+          initQuestionEvents(block);
+      });
+
+      updateNumbers();
+  }
 
 
-	    // ===========================================================
-	    // ⭐ 임시 저장
-	    // ===========================================================
-	    document.getElementById("temp-save").addEventListener("click", () => {
-	        localStorage.setItem("temp-questions", container.innerHTML);
-	        alert("임시 저장 완료!");
-	    });
+  /* ================================
+     3) 자동 임시저장 (입력·선택 시 자동)
+  ================================ */
+  document.addEventListener("input", () => {
+      const data = collectQuizDataForLocal();
+      localStorage.setItem("quiz_temp_v1", JSON.stringify(data));
+  });
+  document.addEventListener("change", () => {
+      const data = collectQuizDataForLocal();
+      localStorage.setItem("quiz_temp_v1", JSON.stringify(data));
+  });
 
 
-	    // ===========================================================
-	    // ⭐ 불러오기
-	    // ===========================================================
-	    document.getElementById("temp-load").addEventListener("click", () => {
-	        const saved = localStorage.getItem("temp-questions");
+  /* ================================
+     4) 페이지 로드시 자동 복원 여부 묻기
+  ================================ */
+  document.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("quiz_temp_v1");
+      if (!saved) return;
 
-	        if (!saved) {
-	            alert("저장된 데이터가 없습니다.");
-	            return;
-	        }
+      const ask = confirm("임시 저장된 문제가 있습니다.\n불러오시겠습니까?");
+      if (!ask) return;
 
-	        container.innerHTML = saved;
-	        reIndex(); // 불러온 뒤 번호 재정렬 + 삭제버튼 재구성
-	    });
+      const list = JSON.parse(saved);
+      loadQuizFromLocal(list);
+  });
+  /* ================================
+     새 문제 블록 생성 함수
+  ================================ */
+  function createQuestionBlock() {
+      const div = document.createElement("div");
+      div.classList.add("question-block");
 
-	});
+      div.innerHTML = `
+          <div class="d-flex align-items-center" style="gap:10px;">
+              <label class="q-label" style="margin:0; font-weight:bold;">Q?.</label>
 
+              <input type="text" class="q-title" placeholder="문제를 입력하세요" style="flex:1;">
+              <input type="text" class="q-point" placeholder="점수" style="width:70px;">
+
+              <div class="btn-group dropright">
+                  <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">
+                      문제 유형
+                  </button>
+                  <div class="dropdown-menu">
+                      <a class="dropdown-item select-type" data-type="short_answer" href="#">서술형</a>
+                      <a class="dropdown-item select-type" data-type="multiple_choice" href="#">객관식</a>
+                  </div>
+              </div>
+
+              <button class="btn btn-danger delete-question">삭제</button>
+          </div>
+
+          <div class="image-container" style="margin-top:10px;">
+              <input type="file" class="image-input" accept="image/*">
+          </div>
+
+          <!-- 서술형 -->
+          <div class="short-answer-block" style="margin-top:10px;">
+              <input type="text" class="q-answer" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
+          </div>
+
+          <!-- 객관식 -->
+          <div class="multiple-choice-block" style="margin-top:10px; display:none;">
+              <div class="option-list"></div>
+              <button class="btn btn-secondary btn-sm add-option" style="margin-top:8px;">보기 추가</button>
+          </div>
+      `;
+
+      initQuestionEvents(div);
+      return div;
+  }
+
+
+  /* ================================
+     객관식 보기 항목 생성 함수
+  ================================ */
+  function createOptionItem() {
+      const wrap = document.createElement("div");
+      wrap.classList.add("option-item");
+      wrap.style.marginBottom = "8px";
+
+      wrap.innerHTML = `
+          <div class="d-flex align-items-center" style="gap:10px;">
+              <input type="radio" name="answer-${Date.now()}">
+              <input type="text" class="option-text" placeholder="보기 입력" style="flex:1;">
+              <button class="btn btn-danger btn-sm delete-option">X</button>
+          </div>
+      `;
+
+      wrap.querySelector(".delete-option").onclick = () => {
+          wrap.remove();
+      };
+
+      return wrap;
+  }
+
+  // ========== 이벤트: 실제 저장(서버전송 FormData) ==========
+  saveBtn.addEventListener('click', async () => {
+    try {
+      // 1) collectForSave 함수가 있으면 재사용 (너 코드에 정의되어 있음)
+      // collectForSave(includeFiles) -> { quizJson, imagesMap }
+      // imagesMap 는 questions 순서와 같은 인덱스로 File 또는 null을 가지는 배열이어야 함.
+      const { quizJson, imagesMap } = collectForSave(true); // includeFiles true -> 파일객체 반환
+
+      console.log("1) 준비된 quizJson (파일 업로드 전):", quizJson);
+      console.log("   imagesMap:", imagesMap);
+
+      // CSRF 설정 (meta 태그에서 가져오기)
+      const csrfMeta = document.querySelector("meta[name='_csrf']");
+      const csrfHeaderMeta = document.querySelector("meta[name='_csrf_header']");
+      const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+      const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : null;
+
+      // 2) 이미지가 있으면 업로드 -> 파일명 받아서 quizJson.questions[i].image 에 넣기
+      for (let i = 0; i < imagesMap.length; i++) {
+        const file = imagesMap[i];
+        if (!file) continue; // 파일 없으면 건너뜀
+
+        // FormData로 파일 전송 (POST /quiz/upload-image)
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const headers = csrfToken ? { [csrfHeader]: csrfToken } : undefined;
+
+        const upRes = await fetch("/quiz/upload-image", {
+          method: "POST",
+          headers: headers,
+          body: fd
+        });
+
+        if (!upRes.ok) {
+          const txt = await upRes.text().catch(()=>null);
+          throw new Error("이미지 업로드 실패: " + (txt || upRes.status));
+        }
+
+        const savedFileName = await upRes.text(); // 서버는 파일명(String) 반환하도록 되어있음
+        console.log(`파일 업로드 완료 (index ${i}): ${savedFileName}`);
+
+        // 서버에 저장할 DTO의 이미지 필드에 저장된 파일명 입력
+        if (quizJson.questions && quizJson.questions[i]) {
+          quizJson.questions[i].image = savedFileName;
+        } else {
+          console.warn("quizJson.questions[" + i + "] 가 없음 — 이미지 이름을 넣을 수 없습니다.");
+        }
+      }
+
+      console.log("2) 이미지 업로드 후 완성된 quizJson:", quizJson);
+
+      // 3) quizJson을 JSON으로 전송 (서버는 @RequestBody QuizDto 를 기대)
+      const postHeaders = {
+        "Content-Type": "application/json"
+      };
+      if (csrfToken && csrfHeader) postHeaders[csrfHeader] = csrfToken;
+
+      const saveRes = await fetch("/quiz/save", {
+        method: "POST",
+        headers: postHeaders,
+        body: JSON.stringify(quizJson)
+      });
+
+      if (!saveRes.ok) {
+        const errText = await saveRes.text().catch(()=>null);
+        throw new Error("서버 저장 실패: " + (errText || saveRes.status));
+      }
+
+      // 성공
+      const successBody = await saveRes.text().catch(()=>null);
+      console.log("서버 저장 응답:", successBody);
+      alert("저장 성공!");
+    } catch (err) {
+      console.error("저장 중 오류:", err);
+      alert("저장 실패: 콘솔을 확인하세요\n" + (err && err.message ? err.message : ""));
+    }
+  });	
+
+  // ---------------- helper functions ----------------
+
+  // collectForSave(mode): mode=true -> include File objects and image placeholders; mode=false -> exclude files (for localStorage)
+  function collectForSave(includeFiles) {
+    const blocks = container.querySelectorAll(".question-block");
+    const questions = [];
+    const imagesMap = []; // index -> File or null (preserve order)
+
+    blocks.forEach((b, idx) => {
+      const qid = idx + 1;
+      const isMultiple = b.querySelector(".multiple-choice-block").style.display === "block";
+
+      // gather options for objective
+      let options = null;
+      let answerOption = null;
+      if (isMultiple) {
+        options = [];
+        // option-item elements inside .option-list
+        const optionEls = b.querySelectorAll(".option-list .option-item");
+        optionEls.forEach((optEl, i) => {
+          const txt = (optEl.querySelector(".option-text") || {}).value || "";
+          options.push(txt);
+          const radio = optEl.querySelector("input[type=radio]");
+          if (radio && radio.checked) answerOption = i + 1;
+        });
+      } else {
+        // subjective answer
+        answerOption = null;
+      }
+
+      const fileInput = b.querySelector(".image-input");
+      const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+      imagesMap.push(includeFiles ? file : null);
+
+      // Build Question DTO matching backend names
+      const qDto = {
+        quizTypeCode: isMultiple ? 2 : 1,                // 1=short,2=multiple
+        questionText: (b.querySelector(".q-title") || {}).value || "",
+        answerOption: isMultiple ? (answerOption !== null ? String(answerOption) : null) : null,
+        point: Number((b.querySelector(".q-point") || {}).value || 0),
+        subjectiveAnswer: !isMultiple ? (b.querySelector(".q-answer") || {}).value || null : null,
+        image: null, // server will store files; send file separately in FormData
+        options: options // array of strings or null
+      };
+
+      questions.push(qDto);
+    });
+
+    const quizJson = {
+      title: quizTitle.value || "",
+      description: quizDesc.value || "",
+      userId: 1, // 필요시 변경
+      questions: questions
+    };
+
+    return { quizJson, imagesMap };
+  }
+
+  // restore local storage data (images cannot be restored)
+  function restoreFromLocal(data) {
+    // clear existing
+    container.innerHTML = "";
+    (data.questions || []).forEach((q, idx) => {
+      const template = createEmptyBlock();
+      // set qid later
+      template.querySelector(".q-title").value = q.questionText || "";
+      template.querySelector(".q-point").value = q.point || "";
+      if (Number(q.quizTypeCode) === 2) {
+        // switch to multiple
+        template.querySelector(".short-answer-block").style.display = "none";
+        template.querySelector(".multiple-choice-block").style.display = "block";
+        const list = template.querySelector(".option-list");
+        list.innerHTML = "";
+        (q.options || []).forEach((optText, i) => {
+          const opt = makeOptionElement(template.dataset.qid || (idx+1), i+1, optText);
+          list.appendChild(opt);
+          // check selected
+          if (q.answerOption && Number(q.answerOption) === i+1) {
+            opt.querySelector("input[type=radio]").checked = true;
+          }
+        });
+      } else {
+        template.querySelector(".short-answer-block").style.display = "block";
+        template.querySelector(".multiple-choice-block").style.display = "none";
+        template.querySelector(".q-answer").value = q.subjectiveAnswer || "";
+      }
+      container.appendChild(template);
+    });
+    setQidsAndAttachAll();
+    renumber();
+  }
+
+  // create empty block from the initial template (cloning and hooking events)
+  function createEmptyBlock() {
+    const first = container.querySelector(".question-block");
+    const clone = first.cloneNode(true);
+    clone.dataset.qid = (container.querySelectorAll(".question-block").length + 1);
+    // reset values
+    clone.querySelector(".q-title").value = "";
+    clone.querySelector(".q-point").value = "";
+    clone.querySelector(".q-answer").value = "";
+    clone.querySelector(".image-input").value = "";
+    clone.querySelector(".option-list").innerHTML = "";
+    clone.querySelector(".delete-question").style.display = "inline-block";
+    attachEventsToBlock(clone);
+    return clone;
+  }
+
+  // attach initial qids and events to existing blocks
+  function setQidsAndAttachAll() {
+    const blocks = container.querySelectorAll(".question-block");
+    blocks.forEach((b, idx) => {
+      b.dataset.qid = idx + 1;
+      // hide delete on first
+      const del = b.querySelector(".delete-question");
+      if (idx === 0) del.style.display = "none"; else del.style.display = "inline-block";
+      attachEventsToBlock(b);
+    });
+    renumber();
+  }
+
+  // attach events to a single block
+  function attachEventsToBlock(block) {
+    // ensure qid exists
+    if (!block.dataset.qid) {
+      block.dataset.qid = container.querySelectorAll(".question-block").length;
+    }
+
+    // delete question button
+    const delBtn = block.querySelector(".delete-question");
+    delBtn.onclick = (e) => {
+      const total = container.querySelectorAll(".question-block").length;
+      if (total <= 1) { alert("문항은 최소 1개 이상이어야 합니다."); return; }
+      block.remove();
+      renumber();
+    };
+
+    // type switching
+    block.querySelectorAll(".select-type").forEach(a => {
+      a.onclick = (ev) => {
+        ev.preventDefault();
+        const type = a.dataset.type;
+        if (type === "short_answer") {
+          block.querySelector(".short-answer-block").style.display = "block";
+          block.querySelector(".multiple-choice-block").style.display = "none";
+        } else {
+          block.querySelector(".short-answer-block").style.display = "none";
+          block.querySelector(".multiple-choice-block").style.display = "block";
+          // if no options, create two defaults
+          const list = block.querySelector(".option-list");
+          if (list.children.length === 0) {
+            list.appendChild(makeOptionElement(block.dataset.qid, 1));
+            list.appendChild(makeOptionElement(block.dataset.qid, 2));
+          }
+        }
+      };
+    });
+
+    // image input onchange (no auto upload here — full upload on save)
+    const imageInput = block.querySelector(".image-input");
+    imageInput.onchange = () => {
+      // no-op or preview logic could go here
+      console.log("이미지 선택됨 for qid", block.dataset.qid, imageInput.files[0]);
+    };
+
+    // add-option
+    const addOptBtn = block.querySelector(".add-option");
+    addOptBtn.onclick = (e) => {
+      e.preventDefault();
+      const list = block.querySelector(".option-list");
+      const idx = list.children.length + 1;
+      list.appendChild(makeOptionElement(block.dataset.qid, idx));
+    };
+
+    // existing delete-option buttons within block (for restored clones)
+    block.querySelectorAll(".delete-option").forEach(btn => {
+      btn.onclick = (ev) => {
+        ev.preventDefault();
+        const row = btn.closest(".option-item");
+        if (row) row.remove();
+      };
+    });
+  }
+
+  // make single option element for a question (qid) with optional text
+  function makeOptionElement(qid, optNumber, text = "") {
+    const div = document.createElement("div");
+    div.className = "option-item";
+    div.style.marginBottom = "8px";
+    const radioName = `choice-${qid}`;
+    div.innerHTML = `
+      <div class="d-flex align-items-center" style="gap:10px;">
+        <input type="radio" name="${radioName}">
+        <input type="text" class="option-text form-control" placeholder="선지 입력" style="flex:1;" value="${escapeHtml(text)}">
+        <button class="btn btn-danger btn-sm delete-option">X</button>
+      </div>
+    `;
+    // attach delete
+    div.querySelector(".delete-option").onclick = (e) => { e.preventDefault(); div.remove(); };
+    return div;
+  }
+
+  // renumber Q labels and ensure radio group names are correct
+  function renumber() {
+    const blocks = container.querySelectorAll(".question-block");
+    blocks.forEach((b, idx) => {
+      b.dataset.qid = idx + 1;
+      const label = b.querySelector(".q-label");
+      if (label) label.textContent = `Q${idx + 1}.`;
+      // adjust radio group names for options
+      b.querySelectorAll(".option-list .option-item").forEach(opt => {
+        const radio = opt.querySelector("input[type=radio]");
+        if (radio) radio.name = `choice-${b.dataset.qid}`;
+      });
+      // show/hide delete on first
+      const del = b.querySelector(".delete-question");
+      if (idx === 0) del.style.display = "none"; else del.style.display = "inline-block";
+    });
+  }
+
+}); // DOMContentLoaded
+
+// small helper to escape HTML in value insertion
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 </script>
