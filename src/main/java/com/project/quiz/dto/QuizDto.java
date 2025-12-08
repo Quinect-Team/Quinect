@@ -12,7 +12,7 @@ public class QuizDto {
 
     @Data
     public static class QuestionDto {
-        private String quizTypeCode;
+        private Integer quizTypeCode;
         private String questionText;
         private String answerOption;
         private Integer point;

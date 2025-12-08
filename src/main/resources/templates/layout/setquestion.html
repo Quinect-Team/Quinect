@@ -126,7 +126,7 @@
 <!-- 문제 추가 -->
 <div class="add-question-area">
     <button id="add-question" class="btn btn-secondary">문제 추가</button>
-	<button id="add-question" class="btn btn-secondary">불러오기</button>
+	<button id="load-question" class="btn btn-secondary">불러오기</button>
     <button id="remove-question" class="btn btn-secondary">문제 제거</button>
 </div>
 <div class="submit-area">
@@ -135,101 +135,178 @@
 </div>
 
 <!-- Bootstrap & Script -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
+<script>
+	document.addEventListener("DOMContentLoaded", () => {
 
-<script type="module">
-	async function uploadImage(file) {
-	    const formData = new FormData();
-	    formData.append("file", file);
+	    const container = document.getElementById("question-container");
 
-	    const res = await fetch("/quiz/upload-image", {
-	        method: "POST",
-	        body: formData
-	    });
+	    // ===========================================================
+	    // ⭐ 문항 추가
+	    // ===========================================================
+	    document.getElementById("add-question").addEventListener("click", () => {
 
-	    return await res.text(); // 서버가 반환한 파일명
-	}
+	        const first = container.querySelector(".question-block");
+	        const clone = first.cloneNode(true);
 
-	
-	function collectQuizData() {
-	    const quizData = {
-	        title: document.getElementById('quiz-title').value,
-	        description: document.getElementById('quiz-desc').value,
-	        userId: 1,   // 필요시 변경
-	        questions: []
-	    };
+	        const index = container.children.length + 1;
 
-	    const blocks = document.querySelectorAll('.question-block');
+	        // 번호 변경
+	        clone.querySelector(".q-label").innerText = `Q${index}.`;
 
-	    blocks.forEach((block, i) => {
-	        const questionText = block.querySelector('input[name="question"]').value;
-	        const typeMenu = block.querySelector('.dropdown-toggle').innerText.trim();
-	        const isObjective = typeMenu.includes("객관식");
+	        // 입력 초기화
+	        clone.querySelector('input[name="question"]').value = "";
+	        clone.querySelector('input[name="point"]').value = "";
+	        clone.querySelector('input[name="image"]').value = "";
+	        clone.querySelector(".text-container").innerHTML = `
+	            <input type="text" name="sub" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
+	        `;
 
-	        // ⭐ point 값 수집
-	        const pointElement = block.querySelector('input[name="point"]');
-	        const point = pointElement ? Number(pointElement.value) : null;
+	        // 기존 삭제 버튼 제거 후 다시 생성 (Q1은 제거됨)
+	        const delBtn = clone.querySelector(".delete-question");
+	        if (delBtn) delBtn.remove();
 
-	        // 객관식 옵션들
-	        let options = [];
-	        if (isObjective) {
-	            const subContainer = block.querySelector('.text-container');
-	            const inputs = subContainer.querySelectorAll('input');
-	            inputs.forEach((inp, idx) => {
-	                options.push(inp.value);
+	        // Q2 이상에만 삭제 버튼 추가
+	        if (index > 1) {
+	            const btn = document.createElement("button");
+	            btn.className = "btn btn-danger delete-question";
+	            btn.innerText = "문항 삭제";
+	            btn.style.marginTop = "10px";
+
+	            btn.addEventListener("click", () => {
+	                clone.remove();
+	                reIndex();
 	            });
+
+	            clone.appendChild(btn);
 	        }
 
-			quizData.questions.push({
-			    questionText: questionText,
-			    quizTypeCode: isObjective ? 2 : 1,
-			    point: point,
-			    answerOption: null,
-			    subjectivenullAnswer: null,
-			    image: null,
-			    options: options
-			});
+	        container.appendChild(clone);
 	    });
 
-	    return quizData;	
-	}
+
+	    // ===========================================================
+	    // ⭐ 문항 재번호 부여
+	    // ===========================================================
+	    function reIndex() {
+	        [...container.children].forEach((block, idx) => {
+	            block.querySelector(".q-label").innerText = `Q${idx + 1}.`;
+
+	            // Q1은 삭제 버튼 제거
+	            const del = block.querySelector(".delete-question");
+	            if (idx === 0 && del) del.remove();
+
+	            // Q2+는 삭제 버튼 없으면 생성
+	            if (idx > 0 && !del) {
+	                const btn = document.createElement("button");
+	                btn.className = "btn btn-danger delete-question";
+	                btn.innerText = "문항 삭제";
+	                btn.style.marginTop = "10px";
+
+	                btn.addEventListener("click", () => {
+	                    block.remove();
+	                    reIndex();
+	                });
+
+	                block.appendChild(btn);
+	            }
+	        });
+	    }
 
 
-	/* 버튼 클릭> 서버 전송 */
-	document.getElementById('save').addEventListener('click', function () {
-	    const quizData = collectQuizData();
+	    // ===========================================================
+	    // ⭐ 문제 유형 전환 (서술형 ↔ 객관식)
+	    // ===========================================================
+	    container.addEventListener("click", (e) => {
+	        if (!e.target.classList.contains("select-type")) return;
 
-	    // 1. HTML 헤더에 심어둔 토큰과 헤더 이름을 가져옵니다.
-	    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-	    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+	        const type = e.target.dataset.type;
+	        const block = e.target.closest(".question-block");
+	        const textContainer = block.querySelector(".text-container");
 
-	    fetch("/quiz/save", {
-	        method: "POST",
-	        headers: {
-	            "Content-Type": "application/json",
-	            [csrfHeader]: csrfToken // 2. 헤더에 토큰을 추가합니다. (예: "X-CSRF-TOKEN": "abcd-1234...")
-	        },
-	        body: JSON.stringify(quizData)
-	    })
-	    .then(res => {
-	        if (!res.ok) throw new Error("서버 에러 발생"); // 에러 처리 추가 권장
-	        return res.text();
-	    })
-	    .then(msg => alert(msg))
-	    .catch(err => console.error(err));
-	});
+	        // 🔹 서술형
+	        if (type === "short_answer") {
+	            textContainer.innerHTML = `
+	                <input type="text" name="sub" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
+	            `;
+	        }
 
-	document.getElementById('temp-save').addEventListener('click', function () {
-	    const quizData = collectQuizData();
-	    fetch("/quiz/temp-save", {
-	        method: "POST",
-	        headers: {"Content-Type": "application/json"},
-	        body: JSON.stringify(quizData)
-	    })
-	    .then(res => res.text())
-	    .then(msg => alert(msg));
+	        // 🔹 객관식
+	        if (type === "multiple_choice") {
+	            const qIndex = [...container.children].indexOf(block) + 1;
+
+	            textContainer.innerHTML = `
+	                <div class="choice-item" style="display:flex; gap:5px; align-items:center; margin-bottom:5px;">
+	                    <input type="radio" name="choice-${qIndex}">
+	                    <input type="text" class="form-control" placeholder="선지를 입력하세요" style="flex:1;">
+	                    <button class="btn btn-sm btn-danger delete-choice">X</button>
+	                </div>
+
+	                <button class="btn btn-primary btn-sm add-choice" style="margin-top:5px;">선지 추가</button>
+	            `;
+	        }
+	    });
+
+
+	    // ===========================================================
+	    // ⭐ 객관식 — 선지 추가 / 삭제
+	    // ===========================================================
+	    container.addEventListener("click", (e) => {
+
+	        // 🔸 선지 추가
+	        if (e.target.classList.contains("add-choice")) {
+
+	            const block = e.target.closest(".question-block");
+	            const index = [...container.children].indexOf(block) + 1;
+	            const textContainer = block.querySelector(".text-container");
+
+	            const div = document.createElement("div");
+	            div.className = "choice-item";
+	            div.style = "display:flex; gap:5px; align-items:center; margin-bottom:5px;";
+
+	            div.innerHTML = `
+	                <input type="radio" name="choice-${index}">
+	                <input type="text" class="form-control" placeholder="선지를 입력하세요" style="flex:1;">
+	                <button class="btn btn-sm btn-danger delete-choice">X</button>
+	            `;
+
+	            textContainer.insertBefore(div, e.target);
+	        }
+
+
+	        // 🔸 선지 삭제
+	        if (e.target.classList.contains("delete-choice")) {
+	            e.target.closest(".choice-item").remove();
+	        }
+	    });
+
+
+	    // ===========================================================
+	    // ⭐ 임시 저장
+	    // ===========================================================
+	    document.getElementById("temp-save").addEventListener("click", () => {
+	        localStorage.setItem("temp-questions", container.innerHTML);
+	        alert("임시 저장 완료!");
+	    });
+
+
+	    // ===========================================================
+	    // ⭐ 불러오기
+	    // ===========================================================
+	    document.getElementById("temp-load").addEventListener("click", () => {
+	        const saved = localStorage.getItem("temp-questions");
+
+	        if (!saved) {
+	            alert("저장된 데이터가 없습니다.");
+	            return;
+	        }
+
+	        container.innerHTML = saved;
+	        reIndex(); // 불러온 뒤 번호 재정렬 + 삭제버튼 재구성
+	    });
+
 	});
 
 </script>

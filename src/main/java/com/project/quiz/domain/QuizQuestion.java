@@ -23,7 +23,8 @@ public class QuizQuestion {
     @JoinColumn(name = "quiz_id")
     private Quiz quiz;
 
-    private String quizTypeCode;
+    private Integer quizTypeCode;
+    
     private String questionText;
     private Integer point;
     
