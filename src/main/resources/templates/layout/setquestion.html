@@ -148,8 +148,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-
-  // 요소 참조
+  // 참조
   const container = document.getElementById("question-container");
   const addBtn = document.getElementById("add-question");
   const loadBtn = document.getElementById("load-question");
@@ -159,496 +158,156 @@ document.addEventListener("DOMContentLoaded", () => {
   const quizTitle = document.getElementById("quiz-title");
   const quizDesc = document.getElementById("quiz-desc");
 
-  // CSRF
+  const LOCAL_KEY = "quiz_temp_v1";
+
+  // CSRF (있으면 사용)
   const csrfTokenMeta = document.querySelector("meta[name='_csrf']");
   const csrfHeaderMeta = document.querySelector("meta[name='_csrf_header']");
   const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute("content") : null;
   const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute("content") : null;
 
-  // 초기 설정: 첫 문항 이벤트 바인딩, qid 세팅
+  // 디바운스 자동저장 타이머
+  let autosaveTimer = null;
+  function debounceAutoSave() {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      const data = collectQuizDataForLocal();
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+      console.log("[autosave] 로컬에 저장됨.", new Date().toISOString());
+    }, 500);
+  }
+
+  // 초기: 기존 블록에 이벤트 연결 및 QID 설정
   setQidsAndAttachAll();
 
-  // ========== 이벤트: 문제 추가 ==========
+  // 자동 복구: 로컬에 임시본이 있으면 페이지 로드 시 자동 복원 (사용자 확인 없음)
+  (function autoRestoreIfExists() {
+    const saved = localStorage.getItem(LOCAL_KEY);
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      // 빈 상태일 때만 자동 복원 (혹은 항상 덮어쓰기를 원하면 조건 제거)
+      // 여기서는 항상 복원하도록 함 (요청사항: 새로고침 시 자동 복구)
+      loadQuizFromLocal(parsed);
+      console.log("[autosore] 로컬 임시본 복원 완료.");
+    } catch (e) {
+      console.warn("로컬 임시본 파싱 실패", e);
+    }
+  })();
+
+
+  // ========== 버튼 이벤트 ==========
+
+  // 문제 추가
   addBtn.addEventListener("click", () => {
-    const first = container.querySelector(".question-block");
-    const clone = first.cloneNode(true);
-
-    // qid 설정 (unique)
-    const newIndex = container.querySelectorAll(".question-block").length + 1;
-    clone.dataset.qid = newIndex;
-
-    // 초기화
-    clone.querySelector(".q-title").value = "";
-    clone.querySelector(".q-point").value = "";
-    const shortBlock = clone.querySelector(".short-answer-block");
-    const multiBlock = clone.querySelector(".multiple-choice-block");
-    shortBlock.style.display = "block";
-    multiBlock.style.display = "none";
-    clone.querySelector(".q-answer").value = "";
-    clone.querySelector(".image-input").value = "";
-    clone.querySelector(".option-list").innerHTML = "";
-
-    // show delete for new ones
-    const delBtn = clone.querySelector(".delete-question");
-    delBtn.style.display = "inline-block";
-
-    container.appendChild(clone);
-    attachEventsToBlock(clone);
+    const newBlock = createQuestionBlock();
+    container.appendChild(newBlock);
     renumber();
+    debounceAutoSave();
   });
 
-  // ========== 이벤트: 문제 제거(맨끝) ==========
+  // 마지막 문제 제거
   removeBtn.addEventListener("click", () => {
     const blocks = container.querySelectorAll(".question-block");
     if (blocks.length <= 1) { alert("문항은 최소 1개 이상이어야 합니다."); return; }
     blocks[blocks.length -1].remove();
     renumber();
+    debounceAutoSave();
   });
 
-  /* ================================
-     임시 저장 / 불러오기 (localStorage)
-  ================================ */
-
-  // 임시저장 버튼
+  // 임시 저장 (수동 버튼)
   tempSaveBtn.addEventListener("click", () => {
-      const data = collectQuizDataForLocal();
-      localStorage.setItem("quiz_temp_v1", JSON.stringify(data));
-      alert("임시 저장 완료! (이미지 파일은 저장되지 않습니다)");
+    const data = collectQuizDataForLocal();
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+    alert("임시 저장 완료! (이미지 파일은 저장되지 않습니다)");
   });
 
-  // 불러오기 버튼
+  // 수동 불러오기 (버튼)
   loadBtn.addEventListener("click", () => {
-      const saved = localStorage.getItem("quiz_temp_v1");
-
-      if (!saved) {
-          alert("임시 저장된 내용이 없습니다.");
-          return;
-      }
-
-      const confirmLoad = confirm("임시 저장된 문제를 불러오시겠습니까?");
-      if (!confirmLoad) return;
-
-      const list = JSON.parse(saved);
-      loadQuizFromLocal(list);
-      alert("임시 저장본을 불러왔습니다!");
+    const saved = localStorage.getItem(LOCAL_KEY);
+    if (!saved) { alert("임시 저장된 내용이 없습니다."); return; }
+    if (!confirm("임시 저장된 문제를 불러오시겠습니까? 기존 내용은 덮어써집니다.")) return;
+    const parsed = JSON.parse(saved);
+    loadQuizFromLocal(parsed);
+    alert("임시 저장본을 불러왔습니다!");
   });
 
+  // 내용 변경 시 자동 임시 저장 (디바운스)
+  document.addEventListener("input", debounceAutoSave);
+  document.addEventListener("change", debounceAutoSave);
 
-  /* ================================
-     1) 현재 화면 입력을 localStorage 저장용으로 수집
-  ================================ */
-  function collectQuizDataForLocal() {
-      const blocks = document.querySelectorAll(".question-block");
-      let result = [];
-
-      blocks.forEach((b, idx) => {
-
-          const type = b.querySelector(".multiple-choice-block").style.display === "block"
-                      ? "multiple_choice"
-                      : "short_answer";
-
-          const item = {
-              number: idx + 1,
-              title: b.querySelector(".q-title").value,
-              point: b.querySelector(".q-point").value,
-              type: type,
-              image: null,            // localStorage에 파일 저장은 불가
-              answer: null,
-              options: []
-          };
-
-          // 서술형
-          if (type === "short_answer") {
-              item.answer = b.querySelector(".q-answer").value;
-          }
-
-          // 객관식
-          else {
-              const options = b.querySelectorAll(".option-item");
-
-              options.forEach((opt, i) => {
-                  const text = opt.querySelector(".option-text").value;
-                  const checked = opt.querySelector("input[type=radio]").checked;
-
-                  item.options.push({ number: i + 1, text });
-
-                  if (checked) item.answer = i + 1;
-              });
-          }
-
-          result.push(item);
-      });
-
-      return result;
-  }
-
-
-  /* ================================
-     2) localStorage에 저장된 내용을 화면에 복원
-  ================================ */
-  function loadQuizFromLocal(list) {
-
-      // 기존 문제 삭제
-      const container = document.getElementById("question-container");
-      container.innerHTML = "";
-
-      list.forEach((q, idx) => {
-          const block = createQuestionBlock();
-          container.appendChild(block);
-
-          block.querySelector(".q-title").value = q.title || "";
-          block.querySelector(".q-point").value = q.point || "";
-
-          // 서술형
-          if (q.type === "short_answer") {
-              block.querySelector(".short-answer-block").style.display = "block";
-              block.querySelector(".multiple-choice-block").style.display = "none";
-              block.querySelector(".q-answer").value = q.answer || "";
-          }
-
-          // 객관식
-          else {
-              block.querySelector(".short-answer-block").style.display = "none";
-              block.querySelector(".multiple-choice-block").style.display = "block";
-
-              const wrap = block.querySelector(".option-list");
-              wrap.innerHTML = "";
-
-              q.options.forEach((opt) => {
-                  const option = createOptionItem();
-                  option.querySelector(".option-text").value = opt.text;
-
-                  // 정답 체크
-                  if (q.answer === opt.number) {
-                      option.querySelector("input[type=radio]").checked = true;
-                  }
-
-                  wrap.appendChild(option);
-              });
-          }
-
-          initQuestionEvents(block);
-      });
-
-      updateNumbers();
-  }
-
-
-  /* ================================
-     3) 자동 임시저장 (입력·선택 시 자동)
-  ================================ */
-  document.addEventListener("input", () => {
-      const data = collectQuizDataForLocal();
-      localStorage.setItem("quiz_temp_v1", JSON.stringify(data));
-  });
-  document.addEventListener("change", () => {
-      const data = collectQuizDataForLocal();
-      localStorage.setItem("quiz_temp_v1", JSON.stringify(data));
-  });
-
-
-  /* ================================
-     4) 페이지 로드시 자동 복원 여부 묻기
-  ================================ */
-  document.addEventListener("DOMContentLoaded", () => {
-      const saved = localStorage.getItem("quiz_temp_v1");
-      if (!saved) return;
-
-      const ask = confirm("임시 저장된 문제가 있습니다.\n불러오시겠습니까?");
-      if (!ask) return;
-
-      const list = JSON.parse(saved);
-      loadQuizFromLocal(list);
-  });
-  /* ================================
-     새 문제 블록 생성 함수
-  ================================ */
-  function createQuestionBlock() {
-      const div = document.createElement("div");
-      div.classList.add("question-block");
-
-      div.innerHTML = `
-          <div class="d-flex align-items-center" style="gap:10px;">
-              <label class="q-label" style="margin:0; font-weight:bold;">Q?.</label>
-
-              <input type="text" class="q-title" placeholder="문제를 입력하세요" style="flex:1;">
-              <input type="text" class="q-point" placeholder="점수" style="width:70px;">
-
-              <div class="btn-group dropright">
-                  <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">
-                      문제 유형
-                  </button>
-                  <div class="dropdown-menu">
-                      <a class="dropdown-item select-type" data-type="short_answer" href="#">서술형</a>
-                      <a class="dropdown-item select-type" data-type="multiple_choice" href="#">객관식</a>
-                  </div>
-              </div>
-
-              <button class="btn btn-danger delete-question">삭제</button>
-          </div>
-
-          <div class="image-container" style="margin-top:10px;">
-              <input type="file" class="image-input" accept="image/*">
-          </div>
-
-          <!-- 서술형 -->
-          <div class="short-answer-block" style="margin-top:10px;">
-              <input type="text" class="q-answer" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
-          </div>
-
-          <!-- 객관식 -->
-          <div class="multiple-choice-block" style="margin-top:10px; display:none;">
-              <div class="option-list"></div>
-              <button class="btn btn-secondary btn-sm add-option" style="margin-top:8px;">보기 추가</button>
-          </div>
-      `;
-
-      initQuestionEvents(div);
-      return div;
-  }
-
-
-  /* ================================
-     객관식 보기 항목 생성 함수
-  ================================ */
-  function createOptionItem() {
-      const wrap = document.createElement("div");
-      wrap.classList.add("option-item");
-      wrap.style.marginBottom = "8px";
-
-      wrap.innerHTML = `
-          <div class="d-flex align-items-center" style="gap:10px;">
-              <input type="radio" name="answer-${Date.now()}">
-              <input type="text" class="option-text" placeholder="보기 입력" style="flex:1;">
-              <button class="btn btn-danger btn-sm delete-option">X</button>
-          </div>
-      `;
-
-      wrap.querySelector(".delete-option").onclick = () => {
-          wrap.remove();
-      };
-
-      return wrap;
-  }
-
-  // ========== 이벤트: 실제 저장(서버전송 FormData) ==========
+  // 저장 버튼 => 서버 전송 (기존 로직 재사용)
   saveBtn.addEventListener('click', async () => {
     try {
-      // 1) collectForSave 함수가 있으면 재사용 (너 코드에 정의되어 있음)
-      // collectForSave(includeFiles) -> { quizJson, imagesMap }
-      // imagesMap 는 questions 순서와 같은 인덱스로 File 또는 null을 가지는 배열이어야 함.
-      const { quizJson, imagesMap } = collectForSave(true); // includeFiles true -> 파일객체 반환
-
-      console.log("1) 준비된 quizJson (파일 업로드 전):", quizJson);
-      console.log("   imagesMap:", imagesMap);
-
-      // CSRF 설정 (meta 태그에서 가져오기)
-      const csrfMeta = document.querySelector("meta[name='_csrf']");
-      const csrfHeaderMeta = document.querySelector("meta[name='_csrf_header']");
-      const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
-      const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.getAttribute('content') : null;
-
-      // 2) 이미지가 있으면 업로드 -> 파일명 받아서 quizJson.questions[i].image 에 넣기
+      const { quizJson, imagesMap } = collectForSave(true);
+      // 이미지 업로드 (index 기준)
       for (let i = 0; i < imagesMap.length; i++) {
         const file = imagesMap[i];
-        if (!file) continue; // 파일 없으면 건너뜀
-
-        // FormData로 파일 전송 (POST /quiz/upload-image)
+        if (!file) continue;
         const fd = new FormData();
         fd.append("file", file);
-
         const headers = csrfToken ? { [csrfHeader]: csrfToken } : undefined;
-
-        const upRes = await fetch("/quiz/upload-image", {
-          method: "POST",
-          headers: headers,
-          body: fd
-        });
-
-        if (!upRes.ok) {
-          const txt = await upRes.text().catch(()=>null);
-          throw new Error("이미지 업로드 실패: " + (txt || upRes.status));
-        }
-
-        const savedFileName = await upRes.text(); // 서버는 파일명(String) 반환하도록 되어있음
-        console.log(`파일 업로드 완료 (index ${i}): ${savedFileName}`);
-
-        // 서버에 저장할 DTO의 이미지 필드에 저장된 파일명 입력
-        if (quizJson.questions && quizJson.questions[i]) {
-          quizJson.questions[i].image = savedFileName;
-        } else {
-          console.warn("quizJson.questions[" + i + "] 가 없음 — 이미지 이름을 넣을 수 없습니다.");
-        }
+        const upRes = await fetch("/quiz/upload-image", { method: "POST", headers: headers, body: fd });
+        if (!upRes.ok) throw new Error("이미지 업로드 실패: " + upRes.status);
+        const savedFileName = await upRes.text();
+        if (quizJson.questions && quizJson.questions[i]) quizJson.questions[i].image = savedFileName;
       }
 
-      console.log("2) 이미지 업로드 후 완성된 quizJson:", quizJson);
-
-      // 3) quizJson을 JSON으로 전송 (서버는 @RequestBody QuizDto 를 기대)
-      const postHeaders = {
-        "Content-Type": "application/json"
-      };
+      // quizJson 전송
+      const postHeaders = { "Content-Type": "application/json" };
       if (csrfToken && csrfHeader) postHeaders[csrfHeader] = csrfToken;
 
-      const saveRes = await fetch("/quiz/save", {
-        method: "POST",
-        headers: postHeaders,
-        body: JSON.stringify(quizJson)
-      });
-
+      const saveRes = await fetch("/quiz/save", { method: "POST", headers: postHeaders, body: JSON.stringify(quizJson) });
       if (!saveRes.ok) {
         const errText = await saveRes.text().catch(()=>null);
         throw new Error("서버 저장 실패: " + (errText || saveRes.status));
       }
 
-      // 성공
-      const successBody = await saveRes.text().catch(()=>null);
-      console.log("서버 저장 응답:", successBody);
-      alert("저장 성공!");
+      // 저장 성공하면 로컬 임시본 삭제 (선택적)
+      localStorage.removeItem(LOCAL_KEY);
+      alert("저장 성공! (로컬 임시본 제거됨)");
     } catch (err) {
       console.error("저장 중 오류:", err);
       alert("저장 실패: 콘솔을 확인하세요\n" + (err && err.message ? err.message : ""));
     }
-  });	
+  });
 
-  // ---------------- helper functions ----------------
+  // ----------------- 주요 함수들 -----------------
 
-  // collectForSave(mode): mode=true -> include File objects and image placeholders; mode=false -> exclude files (for localStorage)
-  function collectForSave(includeFiles) {
-    const blocks = container.querySelectorAll(".question-block");
-    const questions = [];
-    const imagesMap = []; // index -> File or null (preserve order)
-
-    blocks.forEach((b, idx) => {
-      const qid = idx + 1;
-      const isMultiple = b.querySelector(".multiple-choice-block").style.display === "block";
-
-      // gather options for objective
-      let options = null;
-      let answerOption = null;
-      if (isMultiple) {
-        options = [];
-        // option-item elements inside .option-list
-        const optionEls = b.querySelectorAll(".option-list .option-item");
-        optionEls.forEach((optEl, i) => {
-          const txt = (optEl.querySelector(".option-text") || {}).value || "";
-          options.push(txt);
-          const radio = optEl.querySelector("input[type=radio]");
-          if (radio && radio.checked) answerOption = i + 1;
-        });
-      } else {
-        // subjective answer
-        answerOption = null;
-      }
-
-      const fileInput = b.querySelector(".image-input");
-      const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-      imagesMap.push(includeFiles ? file : null);
-
-      // Build Question DTO matching backend names
-      const qDto = {
-        quizTypeCode: isMultiple ? 2 : 1,                // 1=short,2=multiple
-        questionText: (b.querySelector(".q-title") || {}).value || "",
-        answerOption: isMultiple ? (answerOption !== null ? String(answerOption) : null) : null,
-        point: Number((b.querySelector(".q-point") || {}).value || 0),
-        subjectiveAnswer: !isMultiple ? (b.querySelector(".q-answer") || {}).value || null : null,
-        image: null, // server will store files; send file separately in FormData
-        options: options // array of strings or null
-      };
-
-      questions.push(qDto);
-    });
-
-    const quizJson = {
-      title: quizTitle.value || "",
-      description: quizDesc.value || "",
-      userId: 1, // 필요시 변경
-      questions: questions
-    };
-
-    return { quizJson, imagesMap };
-  }
-
-  // restore local storage data (images cannot be restored)
-  function restoreFromLocal(data) {
-    // clear existing
-    container.innerHTML = "";
-    (data.questions || []).forEach((q, idx) => {
-      const template = createEmptyBlock();
-      // set qid later
-      template.querySelector(".q-title").value = q.questionText || "";
-      template.querySelector(".q-point").value = q.point || "";
-      if (Number(q.quizTypeCode) === 2) {
-        // switch to multiple
-        template.querySelector(".short-answer-block").style.display = "none";
-        template.querySelector(".multiple-choice-block").style.display = "block";
-        const list = template.querySelector(".option-list");
-        list.innerHTML = "";
-        (q.options || []).forEach((optText, i) => {
-          const opt = makeOptionElement(template.dataset.qid || (idx+1), i+1, optText);
-          list.appendChild(opt);
-          // check selected
-          if (q.answerOption && Number(q.answerOption) === i+1) {
-            opt.querySelector("input[type=radio]").checked = true;
-          }
-        });
-      } else {
-        template.querySelector(".short-answer-block").style.display = "block";
-        template.querySelector(".multiple-choice-block").style.display = "none";
-        template.querySelector(".q-answer").value = q.subjectiveAnswer || "";
-      }
-      container.appendChild(template);
-    });
-    setQidsAndAttachAll();
-    renumber();
-  }
-
-  // create empty block from the initial template (cloning and hooking events)
-  function createEmptyBlock() {
-    const first = container.querySelector(".question-block");
-    const clone = first.cloneNode(true);
-    clone.dataset.qid = (container.querySelectorAll(".question-block").length + 1);
-    // reset values
-    clone.querySelector(".q-title").value = "";
-    clone.querySelector(".q-point").value = "";
-    clone.querySelector(".q-answer").value = "";
-    clone.querySelector(".image-input").value = "";
-    clone.querySelector(".option-list").innerHTML = "";
-    clone.querySelector(".delete-question").style.display = "inline-block";
-    attachEventsToBlock(clone);
-    return clone;
-  }
-
-  // attach initial qids and events to existing blocks
+  // 화면의 모든 question-block에 이벤트 연결 및 qid 설정
   function setQidsAndAttachAll() {
     const blocks = container.querySelectorAll(".question-block");
     blocks.forEach((b, idx) => {
       b.dataset.qid = idx + 1;
-      // hide delete on first
       const del = b.querySelector(".delete-question");
-      if (idx === 0) del.style.display = "none"; else del.style.display = "inline-block";
+      if (del) del.style.display = (idx === 0 ? "none" : "inline-block");
       attachEventsToBlock(b);
     });
     renumber();
   }
 
-  // attach events to a single block
+  // 한 블록에 필요한 이벤트 연결
   function attachEventsToBlock(block) {
-    // ensure qid exists
-    if (!block.dataset.qid) {
-      block.dataset.qid = container.querySelectorAll(".question-block").length;
+    if (!block) return;
+
+    // ensure qid
+    if (!block.dataset.qid) block.dataset.qid = container.querySelectorAll(".question-block").length;
+
+    // 삭제 버튼
+    const delBtn = block.querySelector(".delete-question");
+    if (delBtn) {
+      delBtn.onclick = (e) => {
+        const total = container.querySelectorAll(".question-block").length;
+        if (total <= 1) { alert("문항은 최소 1개 이상이어야 합니다."); return; }
+        block.remove();
+        renumber();
+        debounceAutoSave();
+      };
     }
 
-    // delete question button
-    const delBtn = block.querySelector(".delete-question");
-    delBtn.onclick = (e) => {
-      const total = container.querySelectorAll(".question-block").length;
-      if (total <= 1) { alert("문항은 최소 1개 이상이어야 합니다."); return; }
-      block.remove();
-      renumber();
-    };
-
-    // type switching
-    block.querySelectorAll(".select-type").forEach(a => {
+    // 문제 유형 선택
+    const selects = block.querySelectorAll(".select-type");
+    selects.forEach(a => {
       a.onclick = (ev) => {
         ev.preventDefault();
         const type = a.dataset.type;
@@ -658,48 +317,99 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           block.querySelector(".short-answer-block").style.display = "none";
           block.querySelector(".multiple-choice-block").style.display = "block";
-          // if no options, create two defaults
           const list = block.querySelector(".option-list");
           if (list.children.length === 0) {
             list.appendChild(makeOptionElement(block.dataset.qid, 1));
             list.appendChild(makeOptionElement(block.dataset.qid, 2));
           }
         }
+        debounceAutoSave();
       };
     });
 
-    // image input onchange (no auto upload here — full upload on save)
+    // 이미지 입력 (preview 없음, 선택만 로그)
     const imageInput = block.querySelector(".image-input");
-    imageInput.onchange = () => {
-      // no-op or preview logic could go here
-      console.log("이미지 선택됨 for qid", block.dataset.qid, imageInput.files[0]);
-    };
+    if (imageInput) {
+      imageInput.onchange = () => {
+        console.log("이미지 선택됨 for qid", block.dataset.qid, imageInput.files[0]);
+        debounceAutoSave();
+      };
+    }
 
-    // add-option
+    // 보기 추가 버튼 (객관식)
     const addOptBtn = block.querySelector(".add-option");
-    addOptBtn.onclick = (e) => {
-      e.preventDefault();
-      const list = block.querySelector(".option-list");
-      const idx = list.children.length + 1;
-      list.appendChild(makeOptionElement(block.dataset.qid, idx));
-    };
+    if (addOptBtn) {
+      addOptBtn.onclick = (e) => {
+        e.preventDefault();
+        const list = block.querySelector(".option-list");
+        const idx = list.children.length + 1;
+        list.appendChild(makeOptionElement(block.dataset.qid, idx));
+        debounceAutoSave();
+      };
+    }
 
-    // existing delete-option buttons within block (for restored clones)
+    // 기존에 있는 삭제 옵션 버튼들
     block.querySelectorAll(".delete-option").forEach(btn => {
       btn.onclick = (ev) => {
         ev.preventDefault();
         const row = btn.closest(".option-item");
-        if (row) row.remove();
+        if (row) { row.remove(); debounceAutoSave(); }
       };
+    });
+
+    // 입력 변화가 생기면 autosave 트리거 (개별 필드도 글로벌 이벤트로 잡혀있지만 블록 수준에서도 안전하게)
+    block.querySelectorAll("input, textarea").forEach(inp => {
+      inp.addEventListener("input", debounceAutoSave);
+      inp.addEventListener("change", debounceAutoSave);
     });
   }
 
-  // make single option element for a question (qid) with optional text
+  // 새로운 question-block DOM 생성 (초기 템플릿과 동일한 구조)
+  function createQuestionBlock() {
+    const div = document.createElement("div");
+    div.classList.add("question-block");
+
+    div.innerHTML = `
+      <div class="d-flex align-items-center" style="gap:10px;">
+        <label class="q-label" style="margin:0; font-weight:bold;">Q?.</label>
+        <input type="text" class="q-title" placeholder="문제를 입력하세요" style="flex:1;">
+        <input type="number" class="q-point" placeholder="점수" style="width:80px;">
+        <div class="btn-group dropright">
+          <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">문제 유형</button>
+          <div class="dropdown-menu">
+            <a class="dropdown-item select-type" data-type="short_answer" href="#">서술형</a>
+            <a class="dropdown-item select-type" data-type="multiple_choice" href="#">객관식</a>
+          </div>
+        </div>
+        <button class="btn btn-danger delete-question">삭제</button>
+      </div>
+
+      <div class="image-container" style="margin-top:10px;">
+        <input type="file" class="image-input" accept="image/*">
+      </div>
+
+      <div class="short-answer-block" style="margin-top:10px;">
+        <input type="text" class="q-answer" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
+      </div>
+
+      <div class="multiple-choice-block" style="margin-top:10px; display:none;">
+        <div class="option-list"></div>
+        <button class="btn btn-secondary btn-sm add-option" style="margin-top:8px;">보기 추가</button>
+      </div>
+    `;
+
+    div.dataset.qid = container.querySelectorAll(".question-block").length + 1;
+    // attach events
+    attachEventsToBlock(div);
+    return div;
+  }
+
+  // 객관식 보기 한 항목 생성
   function makeOptionElement(qid, optNumber, text = "") {
     const div = document.createElement("div");
     div.className = "option-item";
     div.style.marginBottom = "8px";
-    const radioName = `choice-${qid}`;
+    const radioName = `choice-${qid}-${Date.now()}`; // 고유 네임
     div.innerHTML = `
       <div class="d-flex align-items-center" style="gap:10px;">
         <input type="radio" name="${radioName}">
@@ -707,34 +417,168 @@ document.addEventListener("DOMContentLoaded", () => {
         <button class="btn btn-danger btn-sm delete-option">X</button>
       </div>
     `;
-    // attach delete
-    div.querySelector(".delete-option").onclick = (e) => { e.preventDefault(); div.remove(); };
+    const del = div.querySelector(".delete-option");
+    del.onclick = (e) => { e.preventDefault(); div.remove(); debounceAutoSave(); };
     return div;
   }
 
-  // renumber Q labels and ensure radio group names are correct
+  // q-label, radio name 등 순번 재정렬
   function renumber() {
     const blocks = container.querySelectorAll(".question-block");
     blocks.forEach((b, idx) => {
       b.dataset.qid = idx + 1;
       const label = b.querySelector(".q-label");
       if (label) label.textContent = `Q${idx + 1}.`;
-      // adjust radio group names for options
+      // option radio name 조정
       b.querySelectorAll(".option-list .option-item").forEach(opt => {
         const radio = opt.querySelector("input[type=radio]");
         if (radio) radio.name = `choice-${b.dataset.qid}`;
       });
-      // show/hide delete on first
+      // first block delete 숨김
       const del = b.querySelector(".delete-question");
-      if (idx === 0) del.style.display = "none"; else del.style.display = "inline-block";
+      if (del) del.style.display = (idx === 0 ? "none" : "inline-block");
     });
   }
 
-}); // DOMContentLoaded
+  // 화면 상태를 localStorage용으로 수집
+  function collectQuizDataForLocal() {
+    const blocks = container.querySelectorAll(".question-block");
+    const result = [];
 
-// small helper to escape HTML in value insertion
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+    blocks.forEach((b, idx) => {
+      const isMultiple = b.querySelector(".multiple-choice-block").style.display === "block";
+      const item = {
+        number: idx + 1,
+        quizTypeCode: isMultiple ? 2 : 1,
+        questionText: (b.querySelector(".q-title") || {}).value || "",
+        point: Number((b.querySelector(".q-point") || {}).value || 0),
+        subjectiveAnswer: !isMultiple ? (b.querySelector(".q-answer") || {}).value || "" : "",
+        options: [],
+        answerOption: null // 객관식이면 index (1-based)
+      };
+
+      if (isMultiple) {
+        const optionEls = b.querySelectorAll(".option-list .option-item");
+        optionEls.forEach((optEl, i) => {
+          const txt = (optEl.querySelector(".option-text") || {}).value || "";
+          const radio = optEl.querySelector("input[type=radio]");
+          if (radio && radio.checked) item.answerOption = i + 1;
+          item.options.push(txt);
+        });
+      }
+      result.push(item);
+    });
+
+    return {
+      title: quizTitle.value || "",
+      description: quizDesc.value || "",
+      questions: result
+    };
+  }
+
+  // 로컬에서 불러온 데이터를 화면으로 복원
+  function loadQuizFromLocal(list) {
+    // 리스트 형식이 바로 questions 배열인지 대응
+    const questions = list.questions || list;
+
+    // 기존 모두 제거
+    container.innerHTML = "";
+
+    // 복원
+    (questions || []).forEach((q, idx) => {
+      const block = createQuestionBlock();
+      container.appendChild(block);
+
+      // 값 채우기
+      block.querySelector(".q-title").value = q.questionText || q.question || "";
+      block.querySelector(".q-point").value = q.point || q.points || 0;
+
+      if (Number(q.quizTypeCode) === 2 || q.quizType === "multiple_choice") {
+        block.querySelector(".short-answer-block").style.display = "none";
+        block.querySelector(".multiple-choice-block").style.display = "block";
+        const wrap = block.querySelector(".option-list");
+        wrap.innerHTML = "";
+        (q.options || []).forEach((optText, i) => {
+          const opt = makeOptionElement(block.dataset.qid, i+1, optText);
+          wrap.appendChild(opt);
+        });
+        // 정답 체크
+        if (q.answerOption) {
+          const idxAns = Number(q.answerOption) - 1;
+          const radios = wrap.querySelectorAll("input[type=radio]");
+          if (radios[idxAns]) radios[idxAns].checked = true;
+        }
+      } else {
+        block.querySelector(".short-answer-block").style.display = "block";
+        block.querySelector(".multiple-choice-block").style.display = "none";
+        block.querySelector(".q-answer").value = q.subjectiveAnswer || q.answer || "";
+      }
+      // 이미지는 복원 불가 (파일 객체가 없기 때문에)
+      block.querySelector(".image-input").value = "";
+      attachEventsToBlock(block);
+    });
+
+    // 타이틀/설명도 채움
+    quizTitle.value = list.title || "";
+    quizDesc.value = list.description || "";
+
+    renumber();
+  }
+
+  // 서버 전송용 수집 (원래 있던 collectForSave과 호환)
+  function collectForSave(includeFiles) {
+    const blocks = container.querySelectorAll(".question-block");
+    const questions = [];
+    const imagesMap = [];
+
+    blocks.forEach((b, idx) => {
+      const isMultiple = b.querySelector(".multiple-choice-block").style.display === "block";
+
+      let options = null;
+      let answerOption = null;
+      if (isMultiple) {
+        options = [];
+        const optionEls = b.querySelectorAll(".option-list .option-item");
+        optionEls.forEach((optEl, i) => {
+          const txt = (optEl.querySelector(".option-text") || {}).value || "";
+          options.push(txt);
+          const radio = optEl.querySelector("input[type=radio]");
+          if (radio && radio.checked) answerOption = i + 1;
+        });
+      }
+
+      const fileInput = b.querySelector(".image-input");
+      const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+      imagesMap.push(includeFiles ? file : null);
+
+      const qDto = {
+        quizTypeCode: isMultiple ? 2 : 1,
+        questionText: (b.querySelector(".q-title") || {}).value || "",
+        answerOption: isMultiple ? (answerOption !== null ? String(answerOption) : null) : null,
+        point: Number((b.querySelector(".q-point") || {}).value || 0),
+        subjectiveAnswer: !isMultiple ? (b.querySelector(".q-answer") || {}).value || null : null,
+        image: null,
+        options: options
+      };
+
+      questions.push(qDto);
+    });
+
+    const quizJson = {
+      title: quizTitle.value || "",
+      description: quizDesc.value || "",
+      userId: 1,
+      questions: questions
+    };
+
+    return { quizJson, imagesMap };
+  }
+
+  // HTML 값 삽입 시 안전을 위한 이스케이프
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+}); // DOMContentLoaded
 </script>
