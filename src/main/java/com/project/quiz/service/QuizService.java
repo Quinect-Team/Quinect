@@ -73,6 +73,16 @@ public class QuizService {
 
         return quiz.getQuizId();
     }
+    
+    public QuizDto getQuiz(Long quizId) {
+
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizId));
+
+        return QuizDto.fromEntity(quiz);
+    }
+    
+    
     public String storeImage(MultipartFile file) throws Exception {
 
         if (file.isEmpty()) {
@@ -97,5 +107,13 @@ public class QuizService {
 
         return fileName; // DB에는 파일명만 저장
     }
+    public List<QuizDto> getQuizList() {
+        List<Quiz> list = quizRepository.findAll();
+
+        return list.stream()
+                .map(QuizDto::fromEntity)
+                .toList();
+    }
+
 
 }

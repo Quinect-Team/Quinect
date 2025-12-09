@@ -85,6 +85,29 @@
 <!-- 부트스트랩 -->
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
+<!-- 퀴즈 리스트 모달 -->
+<div class="modal fade" id="quizListModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">저장된 퀴즈 불러오기</h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- 여기 JS가 넣음 -->
+        <div id="quiz-list"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <body>
 <div id="question-sub" style="max-width:900px; margin:20px auto;">
     <input id="quiz-title" type="text" placeholder="퀴즈 제목을 입력하세요" style="width:100%; padding:10px; margin-bottom:10px;">
@@ -222,15 +245,127 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("임시 저장 완료! (이미지 파일은 저장되지 않습니다)");
   });
 
-  // 수동 불러오기 (버튼)
-  loadBtn.addEventListener("click", () => {
-    const saved = localStorage.getItem(LOCAL_KEY);
-    if (!saved) { alert("임시 저장된 내용이 없습니다."); return; }
-    if (!confirm("임시 저장된 문제를 불러오시겠습니까? 기존 내용은 덮어써집니다.")) return;
-    const parsed = JSON.parse(saved);
-    loadQuizFromLocal(parsed);
-    alert("임시 저장본을 불러왔습니다!");
+  // 불러오기 버튼 클릭 시 → DB 리스트 가져오기
+  // 불러오기 버튼
+  loadBtn.addEventListener("click", async () => {
+    try {
+      const res = await fetch("/quiz/list");
+      if (!res.ok) throw new Error("불러오기 실패");
+
+      const quizzes = await res.json();
+      showQuizListModal(quizzes);
+
+    } catch (e) {
+      alert("퀴즈 목록을 불러올 수 없습니다.");
+      console.error(e);
+    }
   });
+
+
+  // -----------------------------
+  //   모달 열기
+  // -----------------------------
+  window.showQuizListModal = function(list) {
+    const listBox = document.getElementById("quiz-list");
+    listBox.innerHTML = ""; // 기존 내용 초기화
+
+    if (!list || list.length === 0) {
+      listBox.innerHTML = "<p>저장된 퀴즈가 없습니다.</p>";
+    } else {
+      list.forEach(q => {
+        const item = document.createElement("div");
+        item.style.margin = "5px 0";
+
+        item.innerHTML = `
+          <button class="btn btn-outline-primary btn-sm" onclick="loadQuiz(${q.quizId})">
+            ${q.title}
+          </button>
+        `;
+        listBox.appendChild(item);
+      });
+    }
+
+    $("#quizListModal").modal("show"); // Bootstrap 모달 열기
+  };
+
+
+  // -----------------------------
+  //   모달 닫기
+  // -----------------------------
+  window.closeQuizListModal = function() {
+    document.activeElement.blur();
+    $("#quizListModal").modal("hide");
+  };
+
+
+  // -----------------------------
+  //   퀴즈 1개 불러오기
+  // -----------------------------
+  window.loadQuiz = async function(id) {
+    try {
+      const res = await fetch(`/quiz/${id}`);
+      if (!res.ok) throw new Error("퀴즈 불러오기 실패");
+
+      const quiz = await res.json();
+
+      applyQuizToUI(quiz);
+      closeQuizListModal();
+
+    } catch (e) {
+      alert("퀴즈를 불러올 수 없습니다.");
+      console.error(e);
+    }
+  };
+
+
+  // -----------------------------
+  //   불러온 퀴즈 UI 반영
+  // -----------------------------
+  function applyQuizToUI(quiz) {
+    container.innerHTML = "";  // 기존 문제 전부 제거
+
+    quizTitle.value = quiz.title || "";
+    quizDesc.value = quiz.description || "";
+
+    quiz.questions.forEach((q, index) => {
+      const block = createQuestionBlock();
+      container.appendChild(block);
+
+      block.querySelector(".q-title").value = q.questionText || "";
+      block.querySelector(".q-point").value = q.point || 0;
+
+      const isMultiple = q.quizTypeCode === 2;
+
+      if (isMultiple) {
+        block.querySelector(".short-answer-block").style.display = "none";
+        block.querySelector(".multiple-choice-block").style.display = "block";
+
+        const wrap = block.querySelector(".option-list");
+        wrap.innerHTML = "";
+
+        q.options.forEach((text, i) => {
+          const opt = makeOptionElement(block.dataset.qid, i + 1, text);
+          wrap.appendChild(opt);
+        });
+
+        // 정답 선택
+        if (q.answerOption) {
+          const radios = wrap.querySelectorAll("input[type=radio]");
+          const idx = parseInt(q.answerOption) - 1;
+          if (radios[idx]) radios[idx].checked = true;
+        }
+
+      } else {
+        block.querySelector(".short-answer-block").style.display = "block";
+        block.querySelector(".multiple-choice-block").style.display = "none";
+        block.querySelector(".q-answer").value = q.subjectiveAnswer || "";
+      }
+    });
+
+    renumber();
+  }
+
+
 
   // 내용 변경 시 자동 임시 저장 (디바운스)
   document.addEventListener("input", debounceAutoSave);
@@ -581,4 +716,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 }); // DOMContentLoaded
+
+
 </script>
