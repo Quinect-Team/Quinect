@@ -28,7 +28,8 @@
 				</div>
 				<div class="col">
 					<div class="d-flex align-items-center mb-2">
-						<h2 class="h3 font-weight-bold mb-0 mr-2 text-gray-900" th:text="${user.userProfile.username}">사용자명</h2>
+						<h2 class="h3 font-weight-bold mb-0 mr-2 text-gray-900" th:text="${user.userProfile.username}">
+							사용자명</h2>
 
 						<a th:href="@{/profile/settings(source='profile')}" class="text-gray-600 text-decoration-none"
 							title="설정">
@@ -59,13 +60,28 @@
 	</div>
 
 	<h5 class="font-weight-bold text-gray-800 mb-3">업적 내역</h5>
-	<div class="d-flex mb-5">
-		<div class="achievement-icon"><i class="fas fa-trophy text-white"></i></div>
-		<div class="achievement-icon"><i class="fas fa-award text-white"></i></div>
-		<div class="achievement-icon"><i class="fas fa-medal text-white"></i></div>
-		<div class="achievement-icon"><i class="fas fa-star text-white"></i></div>
-	</div>
 
+	<div class="d-flex mb-5 flex-wrap">
+
+		<div th:each="ach : ${achievements}" class="mr-3 mb-3 text-center" th:title="${ach.achievement.title}">
+
+			<div class="achievement-icon-wrapper"
+				style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fc; border-radius: 50%; box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15);">
+
+				<img th:if="${ach.achievement.rewardItem != null and ach.achievement.rewardItem.imageUrl != null}"
+					th:src="${ach.achievement.rewardItem.imageUrl}" alt="Medal"
+					style="width: 60px; height: 60px; object-fit: contain;">
+
+				<i th:unless="${ach.achievement.rewardItem != null and ach.achievement.rewardItem.imageUrl != null}"
+					class="fas fa-medal fa-3x text-warning"></i>
+			</div>
+		</div>
+
+		<div th:if="${#lists.isEmpty(achievements)}" class="col-12 text-center py-3">
+			<span class="text-gray-500">아직 달성한 업적이 없습니다. 분발하세요! 🔥</span>
+		</div>
+
+	</div>
 	<h5 class="font-weight-bold text-gray-800 mb-3">타임라인</h5>
 
 	<div class="timeline-section mb-5" style="padding-bottom: 60px;">

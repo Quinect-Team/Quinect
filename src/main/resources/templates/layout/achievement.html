@@ -1,0 +1,76 @@
+<div th:fragment="achievement">
+    <div class="container-fluid">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">🏆 업적 현황</h1>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-4" th:each="dto : ${achievements}">
+                
+                <div class="card shadow h-100 py-2"
+                     th:classappend="${dto.isAchieved ? 'border-bottom-success' : 'border-left-primary'}">
+                    
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            
+                            <div class="col-auto mr-4">
+                                <div class="achievement-icon-wrapper" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background-color: #f8f9fc;">
+                                    
+                                    <th:block th:if="${dto.isAchieved}">
+                                        <img th:if="${dto.achievement.rewardItem != null}"
+                                             th:src="${dto.achievement.rewardItem.imageUrl}"
+                                             style="width: 45px; height: 45px; object-fit: contain;">
+                                        <i th:unless="${dto.achievement.rewardItem != null}"
+                                           class="fas fa-medal fa-2x text-success"></i>
+                                    </th:block>
+
+                                    <th:block th:unless="${dto.isAchieved}">
+                                        <img th:if="${dto.achievement.rewardItem != null}"
+                                             th:src="${dto.achievement.rewardItem.imageUrl}"
+                                             style="width: 45px; height: 45px; object-fit: contain; filter: grayscale(100%); opacity: 0.5;">
+                                        <i th:unless="${dto.achievement.rewardItem != null}"
+                                           class="fas fa-lock fa-2x text-gray-400"></i>
+                                    </th:block>
+                                </div>
+                            </div>
+
+                            <div class="col">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" 
+                                         th:text="${dto.achievement.title}">업적 제목</div>
+                                    
+                                    <div class="text-xs font-weight-bold text-uppercase mb-1"
+                                         th:classappend="${dto.isAchieved ? 'text-success' : 'text-primary'}">
+                                        <span th:text="${dto.currentValue}">0</span> / <span th:text="${dto.achievement.goalValue}">100</span>
+                                        <span th:if="${dto.isAchieved}" class="ml-2 badge badge-success">Completed!</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-xs text-gray-500 mb-2" th:text="${dto.achievement.description}">
+                                    설명 텍스트가 들어갑니다.
+                                </div>
+
+                                <div class="progress progress-sm mr-2">
+                                    <div class="progress-bar" role="progressbar"
+                                         th:style="'width: ' + ${dto.percent} + '%'"
+                                         th:classappend="${dto.isAchieved ? 'bg-success' : 'bg-primary'}"
+                                         th:aria-valuenow="${dto.percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12" th:if="${#lists.isEmpty(achievements)}">
+                <div class="card shadow mb-4">
+                    <div class="card-body text-center py-5">
+                        등록된 업적이 없습니다.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

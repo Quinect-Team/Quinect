@@ -26,11 +26,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		// 3️⃣ 친구 채팅 (DB 저장 O)
 		registry.addEndpoint("/ws/chat").withSockJS();
 	}
+	
+	
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
 		registry.enableSimpleBroker("/topic", "/queue");
 		registry.setApplicationDestinationPrefixes("/app");
+		
+		//notification 용 추가
+ 		registry.setUserDestinationPrefix("/user");
 	}
 
 	@Override

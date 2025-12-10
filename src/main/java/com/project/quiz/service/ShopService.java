@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.project.quiz.domain.ShopItem;
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserInventory;
+import com.project.quiz.dto.ItemPurchasedEvent;
 import com.project.quiz.dto.ShopItemResponse;
 import com.project.quiz.repository.ShopItemRepository;
 import com.project.quiz.repository.UserInventoryRepository;
@@ -26,6 +28,8 @@ public class ShopService {
     private final ShopItemRepository shopItemRepository;
     private final UserRepository userRepository;
     private final UserInventoryRepository userInventoryRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    
 
     // 1. 상점 목록 조회
     public List<ShopItem> getAvailableItems() {
@@ -53,6 +57,7 @@ public class ShopService {
                 .build();
         
         userInventoryRepository.save(inventory);
+        eventPublisher.publishEvent(new ItemPurchasedEvent(user));
     }
     
     

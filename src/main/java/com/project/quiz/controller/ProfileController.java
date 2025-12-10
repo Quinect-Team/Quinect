@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.project.quiz.domain.User;
+import com.project.quiz.domain.UserAchievement;
 import com.project.quiz.domain.UserInventory;
 import com.project.quiz.dto.TimelineDto;
+import com.project.quiz.repository.UserAchievementRepository;
 import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.InventoryService;
 import com.project.quiz.service.TimelineService;
@@ -28,6 +30,7 @@ public class ProfileController {
 	private final InventoryService inventoryService;
 	private final UserRepository userRepository;// 서비스 주입
 	private final TimelineService timelineService;
+	private final UserAchievementRepository userAchievementRepository;
 
 	// 프로필 페이지 이동
 	@GetMapping("/profile")
@@ -43,6 +46,9 @@ public class ProfileController {
 	             // 2. [추가] 테마 (배경) 이미지 URL 가져오기
 	             String themeUrl = inventoryService.getEquippedItemUrl(user, "THEME");
 	             model.addAttribute("equippedThemeUrl", themeUrl);
+	             
+	             List<UserAchievement> achievements = userAchievementRepository.findByUserAndIsAchievedTrue(user);
+	                model.addAttribute("achievements", achievements);
 	         }
 	         List<TimelineDto> timeline = timelineService.getProfileTimeline(principal.getName());
 	         model.addAttribute("timelineList", timeline);

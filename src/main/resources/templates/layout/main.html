@@ -92,20 +92,31 @@
 
 		<!-- Pending Requests Card Example -->
 		<div class="col-xl-3 col-md-6 mb-4">
-			<div class="card border-left-warning shadow h-100 py-2">
-				<div class="card-body">
-					<div class="row no-gutters align-items-center">
-						<div class="col mr-2">
-							<div class="text-s font-weight-bold text-warning text-uppercase mb-1">
-								내 업적</div>
-							<div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
-						</div>
-						<div class="col-auto">
-							<i class="fas fa-trophy fa-2x text-gray-300"></i>
-						</div>
-					</div>
-				</div>
-			</div>
+		    <div class="card border-left-warning shadow h-100 py-2">
+		        <div class="card-body">
+		            <div class="row no-gutters align-items-center">
+		                <div class="col mr-2">
+		                    
+		                    <div class="text-s font-weight-bold text-warning text-uppercase mb-1">
+		                        달성한 업적
+		                    </div>
+		                    
+		                    <div class="d-flex align-items-center">
+		                        <div class="h5 mb-0 font-weight-bold text-gray-800 mr-3" 
+		                             th:text="${achievedCount}">0</div>
+		                             
+		                        <a th:href="@{/achievement}" class="btn btn-warning btn-sm font-weight-bold text-white shadow-sm">
+		                            <i class="fas fa-trophy mr-1"></i>보러가기
+		                        </a>
+		                    </div>
+		                    
+		                </div>
+		                <div class="col-auto">
+		                    <i class="fas fa-trophy fa-2x text-gray-300"></i>
+		                </div>
+		            </div>
+		        </div>
+		    </div>
 		</div>
 	</div>
 

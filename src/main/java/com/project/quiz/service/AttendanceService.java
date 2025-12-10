@@ -6,12 +6,14 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserActivityAttendance;
 import com.project.quiz.domain.UserActivityLog;
+import com.project.quiz.dto.AttendanceEvent;
 import com.project.quiz.dto.AttendanceEventDto;
 import com.project.quiz.repository.AttendanceRepository;
 import com.project.quiz.repository.UserActivityLogRepository;
@@ -27,6 +29,7 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;
     private final PointService pointService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // [읽기] 오늘 출석 여부 확인 (Log 테이블만 조회)
     @Transactional(readOnly = true)
@@ -74,6 +77,7 @@ public class AttendanceService {
 
         // 3. 포인트 지급 (PointService가 별도 로그 생성함 -> "POINT_EARN" 로그도 같이 쌓임)
         pointService.addPoint(user, 100, "일일 출석체크 보상");
+        eventPublisher.publishEvent(new AttendanceEvent(user));
     }
     
     @Transactional(readOnly = true)

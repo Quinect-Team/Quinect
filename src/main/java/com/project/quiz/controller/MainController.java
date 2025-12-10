@@ -9,59 +9,72 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.project.quiz.domain.User;
+import com.project.quiz.repository.UserAchievementRepository;
+import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.AttendanceService;
+
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Controller
 public class MainController {
-	
+
 	private final AttendanceService attendanceService;
+	private final UserAchievementRepository userAchievementRepository;
+	private final UserRepository userRepository;
 
-    // 1. 루트 접속 시 /index로 리다이렉트 (또는 바로 index 보여주기)
+	// 1. 루트 접속 시 /index로 리다이렉트 (또는 바로 index 보여주기)
 	@GetMapping("/")
-    public String root(Principal principal) {
-        // 1. 로그인한 사용자(Principal이 null이 아님)라면 -> 메인으로
-        if (principal != null) {
-            return "redirect:/main";
-        }
-        
-        // 2. 로그인 안 한 손님이라면 -> 인덱스로
-        return "redirect:/index";
-    }
+	public String root(Principal principal) {
+		// 1. 로그인한 사용자(Principal이 null이 아님)라면 -> 메인으로
+		if (principal != null) {
+			return "redirect:/main";
+		}
 
-    // 2. 인덱스 페이지 (비로그인 접근 가능)
+		// 2. 로그인 안 한 손님이라면 -> 인덱스로
+		return "redirect:/index";
+	}
+
+	// 2. 인덱스 페이지 (비로그인 접근 가능)
 	@GetMapping("/index")
-    public String index(Principal principal) {
-        if (principal != null) {
-            return "redirect:/main";
-        }
-        return "index";
-    }
+	public String index(Principal principal) {
+		if (principal != null) {
+			return "redirect:/main";
+		}
+		return "index";
+	}
 
-    // 3. 메인 페이지 (로그인 후 접근 후 바로 출석체크 불러옴. 수정-2025-11-27)
+	// 3. 메인 페이지 (로그인 후 접근 후 바로 출석체크 불러옴. 수정-2025-11-27)
 	@GetMapping("/main")
-    public String mainPage(Model model, Principal principal) {
-        if (principal != null) {
-            // 출석 여부를 모델에 담음
-            boolean checkedIn = attendanceService.hasCheckedInToday(principal.getName());
-            model.addAttribute("checkedIn", checkedIn);
-        }
-        return "main";
-    }
-	
+	public String mainPage(Model model, Principal principal) {
+		if (principal != null) {
+			User user = userRepository.findByEmail(principal.getName()).orElse(null);
+			if (user != null) {
+				// 1. 출석 여부 (기존 코드)
+				boolean checkedIn = attendanceService.hasCheckedInToday(principal.getName());
+				model.addAttribute("checkedIn", checkedIn);
+
+				// 2. [추가] 달성한 업적 개수 가져오기
+				long achievedCount = userAchievementRepository.countByUserAndIsAchievedTrue(user);
+				model.addAttribute("achievedCount", achievedCount);
+			}
+		}
+		return "main";
+	}
+
 	// 출석체크 AJAX 요청 처리
-    @PostMapping("/api/attendance/check")
-    @ResponseBody
-    public ResponseEntity<String> doAttendance(Principal principal) {
-        try {
-            attendanceService.checkIn(principal.getName());
-            return ResponseEntity.ok("출석체크 완료! 100P가 적립되었습니다.");
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("오류가 발생했습니다.");
-        }
-    }
+	@PostMapping("/api/attendance/check")
+	@ResponseBody
+	public ResponseEntity<String> doAttendance(Principal principal) {
+		try {
+			attendanceService.checkIn(principal.getName());
+			return ResponseEntity.ok("출석체크 완료! 100P가 적립되었습니다.");
+		} catch (IllegalStateException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(500).body("오류가 발생했습니다.");
+		}
+	}
 }
