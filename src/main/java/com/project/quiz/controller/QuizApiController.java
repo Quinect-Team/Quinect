@@ -25,12 +25,6 @@ public class QuizApiController {
         quizService.saveQuiz(quizDto);
         return ResponseEntity.ok("saved");
     }
-
-//    @PostMapping("/temp-save")
-//    public ResponseEntity<?> tempSave(@RequestBody QuizDto quizDto) {
-//        quizService.tempSaveQuiz(quizDto);
-//        return ResponseEntity.ok("temp saved");
-//    }
     
     @PostMapping(value = "/upload-image", consumes = "multipart/form-data")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {

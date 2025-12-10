@@ -182,6 +182,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const quizDesc = document.getElementById("quiz-desc");
 
   const LOCAL_KEY = "quiz_temp_v1";
+  let currentQuizId = null;
+  let currentUserId = null;
 
   // CSRF (있으면 사용)
   const csrfTokenMeta = document.querySelector("meta[name='_csrf']");
@@ -307,8 +309,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error("퀴즈 불러오기 실패");
 
       const quiz = await res.json();
-
       applyQuizToUI(quiz);
+
+      currentQuizId = quiz.quizId; // ← 수정용 ID 저장
       closeQuizListModal();
 
     } catch (e) {
@@ -316,6 +319,15 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(e);
     }
   };
+
+
+  function resetQuizUI() {
+    container.innerHTML = "";
+    quizTitle.value = "";
+    quizDesc.value = "";
+    currentQuizId = null; // 새 퀴즈 모드
+  }
+
 
 
   // -----------------------------
@@ -374,8 +386,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // 저장 버튼 => 서버 전송 (기존 로직 재사용)
   saveBtn.addEventListener('click', async () => {
     try {
-      const { quizJson, imagesMap } = collectForSave(true);
-      // 이미지 업로드 (index 기준)
+      const quizJson = collectQuizData(); // UI 데이터 수집
+
+      // 이미지 업로드 처리 (선택적)
+      const { imagesMap } = collectForSave(true); // 기존 이미지 수집 로직 재사용
       for (let i = 0; i < imagesMap.length; i++) {
         const file = imagesMap[i];
         if (!file) continue;
@@ -388,7 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (quizJson.questions && quizJson.questions[i]) quizJson.questions[i].image = savedFileName;
       }
 
-      // quizJson 전송
+      // Quiz 저장 (새 퀴즈 or 수정)
       const postHeaders = { "Content-Type": "application/json" };
       if (csrfToken && csrfHeader) postHeaders[csrfHeader] = csrfToken;
 
@@ -398,14 +412,17 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("서버 저장 실패: " + (errText || saveRes.status));
       }
 
-      // 저장 성공하면 로컬 임시본 삭제 (선택적)
-      localStorage.removeItem(LOCAL_KEY);
-      alert("저장 성공! (로컬 임시본 제거됨)");
+      localStorage.removeItem(LOCAL_KEY); // 임시본 삭제
+      alert("저장 성공!");
+	  resetQuizEditor();   // Q1 블록만 남는 초기 상태로 되돌림
+	  currentQuizId = null; // 기존 퀴즈 ID 제거 → 새 퀴즈 모드
+
     } catch (err) {
       console.error("저장 중 오류:", err);
-      alert("저장 실패: 콘솔을 확인하세요\n" + (err && err.message ? err.message : ""));
+      alert("저장 실패: 콘솔을 확인하세요\n" + (err?.message || ""));
     }
   });
+
 
   // ----------------- 주요 함수들 -----------------
 
@@ -708,6 +725,107 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return { quizJson, imagesMap };
   }
+  function collectQuizData() {
+    const quiz = {
+      quizId: currentQuizId || null, // 수정 중인 퀴즈 ID
+      title: quizTitle.value,
+      description: quizDesc.value,
+      userId: currentUserId, // 필요하면
+      questions: []
+    };
+
+    const questionBlocks = document.querySelectorAll(".question-block");
+
+    questionBlocks.forEach((block, index) => {
+      const q = {
+        questionText: block.querySelector(".q-title").value,
+        quizTypeCode: parseInt(block.dataset.type), // 1:주관식, 2:객관식
+        point: parseInt(block.querySelector(".q-point").value) || 0,
+        answerOption: null,
+        subjectiveAnswer: null,
+        image: block.dataset.image || null,
+        options: []
+      };
+
+      if (q.quizTypeCode === 2) { // 객관식
+        const optionInputs = block.querySelectorAll(".option-list input[type=text]");
+        optionInputs.forEach(input => q.options.push(input.value));
+
+        const checked = block.querySelector(".option-list input[type=radio]:checked");
+        if (checked) q.answerOption = checked.value;
+      } else { // 주관식
+        q.subjectiveAnswer = block.querySelector(".q-answer").value;
+      }
+
+      quiz.questions.push(q);
+    });
+
+    return quiz;
+  }
+  
+  function resetQuizEditor() {
+    // container, quizTitle, quizDesc는 이미 DOMContentLoaded 내부에서 선언된 변수로 보이므로 그대로 사용
+    try {
+      // 1) 기존 문제 전부 제거
+      container.innerHTML = "";
+
+      // 2) 기본 타이틀/설명 초기화
+      if (quizTitle) quizTitle.value = "";
+      if (quizDesc) quizDesc.value = "";
+
+      // 3) 새 퀴즈 모드로 전환
+      currentQuizId = null;
+
+      // 4) Q1 블럭 생성 (가능하면 createQuestionBlock 사용)
+      if (typeof createQuestionBlock === "function") {
+        const firstBlock = createQuestionBlock();
+        container.appendChild(firstBlock);
+      } else {
+        // fallback: create minimal block DOM if createQuestionBlock가 정의되어 있지 않다면 (방어 코드)
+        const div = document.createElement("div");
+        div.classList.add("question-block");
+        div.innerHTML = `
+          <div class="d-flex align-items-center" style="gap:10px;">
+            <label class="q-label" style="margin:0; font-weight:bold;">Q1.</label>
+            <input type="text" class="q-title" placeholder="문제를 입력하세요" style="flex:1;">
+            <input type="number" class="q-point" placeholder="점수" style="width:80px;">
+            <button class="btn btn-danger delete-question" style="display:none;">삭제</button>
+          </div>
+          <div class="image-container" style="margin-top:10px;">
+            <input type="file" class="image-input" accept="image/*">
+          </div>
+          <div class="short-answer-block" style="margin-top:10px;">
+            <input type="text" class="q-answer" placeholder="정답을 작성하세요." style="width:100%; padding:5px;">
+          </div>
+          <div class="multiple-choice-block" style="margin-top:10px; display:none;">
+            <div class="option-list"></div>
+            <button class="btn btn-secondary btn-sm add-option" style="margin-top:8px;">보기 추가</button>
+          </div>
+        `;
+        container.appendChild(div);
+        // attach events so new elements behave like others
+        attachEventsToBlock(div);
+      }
+
+      // 5) 번호 재정렬 / 이벤트 재연결
+      renumber();
+
+      // 포커스 이동: 제목 입력으로 포커스
+      if (quizTitle) quizTitle.focus();
+
+    } catch (e) {
+      console.error("resetQuizEditor 오류:", e);
+      // 실패해도 화면이 완전히 비어있지 않도록 최소 한 블록 보장
+      if (container && container.children.length === 0) {
+        const fallback = createQuestionBlock ? createQuestionBlock() : document.createElement("div");
+        container.appendChild(fallback);
+        renumber();
+      }
+    }
+  }
+
+
+
 
   // HTML 값 삽입 시 안전을 위한 이스케이프
   function escapeHtml(str) {
@@ -716,6 +834,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 }); // DOMContentLoaded
+
 
 
 </script>
