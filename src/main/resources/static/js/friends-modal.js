@@ -1,13 +1,14 @@
+// ⭐ 전역 변수: 현재 친구 관계 데이터 저장 (IIFE 밖에!)
+window.currentFriendships = { received: [], sent: [], accepted: [] };
+
+// ⭐ 현재 열려 있는 채팅 대상 전역 보관
+window.currentChatUserId = null;
+window.currentChatUsername = null;
+window.currentChatEmail = null;
+
+
 (function($) {
 	'use strict';
-
-	// ⭐ 전역 변수: 현재 친구 관계 데이터 저장
-	let currentFriendships = { received: [], sent: [], accepted: [] };
-
-	// ⭐ 현재 열려 있는 채팅 대상 전역 보관
-	let currentChatUserId = null;
-	let currentChatUsername = null;
-	let currentChatEmail = null;
 
 	/**
 	 * 친구 모달 열기
@@ -635,12 +636,22 @@
 			success: function(response) {
 				console.log('✅ 메시지 전송 성공!', response);
 
-				// 입력창 초기화
+				// ⭐ [중요] 입력창 즉시 클리어
 				$('#messageInput').val('').focus();
 
-				// ⭐ 메시지 기록 다시 불러오기
-				loadMessageHistory(currentChatUserId);
-			},
+				// ⭐ [중요] 응답으로 받은 메시지를 즉시 화면에 표시
+				if (response && response.id) {
+					console.log('⭐ 로컬에서 즉시 메시지 표시:', response);
+					displayMessage(response);
+
+					// 스크롤 자동 아래로
+					setTimeout(function() {
+						var historyDiv = $('#messageHistory');
+						historyDiv.scrollTop(historyDiv[0].scrollHeight);
+					}, 50);
+				}
+			}
+			,
 			error: function(xhr) {
 				console.error('❌ 메시지 전송 실패:', xhr);
 				const errorMsg = xhr.responseText || '메시지 전송에 실패했습니다';
@@ -814,25 +825,151 @@
 	window.sendMessage = sendMessage;
 
 	/**
-	 * DOM 로드 후 이벤트 바인딩
+	 * 1:1 채팅 메시지 실시간 수신 대기 (재구독 가능한 버전)
+	 */
+	function subscribeToPrivateMessages() {
+		console.log('📢 [subscribeToPrivateMessages] 함수 호출됨');
+
+		if (!stompClient || !stompClient.connected) {
+			console.warn('⚠️ WebSocket이 아직 연결되지 않았습니다. 5초 후 재시도...');
+			setTimeout(subscribeToPrivateMessages, 5000);
+			return;
+		}
+
+		console.log('✅ WebSocket 연결 확인됨, stompClient.connected =', stompClient.connected);
+
+		if (window.messageSubscription) {
+			console.log('⚠️ 이미 구독 중입니다. 기존 구독 해제 후 재구독...');
+			window.messageSubscription.unsubscribe();
+		}
+
+		console.log('📢 [SUBSCRIBE] /user/queue/friend-messages 구독 시작...');
+
+		try {
+			window.messageSubscription = stompClient.subscribe('/user/queue/friend-messages', function(message) {
+				var msg = JSON.parse(message.body);
+
+				console.log('\n⚡⚡⚡ [WebSocket 실시간 메시지 도착!]');
+				console.log('📬 메시지 ID:', msg.id);
+				console.log('📬 메시지 발신자 ID:', msg.senderId);
+				console.log('📬 메시지 발신자명:', msg.senderName);
+				console.log('📬 메시지 내용:', msg.messageText);
+				console.log('📬 메시지 시간:', msg.sentAt);
+
+				// 현재 상태 확인
+				console.log('📢 현재 채팅 모달 열려있음?', $('#chatModal').is(':visible'));
+				console.log('📢 현재 채팅 대상 ID:', window.currentChatUserId);
+				console.log('📢 비교 결과: window.currentChatUserId(' + window.currentChatUserId + ') == msg.senderId(' + msg.senderId + ') = ' + (window.currentChatUserId == msg.senderId));
+
+				// ⭐ [수정] 조건 체크 없이 무조건 표시!
+				// 이유: 
+				// 1. 메시지 도착 = 상대방이 보낸 것
+				// 2. 내가 받은 메시지를 무조건 표시해야 함
+				// 3. 채팅 모달 상태와 상관없이 받으면 표시
+
+				console.log('✅ WebSocket 메시지 수신 → displayMessage() 호출');
+				displayMessage(msg);
+
+				// ⭐ 자동 스크롤 (메시지 도착하면 아래로)
+				setTimeout(function() {
+					var historyDiv = $('#messageHistory');
+					if (historyDiv.length > 0) {
+						historyDiv.scrollTop(historyDiv[0].scrollHeight);
+						console.log('📜 스크롤 위치 이동:', historyDiv.scrollTop());
+					}
+				}, 50);
+
+				console.log('');  // 빈 줄
+			});
+
+			window.messageSubscribed = true;
+			console.log('✅ 개인 메시지 수신 대기 중... (구독 등록 완료)\n');
+
+		} catch (error) {
+			console.error('❌ 구독 중 에러 발생:', error);
+		}
+	}
+
+
+	/**
+	 * 초대 메시지 수신 대기 (재구독 가능한 버전)
+	 */
+	function subscribeToInvitations() {
+		console.log('📢 [subscribeToInvitations] 함수 호출됨');
+
+		if (!stompClient || !stompClient.connected) {
+			console.warn('⚠️ WebSocket이 아직 연결되지 않았습니다. 5초 후 재시도...');
+			setTimeout(subscribeToInvitations, 5000);
+			return;
+		}
+
+		console.log('✅ WebSocket 연결 확인됨, stompClient.connected =', stompClient.connected);
+
+		// ⭐ 이미 구독한 경우도 다시 구독
+		if (window.invitationSubscription) {
+			console.log('⚠️ 이미 구독 중입니다. 기존 구독 해제 후 재구독...');
+			window.invitationSubscription.unsubscribe();
+		}
+
+		console.log('📢 [SUBSCRIBE] /user/queue/room-invitations 구독 시작...');
+
+		try {
+			window.invitationSubscription = stompClient.subscribe('/user/queue/room-invitations', function(message) {
+				var invitation = JSON.parse(message.body);
+				console.log('🎯 [WebSocket 초대 메시지 수신]', invitation);
+				showInvitationNotification(invitation);
+			});
+
+			window.invitationSubscribed = true;
+			console.log('✅ 초대 메시지 수신 대기 중... (구독 등록 완료)');
+		} catch (error) {
+			console.error('❌ 초대 구독 중 에러 발생:', error);
+		}
+	}
+
+	window.subscribeToPrivateMessages = subscribeToPrivateMessages;
+	window.subscribeToInvitations = subscribeToInvitations;
+
+	/**
+	 * DOM 로드 후 초기화 (올바른 순서)
 	 */
 	$(document).ready(function() {
 
-		$.ajax({
-			url: '/api/user/current',  // ← 이 API 만들어야 함
-			type: 'GET',
-			success: function(user) {
-				$('body').data('user-id', user.id);
-				$('body').data('user-email', user.email);
+		console.log('========== friends-modal.js 로드됨 ==========');
 
-				console.log('✅ 현재 사용자:', user.id, user.email);
-			},
-			error: function(xhr) {
-				console.error('❌ 사용자 정보를 가져올 수 없습니다');
-			}
+		console.log('🔌 [1단계] WebSocket 초기화 시작...');
+
+		initGlobalWebSocket().then(function() {
+			console.log('✅ [1단계 완료] WebSocket 연결됨');
+
+			// ⭐ [2단계] 사용자 정보 로드
+			console.log('👤 [2단계] 현재 사용자 정보 로드 시작...');
+
+			$.ajax({
+				url: '/api/user/current',
+				type: 'GET',
+				success: function(user) {
+					$('body').data('user-id', user.id);
+					$('body').data('user-email', user.email);
+					console.log('✅ [2단계 완료] 현재 사용자:', user.id, user.email);
+
+					// ⭐ [3단계] 이제 subscribeToPrivateMessages 호출!
+					console.log('📢 [3단계] 메시지 구독 시작...');
+					subscribeToPrivateMessages();
+					subscribeToInvitations();
+				},
+				error: function(xhr) {
+					console.error('❌ [2단계 실패] 사용자 정보를 가져올 수 없습니다');
+				}
+			});
+
+		}).catch(function(error) {
+			console.error('❌ [1단계 실패] WebSocket 연결 실패:', error);
 		});
 
-		console.log('friends-modal.js 로드됨');
+		console.log('friends-modal.js 초기화 완료\n');
+
+		// ⭐ [이벤트 바인딩] (WebSocket과 상관없으므로 언제든 가능)
 
 		// 닫기 버튼 클릭
 		$('.closebtn').on('click', closeFriendModal);
@@ -896,7 +1033,7 @@
 			}
 		});
 
-		// ✅ 메시지 버튼 → 채팅 모달로 전환
+		// 메시지 버튼 → 채팅 모달로 전환
 		$(document).on('click', '.send-message-btn', function() {
 			const userId = $(this).data('user-id');
 			const username = $(this).data('username');
@@ -912,7 +1049,7 @@
 			switchToChatView(userId, username, email);
 		});
 
-		// ✅ 채팅 입력창 엔터로 전송
+		// 채팅 입력창 엔터로 전송
 		$(document).on('keypress', '#messageInput', function(e) {
 			if (e.which === 13) {
 				e.preventDefault();
@@ -934,7 +1071,7 @@
 			}
 		});
 
-		console.log('이벤트 바인딩 완료');
+		console.log('✅ 이벤트 바인딩 완료\n');
 	});
 
 })(jQuery);

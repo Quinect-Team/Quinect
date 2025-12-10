@@ -1,30 +1,41 @@
 package com.project.quiz.config;
 
+import java.util.Collections;
+
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.*;
-import org.springframework.messaging.simp.config.*;
-import org.springframework.messaging.simp.stomp.*;
-import org.springframework.messaging.support.*;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompCommand;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import com.project.quiz.domain.User;
+import com.project.quiz.repository.UserRepository;
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-	
+
+	private final UserRepository userRepository;
+
+	public WebSocketConfig(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
+
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
-		// 1️⃣ 방 진행 (저장 X)
 		registry.addEndpoint("/ws").withSockJS();
-
-		// 2️⃣ 투표 기능 (저장 X)
 		registry.addEndpoint("/ws/vote").withSockJS();
-
-		// 3️⃣ 친구 채팅 (DB 저장 O)
 		registry.addEndpoint("/ws/chat").withSockJS();
+		registry.addEndpoint("/ws/friend-chat").withSockJS();
 	}
 	
 	
@@ -43,15 +54,38 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		registration.interceptors(new ChannelInterceptor() {
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
-				StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-				if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-					Authentication user = SecurityContextHolder.getContext().getAuthentication();
-					if (user == null || !user.isAuthenticated()) {
-						// 필요 시 게스트 인증 처리
+				StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+
+				if (accessor.getCommand() == StompCommand.CONNECT) {
+					System.out.println("🔌 [STOMP CONNECT] 연결 요청");
+
+					try {
+						// ⭐ getFirstNativeHeader() 직접 사용 (이건 public)
+						String userIdHeader = accessor.getFirstNativeHeader("X-User-ID");
+						System.out.println("✅ X-User-ID 헤더: " + userIdHeader);
+
+						if (userIdHeader != null && !userIdHeader.isEmpty()) {
+							String userId = userIdHeader;
+							System.out.println("✅ 클라이언트에서 전달받은 사용자 ID: " + userId);
+
+							// ⭐ Principal 설정
+							UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userId,
+									null, Collections.emptyList());
+
+							accessor.setUser(token);
+							System.out.println("✅ Principal 설정 완료: " + userId);
+						} else {
+							System.out.println("❌ X-User-ID 헤더가 없습니다!");
+						}
+					} catch (Exception e) {
+						System.err.println("❌ 에러: " + e.getMessage());
+						e.printStackTrace();
 					}
 				}
+
 				return message;
 			}
 		});
 	}
+
 }
