@@ -92,7 +92,7 @@ public class FriendMessageController {
 			System.out.println("   목적지: /user/" + receiver.getId() + "/queue/friend-messages");
 
 			try {
-				messagingTemplate.convertAndSendToUser(String.valueOf(receiver.getId()), // 받는 사람 ID
+				messagingTemplate.convertAndSendToUser(receiver.getEmail(), // 받는 사람 ID
 						"/queue/friend-messages", // 목적지
 						message // 메시지 객체
 				);
