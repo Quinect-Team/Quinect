@@ -1,8 +1,6 @@
 package com.project.quiz.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
@@ -41,23 +39,12 @@ public class FriendMessageController {
 				return ResponseEntity.badRequest().body("사용자 정보를 찾을 수 없습니다");
 			}
 
-			System.out.println("\n=== 📨 메시지 전송 시작 ===");
-			System.out.println("현재 사용자 ID: " + currentUserId);
-			System.out.println("FriendshipId: " + friendshipId);
-			System.out.println("Content: " + content);
-
 			// ⭐ 1단계: Service로 메시지 저장
 			FriendMessageDTO message = friendMessageService.sendMessage(friendshipId, currentUserId, content);
 
 			if (message == null) {
-				System.out.println("❌ message가 null입니다!");
 				return ResponseEntity.badRequest().body("메시지 저장에 실패했습니다");
 			}
-
-			System.out.println("✅ 메시지 저장 완료!");
-			System.out.println("   - ID: " + message.getId());
-			System.out.println("   - 내용: " + message.getMessageText());
-			System.out.println("   - 발신자 ID: " + message.getSenderId());
 
 			// ⭐ 2단계: 발신자 정보 설정 (userProfile에서 닉네임 가져오기)
 			User sender = userRepository.findById(currentUserId).orElse(null);
@@ -70,7 +57,6 @@ public class FriendMessageController {
 			}
 
 			message.setSenderName(senderName);
-			System.out.println("   - 발신자 이름: " + senderName);
 
 			// ⭐ 3단계: 상대방(수신자) 찾기
 			Friendship friendship = friendshipRepository.findById(friendshipId)
@@ -83,26 +69,15 @@ public class FriendMessageController {
 				receiver = friendship.getUser();
 			}
 
-			System.out.println("   - 수신자 ID: " + receiver.getId());
-			System.out.println("   - 수신자 이메일: " + receiver.getEmail());
-
-			// ⭐ 4단계: WebSocket으로 상대방에게 실시간 전송!
-			System.out.println("\n📢 [WebSocket 메시지 전송]");
-			System.out.println("   받는사람 ID: " + receiver.getId());
-			System.out.println("   목적지: /user/" + receiver.getId() + "/queue/friend-messages");
-
 			try {
 				messagingTemplate.convertAndSendToUser(receiver.getEmail(), // 받는 사람 ID
 						"/queue/friend-messages", // 목적지
 						message // 메시지 객체
 				);
-				System.out.println("✅ WebSocket 메시지 전송 완료!");
 			} catch (Exception e) {
 				System.out.println("⚠️ WebSocket 전송 실패 (HTTP 응답으로 보상): " + e.getMessage());
 				// WebSocket 실패 시에도 HTTP 응답으로 메시지 반환 (클라이언트에서 처리 가능)
 			}
-
-			System.out.println("=== 메시지 전송 완료 ===\n");
 
 			return ResponseEntity.ok(message);
 
@@ -126,7 +101,6 @@ public class FriendMessageController {
 		// Spring Security의 User 객체인 경우
 		if (principal instanceof org.springframework.security.core.userdetails.User) {
 			String email = ((org.springframework.security.core.userdetails.User) principal).getUsername();
-			System.out.println("로그인한 사용자 이메일: " + email);
 
 			// ⭐ 이메일로 User 조회
 			User user = userRepository.findByEmail(email).orElse(null);
@@ -137,6 +111,29 @@ public class FriendMessageController {
 		}
 
 		return null;
+	}
+
+	/**
+	 * ⭐ 현재 사용자의 안 읽은 친구 메시지 5개 조회 (드롭다운용) GET /api/friend-messages/unread/list
+	 */
+	@GetMapping("/unread/list")
+	public ResponseEntity<List<Map<String, Object>>> getUnreadMessages(Authentication authentication) {
+		try {
+			Long currentUserId = getCurrentUserId(authentication);
+
+			if (currentUserId == null) {
+				return ResponseEntity.badRequest().body(new ArrayList<>());
+			}
+
+			List<Map<String, Object>> messages = friendMessageService.getUnreadMessages(currentUserId);
+
+			return ResponseEntity.ok(messages);
+
+		} catch (Exception e) {
+			System.err.println("❌ 안 읽은 메시지 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).body(new ArrayList<>());
+		}
 	}
 
 	/**
@@ -169,20 +166,14 @@ public class FriendMessageController {
 					} else {
 						msg.setSenderName("Unknown");
 					}
-
-					System.out.println("📢 메시지 #" + msg.getId() + " - senderName 설정: " + msg.getSenderName());
 				}
-			}
-
-			System.out.println("✅ 메시지 조회 완료: " + messages.size() + "개");
-			for (FriendMessageDTO msg : messages) {
-				System.out.println("   - ID: " + msg.getId() + ", Sender: " + msg.getSenderName() + ", Content: "
-						+ msg.getMessageText());
 			}
 
 			return ResponseEntity.ok(messages);
 
-		} catch (Exception e) {
+		} catch (
+
+		Exception e) {
 			e.printStackTrace();
 			return ResponseEntity.status(500).body(new ArrayList<>()); // ← 빈 리스트 반환
 		}
@@ -214,8 +205,6 @@ public class FriendMessageController {
 
 			// 친구 삭제
 			friendMessageService.deleteFriendship(friendshipId);
-
-			System.out.println("✅ 친구 삭제 완료: friendshipId=" + friendshipId);
 
 			return ResponseEntity.ok("친구가 삭제되었습니다");
 		} catch (IllegalArgumentException e) {
@@ -252,14 +241,50 @@ public class FriendMessageController {
 			// 친구 복구
 			friendMessageService.restoreFriendship(friendshipId);
 
-			System.out.println("✅ 친구 복구 완료: friendshipId=" + friendshipId);
-
 			return ResponseEntity.ok("친구가 복구되었습니다");
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.badRequest().body(e.getMessage());
 		} catch (Exception e) {
 			System.err.println("❌ 친구 복구 실패: " + e.getMessage());
 			return ResponseEntity.status(500).body("친구 복구에 실패했습니다");
+		}
+	}
+
+	/**
+	 * 채팅방 열 때 - 해당 대화의 모든 메시지를 읽음 처리 PUT
+	 * /api/friend-messages/friendship/{friendshipId}/mark-as-read
+	 */
+	@PutMapping("/friendship/{friendshipId}/mark-as-read")
+	@Transactional
+	public ResponseEntity<?> markFriendshipAsRead(@PathVariable("friendshipId") Long friendshipId,
+			Authentication authentication) {
+		try {
+			Long currentUserId = getCurrentUserId(authentication);
+
+			if (currentUserId == null) {
+				return ResponseEntity.badRequest().body("사용자 정보를 찾을 수 없습니다");
+			}
+
+			// 해당 friendship이 현재 사용자와 관련 있는지 확인 (권한 체크)
+			Friendship friendship = friendshipRepository.findById(friendshipId)
+					.orElseThrow(() -> new IllegalArgumentException("친구 관계가 없습니다"));
+
+			if (!friendship.getUser().getId().equals(currentUserId)
+					&& !friendship.getFriendUser().getId().equals(currentUserId)) {
+				return ResponseEntity.status(403).body("권한이 없습니다");
+			}
+
+			// ⭐ Service 메서드 호출 (엔티티 활용)
+			friendMessageService.markChatRoomAsRead(friendshipId, currentUserId);
+
+			return ResponseEntity.ok("채팅 메시지가 읽음 처리되었습니다");
+
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (Exception e) {
+			System.err.println("❌ 읽음 처리 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).body("읽음 처리에 실패했습니다");
 		}
 	}
 

@@ -279,4 +279,12 @@ public class FriendshipService {
 		System.out.println("✅ 친구 삭제(상태 변경) 완료");
 	}
 
+	/**
+	 * ⭐ 두 사용자 간의 friendship 조회 (양방향)
+	 */
+	public Friendship findFriendship(Long userId1, Long userId2) {
+		return friendshipRepository.findByUserIdAndFriendUserId(userId1, userId2)
+				.orElseGet(() -> friendshipRepository.findByUserIdAndFriendUserId(userId2, userId1).orElse(null));
+	}
+
 }

@@ -13,7 +13,27 @@
 	<ul class="navbar-nav ml-auto">
 
 		<li class="nav-item dropdown no-arrow d-sm-none"></li>
-
+		<li class="nav-item dropdown no-arrow mx-1">
+		    <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" 
+		       role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		        <i class="fas fa-envelope fa-fw"></i>
+		        <span id="messageBadge" class="badge badge-danger badge-counter"
+		              style="display:none;">5+</span>
+		    </a>
+		    
+		    <div class="dropdown-list dropdown-menu dropdown-menu-right shadow"
+		         aria-labelledby="messagesDropdown" style="width: 350px;">
+		        <h6 class="dropdown-header">Messages</h6>
+		        
+		        <!-- ⭐ JavaScript로 동적으로 채워질 부분 -->
+		        <div id="messageItems"></div>
+		        
+		        <a id="noMessagesMessage" class="dropdown-item text-center small text-gray-500">
+		            새로운 메시지가 없습니다.
+		        </a>
+		    </div>
+		</li>
+		
 		<li class="nav-item dropdown no-arrow mx-1">
 			<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown"
 				aria-haspopup="true" aria-expanded="false">

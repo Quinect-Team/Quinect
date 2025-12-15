@@ -1,7 +1,10 @@
 package com.project.quiz.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -90,6 +93,55 @@ public class FriendMessageService {
 	}
 
 	/**
+	 * ⭐ 현재 사용자의 안 읽은 친구 메시지 5개 조회 현재 사용자가 포함된 friendship의 메시지만 조회
+	 */
+	public List<Map<String, Object>> getUnreadMessages(Long currentUserId) {
+		// 1단계: 현재 사용자가 포함된 모든 friendship ID 조회
+		// (user_id가 currentUserId OR friend_user_id가 currentUserId인 것들)
+		List<Friendship> myFriendships = friendshipRepository.findByUserIdOrFriendUserId(currentUserId, currentUserId);
+
+		List<Long> friendshipIds = myFriendships.stream().map(Friendship::getId).collect(Collectors.toList());
+
+		if (friendshipIds.isEmpty()) {
+			return new ArrayList<>();
+		}
+
+		// 2단계: 그 friendshipId들에 속한 unread 메시지만 조회
+		List<FriendMessage> unreadMessages = friendMessageRepository
+				.findByFriendshipIdInAndSenderIdNotAndIsReadFalseOrderBySentAtDesc(friendshipIds, currentUserId);
+
+		Map<Long, FriendMessage> latestByUser = new LinkedHashMap<>();
+		for (FriendMessage msg : unreadMessages) {
+			latestByUser.putIfAbsent(msg.getSenderId(), msg); // 첫 번째만 추가 (이미 최신순)
+		}
+
+		// 3단계: DTO로 변환
+		return unreadMessages.stream().limit(5).map(msg -> {
+			String senderName = getUserName(msg.getSenderId());
+			String profileImage = getUserProfileImage(msg.getSenderId()); // ⭐ 추가
+
+			Map<String, Object> resultMap = new java.util.HashMap<>();
+			resultMap.put("messageId", msg.getId());
+			resultMap.put("senderId", msg.getSenderId());
+			resultMap.put("senderName", senderName);
+			resultMap.put("profileImage", profileImage);
+			resultMap.put("content", msg.getMessageText());
+			resultMap.put("sentAt", msg.getSentAt().toString());
+
+			return resultMap;
+		}).collect(Collectors.toList());
+	}
+
+	// ⭐ 프로필 이미지 조회 메서드
+	private String getUserProfileImage(Long userId) {
+		UserProfile userProfile = userProfileRepository.findById(userId).orElse(null);
+		if (userProfile != null && userProfile.getProfileImage() != null) {
+			return userProfile.getProfileImage();
+		}
+		return null; // 프로필 이미지가 없으면 null 반환 (프론트에서 기본 이미지 사용)
+	}
+
+	/**
 	 * 친구 삭제 (status 변경)
 	 */
 	@Transactional
@@ -113,6 +165,27 @@ public class FriendMessageService {
 		friendship.setStatus("accepted");
 		friendship.setUpdatedAt(LocalDateTime.now());
 		friendshipRepository.save(friendship);
+	}
+
+	/**
+	 * ⭐ 특정 friendship의 사용자가 받은 모든 메시지를 읽음 처리
+	 */
+	@Transactional
+	public void markChatRoomAsRead(Long friendshipId, Long currentUserId) {
+		// 1단계: 현재 사용자가 받은 안 읽은 메시지들 조회
+		List<FriendMessage> unreadMessages = friendMessageRepository
+				.findByFriendshipIdAndSenderIdNotAndIsReadFalse(friendshipId, currentUserId);
+
+		// 2단계: 각 메시지를 읽음 처리
+		unreadMessages.forEach(message -> {
+			message.markAsRead();
+		});
+
+		// 3단계: DB에 저장 (변경감지로 자동 update)
+		friendMessageRepository.saveAll(unreadMessages);
+
+		System.out.println("✅ 채팅방 #" + friendshipId + "의 " + unreadMessages.size() + "개 메시지 읽음 처리 완료 (사용자: "
+				+ currentUserId + ")");
 	}
 
 	/**

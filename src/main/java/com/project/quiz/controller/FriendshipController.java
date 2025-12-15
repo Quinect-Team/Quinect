@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.project.quiz.domain.Friendship;
 import com.project.quiz.domain.User;
 import com.project.quiz.dto.UserSearchResponse;
 import com.project.quiz.service.FriendshipService;
@@ -24,7 +25,7 @@ import lombok.*;
 @RestController
 @RequestMapping("/api/friends")
 @RequiredArgsConstructor
-public class FriendsController {
+public class FriendshipController {
 
 	private final FriendshipService friendshipService;
 	private final UserService userService;
@@ -220,6 +221,7 @@ public class FriendsController {
 			return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
 		}
 	}
+
 }
 
 // ⭐ ErrorResponse 클래스

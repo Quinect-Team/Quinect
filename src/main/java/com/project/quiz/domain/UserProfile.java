@@ -17,7 +17,9 @@ public class UserProfile {
     private User user;
 
     private String username;      // 닉네임 (이사옴)
-    private String profileImage;  // 이미지 (이사옴)
+    
+    @Column(nullable = true)
+    private String profileImage = "/img/undraw_profile.svg";  // 기본 이미지
     private Long pointBalance;    // 포인트 (이사옴)
     
     @Column(length = 255)
