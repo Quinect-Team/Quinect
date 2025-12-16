@@ -35,34 +35,41 @@ public class AchievementController {
         if (principal != null) {
             User user = userRepository.findByEmail(principal.getName()).orElse(null);
             if (user != null) {
-                // 1. 전체 업적 목록 조회 (메타 데이터)
+                // 1. 전체 업적 조회
                 List<Achievement> allAchievements = achievementRepository.findAll();
 
-                // 2. 내 진행 상황 조회 (Map으로 변환하여 검색 속도 UP)
-                // Key: Achievement ID, Value: UserAchievement 객체
-                Map<Long, UserAchievement> myProgressMap = userAchievementRepository.findAllByUser(user) // findAllByUser 필요 (아래 Repository 수정 참고)
+                // 2. 내 진행 상황 조회
+                Map<Long, UserAchievement> myProgressMap = userAchievementRepository.findAllByUser(user)
                         .stream()
                         .collect(Collectors.toMap(ua -> ua.getAchievement().getId(), ua -> ua));
 
-                // 3. DTO 리스트 생성 (전체 업적 Loop)
+                // 3. DTO 리스트 생성
                 List<AchievementDisplayDto> displayList = new ArrayList<>();
-                
                 for (Achievement ach : allAchievements) {
                     UserAchievement progress = myProgressMap.get(ach.getId());
-                    
                     long current = (progress != null) ? progress.getCurrentValue() : 0;
                     boolean achieved = (progress != null) && progress.getIsAchieved();
-                    
                     displayList.add(AchievementDisplayDto.of(ach, current, achieved));
                 }
 
-                // 4. 정렬: 미달성(false) 위로, 달성(true) 아래로 -> 그 안에서 ID 순
+                // 4. 정렬 (미달성 위, 달성 아래)
                 displayList.sort(Comparator.comparing(AchievementDisplayDto::isAchieved)
                         .thenComparing(dto -> dto.getAchievement().getId()));
 
                 model.addAttribute("achievements", displayList);
+
+                // ▼▼▼ [추가] 상단 요약용 개수 계산 ▼▼▼
+                int totalCount = displayList.size();
+                long achievedCount = displayList.stream().filter(AchievementDisplayDto::isAchieved).count();
+                
+                model.addAttribute("totalCount", totalCount);
+                model.addAttribute("achievedCount", achievedCount);
+                
+                // 퍼센트(전체 진행률) 계산 - 0으로 나누기 방지
+                int totalPercent = (totalCount > 0) ? (int)((double)achievedCount / totalCount * 100) : 0;
+                model.addAttribute("totalPercent", totalPercent);
             }
         }
-        return "achievement"; // achievement.html
+        return "achievement";
     }
 }

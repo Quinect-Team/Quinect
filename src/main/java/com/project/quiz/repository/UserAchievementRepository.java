@@ -19,4 +19,6 @@ public interface UserAchievementRepository extends JpaRepository<UserAchievement
     List<UserAchievement> findAllByUser(User user);
     
     long countByUserAndIsAchievedTrue(User user);
+    
+    List<UserAchievement> findByUserAndIsAchievedTrueOrderByAchievedAtAsc(User user);
 }

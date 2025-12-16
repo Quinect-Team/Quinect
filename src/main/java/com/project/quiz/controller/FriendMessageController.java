@@ -96,23 +96,22 @@ public class FriendMessageController {
 			return null;
 		}
 
-		Object principal = authentication.getPrincipal();
+		// 1. Principal 타입 확인 없이 바로 이름을 가져옵니다. (가장 안전한 방법)
+		// 일반 로그인: 이메일/ID, OAuth2: 이메일/Sub ID 등이 들어옴
+		String emailOrUsername = authentication.getName();
+        
+		// 2. DB에서 조회
+		User user = userRepository.findByEmail(emailOrUsername).orElse(null);
 
-		// Spring Security의 User 객체인 경우
-		if (principal instanceof org.springframework.security.core.userdetails.User) {
-			String email = ((org.springframework.security.core.userdetails.User) principal).getUsername();
-
-			// ⭐ 이메일로 User 조회
-			User user = userRepository.findByEmail(email).orElse(null);
-
-			if (user != null) {
-				return user.getId();
-			}
+		// 3. 만약 이메일로 못 찾았다면, 혹시 닉네임일 수도 있으니 추가 로직 (필요 시)
+        // (지금 구조상 이메일이 ID라면 위 코드로 충분합니다)
+        
+		if (user != null) {
+			return user.getId();
 		}
 
 		return null;
 	}
-
 	/**
 	 * ⭐ 현재 사용자의 안 읽은 친구 메시지 5개 조회 (드롭다운용) GET /api/friend-messages/unread/list
 	 */

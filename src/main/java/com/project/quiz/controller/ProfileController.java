@@ -47,8 +47,9 @@ public class ProfileController {
 	             String themeUrl = inventoryService.getEquippedItemUrl(user, "THEME");
 	             model.addAttribute("equippedThemeUrl", themeUrl);
 	             
-	             List<UserAchievement> achievements = userAchievementRepository.findByUserAndIsAchievedTrue(user);
-	                model.addAttribute("achievements", achievements);
+	             List<UserAchievement> achievements = 
+	                     userAchievementRepository.findByUserAndIsAchievedTrueOrderByAchievedAtAsc(user);
+	             model.addAttribute("achievements", achievements);
 	         }
 	         List<TimelineDto> timeline = timelineService.getProfileTimeline(principal.getName());
 	         model.addAttribute("timelineList", timeline);
