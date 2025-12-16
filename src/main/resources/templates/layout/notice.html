@@ -1,0 +1,72 @@
+<div class="container mt-4" style="max-width: 900px;" th:fragment="notice">
+
+	<div class="d-flex align-items-center mb-4">
+		<a th:href="@{/main}" class="text-decoration-none text-gray-800">
+			<i class="fas fa-arrow-left fa-2x mr-3"></i>
+		</a>
+		<h1 class="h3 mb-0 text-gray-800 font-weight-bold">공지사항</h1>
+	</div>
+
+	<div class="card shadow mb-4">
+		<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+			<h6 class="m-0 font-weight-bold text-success">공지 목록</h6>
+
+			<div sec:authorize="hasRole('ADMIN')">
+				<a th:href="@{/notice/write}" class="btn btn-success btn-sm btn-icon-split">
+					<span class="icon text-white-50">
+						<i class="fas fa-pen"></i>
+					</span>
+					<span class="text">공지 작성</span>
+				</a>
+			</div>
+		</div>
+
+		<div class="card-body">
+			<div class="table-responsive">
+				<table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+					<thead class="thead-light text-center">
+						<tr>
+							<th style="width: 10%">번호</th>
+							<th style="width: 50%">제목</th>
+							<th style="width: 15%">작성자</th>
+							<th style="width: 15%">작성일</th>
+							<th style="width: 10%">조회수</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:if="${#lists.isEmpty(notices)}">
+							<td colspan="5" class="text-center py-5 text-gray-500">
+								<i class="fas fa-info-circle fa-2x mb-3"></i><br>
+								등록된 공지사항이 없습니다.
+							</td>
+						</tr>
+
+						<tr th:each="post, stat : ${notices}">
+							<td class="text-center" th:text="${stat.count}">1</td>
+
+							<td>
+								<a th:href="@{/notice/{id}(id=${post.postId})}"
+									class="text-dark font-weight-bold text-decoration-none">
+									<span th:text="${post.title}">제목</span>
+								</a>
+								<span th:if="${post.createdAt.isAfter(T(java.time.LocalDateTime).now().minusDays(3))}"
+									class="badge badge-danger ml-1">N</span>
+							</td>
+
+							<td class="text-center">
+								<span class="badge badge-secondary">관리자</span>
+							</td>
+
+							<td class="text-center" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">
+								2023-01-01</td>
+
+							<td class="text-center" th:text="${post.viewCount}">0</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+</div>
+</div>

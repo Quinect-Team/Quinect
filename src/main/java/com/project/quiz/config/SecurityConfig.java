@@ -24,7 +24,12 @@ public class SecurityConfig {
 						"/css/**", "/js/**", "/images/**", "/vendor/**", "/joinroom", "/waitroom/**", "/ws/**",
 						"/forgot/**", "/send", "/verify", "/check", "/reset", "/success", "/img/**", "/quiz/**")
 				.permitAll().requestMatchers("/api/**").authenticated()
-
+				
+				
+				.requestMatchers("/notice/write").hasRole("ADMIN") 
+			    // [추가] 공지사항 목록/상세는 누구나(혹은 로그인 유저) 허용
+			    .requestMatchers("/notice/**").permitAll()
+			    
 				// 2. 그 외 요청은 인증(로그인) 필요
 				.anyRequest().authenticated()).formLogin((form) -> form.loginPage("/login") // 로그인 페이지 URL
 						.usernameParameter("email") // HTML 폼의 input name (이메일로 로그인 시)

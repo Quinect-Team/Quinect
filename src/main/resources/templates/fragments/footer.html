@@ -4,18 +4,23 @@
 	<footer class="sticky-footer bg-white text-black-50" th:fragment="footer">
 	  <div class="container my-auto">
 		
-		<!-- 공지 파트 -->
-	    <div class="mb-2">
-	        <a href="#" class="text-black-50 font-weight-bold text-decoration-none" style="font-size: 0.9rem;">
-	            공지 | Quinect 첫 오픈!
+		<div class="mb-2">
+            <a th:href="@{/notice}" class="text-black-50 font-weight-bold text-decoration-none" style="font-size: 0.9rem;">
+	            공지 | 
+                
+                <span th:if="${latestNotice != null}" th:text="${latestNotice.title}">
+                    최신 공지 제목이 들어갑니다
+                </span>
+
+                <span th:unless="${latestNotice != null}">
+                    등록된 공지가 없습니다.
+                </span>
 	        </a>
 	    </div>
 		
-		<!-- 구분선 디바이더 -->
 		<hr class="sidebar-divider">
 		
-		<!-- footer 메뉴 -->
-	    <div class="mb-3">
+		<div class="mb-3">
 	        <a href="#" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">개인정보처리방침</a>
 	        <span class="mx-2" style="color: rgba(255,255,255,0.2);">|</span>
 	        <a th:href="@{/board}" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">문의하기</a>
@@ -27,12 +32,11 @@
 	        <a href="#" class="text-black-50 text-decoration-none" style="font-size: 0.85rem; letter-spacing: 0.5px;">위치</a>
 	    </div>
 		
-		<!-- 기타 -->
-	    <div class="copyright mb-2" style="font-size: 0.8rem;">
+		<div class="copyright mb-2" style="font-size: 0.8rem;">
 	      <span>Copyright &copy; Quinect 2025 All Rights Reserved.</span>
 	    </div>
 
-	    <a class="d-none d-sm-flex align-items-center text-decoration-none" th:href="@{/}" 
+        <a class="d-none d-sm-flex align-items-center text-decoration-none" th:href="@{/}" 
 	       style="opacity: 0.8;"
 	       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">
 	        <div class="rotate-n-15 mb-1">
