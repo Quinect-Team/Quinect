@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +21,8 @@ import com.project.quiz.service.QuizService;
 public class QuizApiController {
 
     private final QuizService quizService;
+    private final QuizRepository quizRepository;
+
     
     @PostMapping("/save")
     public ResponseEntity<?> saveQuiz(@RequestBody QuizDto quizDto) {
@@ -36,18 +40,5 @@ public class QuizApiController {
             return ResponseEntity.status(500).body("Upload error");
         }
     }
-    @GetMapping("/list")
-    public List<QuizDto> getQuizList() {
-        return quizService.getQuizList();
-    }
-    
-    @GetMapping("/{quizId}")
-    public ResponseEntity<QuizDto> getQuiz(@PathVariable("quizId") Long quizId){
-        QuizDto quiz = quizService.getQuiz(quizId);
-        return ResponseEntity.ok(quiz);
-    }
-
-
-
 
 }

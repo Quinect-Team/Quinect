@@ -123,14 +123,29 @@
 
 </div>
 <div class="container" id="list">
-	<div class="card">
-		<div class="thumb" style="background-image:url('이미지주소');"></div>
-		<div class="info">
-			<div class="title">리스트 제목</div>
-			<div class="desc">설명 또는 서브텍스트</div>
-		</div>
-	</div>	
+    <th:block th:each="quiz : ${quizzes}">
+		<a th:href="@{/view/{id}(id=${quiz.quizId})}"
+		   style="text-decoration:none; color:inherit;">
+        <div class="card">
+
+            <!-- 이미지 표시 -->
+			<div class="thumb"
+			     th:if="${!#lists.isEmpty(quiz.questions)}"
+			     th:style="'background-image:url(/uploads/quiz/' + ${quiz.questions[0].image} + ')'">
+			</div>
+
+            <!-- 텍스트 정보 -->
+            <div class="info">
+                <div class="title" th:text="${quiz.title}"></div>
+                <div class="desc" th:text="${quiz.description}"></div>
+            </div>
+        </div>
+		</a>
+    </th:block>
 </div>
+
+
+
 
 <script>
 	const btnHot = document.getElementById('btnHot');

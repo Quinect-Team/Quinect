@@ -2,6 +2,7 @@ package com.project.quiz.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
 import java.util.List;
 
 import com.project.quiz.domain.Quiz;
@@ -9,30 +10,47 @@ import com.project.quiz.domain.QuizOption;
 
 @Data
 public class QuizDto {
-    private Long quizId;           // <-- 추가 (퀴즈 식별자)
+
+    /* ================== Quiz ================== */
+    private Long quizId;
     private String title;
     private String description;
     private Long userId;
+
     private List<QuestionDto> questions;
 
+    /* ================== Question ================== */
     @Data
     public static class QuestionDto {
-        private Long questionId;      // <-- 추가 (질문 식별자)
+
+        private Long questionId;
+
+        /** 1: 서술형, 2: 객관식 */
         private Integer quizTypeCode;
+
         private String questionText;
-        private String answerOption;
         private Integer point;
+
+        /** 객관식 정답 (option_number) */
+        private String answerOption;
+
+        /** 서술형 정답 */
         private String subjectiveAnswer;
+
         private String image;
-        private List<String> options;
+
+        /** 객관식 보기 */
+        private List<OptionDto> options;
     }
-    
+
+    /* ================== Option ================== */
     @Data
     public static class OptionDto {
         private Integer optionNumber;
         private String optionText;
     }
-    
+
+    /* ================== Entity → DTO ================== */
     public static QuizDto fromEntity(Quiz quiz) {
 
         QuizDto dto = new QuizDto();
@@ -41,28 +59,30 @@ public class QuizDto {
         dto.setDescription(quiz.getDescription());
         dto.setUserId(quiz.getUserId());
 
-        // 질문 리스트 매핑
         List<QuestionDto> questionDtos = quiz.getQuestions()
                 .stream()
                 .map(q -> {
                     QuestionDto qd = new QuestionDto();
 
                     qd.setQuestionId(q.getQuestionId());
-
                     qd.setQuizTypeCode(q.getQuizTypeCode());
                     qd.setQuestionText(q.getQuestionText());
-                    qd.setAnswerOption(q.getAnswerOption());
                     qd.setPoint(q.getPoint());
+                    qd.setAnswerOption(q.getAnswerOption());
                     qd.setSubjectiveAnswer(q.getSubjectiveAnswer());
                     qd.setImage(q.getImage());
 
-                    // 객관식 보기 목록(List<String>) 매핑
                     if (q.getOptions() != null) {
-                        List<String> optionTexts = q.getOptions()
+                        List<OptionDto> optionDtos = q.getOptions()
                                 .stream()
-                                .map(QuizOption::getOptionText)
+                                .map(opt -> {
+                                    OptionDto od = new OptionDto();
+                                    od.setOptionNumber(opt.getOptionNumber());
+                                    od.setOptionText(opt.getOptionText());
+                                    return od;
+                                })
                                 .toList();
-                        qd.setOptions(optionTexts);
+                        qd.setOptions(optionDtos);
                     }
 
                     return qd;
@@ -72,7 +92,8 @@ public class QuizDto {
         dto.setQuestions(questionDtos);
         return dto;
     }
-    
+
+    /* ================== List 화면용 ================== */
     @Data
     @AllArgsConstructor
     public static class ListResponse {

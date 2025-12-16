@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quiz</title>
+    <style>
+        :root{--card:#fff;--bg:#f4f6fb;--accent:#1a73e8}
+        *{box-sizing:border-box}
+        body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);margin:0;padding:32px;}
+        .container{max-width:880px;margin:0 auto}
+        .card{background:var(--card);border-radius:12px;box-shadow:0 6px 24px rgba(10,20,40,.08);padding:28px}
+        h1{margin:0 0 8px;font-size:22px}
+        p.lead{margin:0 0 20px;color:#4b5563}
+        .question{border-top:1px solid #eef2f7;padding:18px 0;display:flex;gap:18px}
+        .q-left{width:64px;text-align:right;color:#6b7280}
+        .q-right{flex:1}
+        .q-title{font-weight:600;margin-bottom:6px}
+        .q-meta{font-size:13px;color:#6b7280;margin-bottom:10px}
+        label.option{display:block;padding:10px;border-radius:8px;border:1px solid transparent;margin-bottom:8px;cursor:pointer}
+        input[type=radio]{margin-right:10px}
+        textarea{width:100%;min-height:100px;padding:10px;border-radius:8px;border:1px solid #e5e7eb}
+        .controls{display:flex;gap:12px;justify-content:flex-end;margin-top:18px}
+        button{background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer}
+        button.secondary{background:#e5e7eb;color:#111}
+        .results{margin-top:18px;padding:16px;border-radius:8px;background:#111827;color:white}
+        .small{font-size:13px;color:#6b7280}
+        .note{font-size:13px;color:#374151;background:#fff3cd;padding:10px;border-radius:8px;margin-top:12px}
+        @media (max-width:720px){.question{flex-direction:column}.q-left{text-align:left;width:auto}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card" id="quiz-root"></div>
+</div>
+
+<script>
+/* ===== quizId 추출 ===== */
+function getLastPathSegment() {
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : null;
+}
+
+const quizId = getLastPathSegment();
+const root = document.getElementById('quiz-root');
+const LOCAL_KEY = quizId ? `quiz_temp_${quizId}` : null;
+
+
+if (!quizId) {
+    root.innerHTML = '<p>퀴즈 ID가 없습니다.</p>';
+} else {
+    fetch(`/api/quiz/${quizId}`)
+        .then(res => {
+            if (!res.ok) throw new Error(res.status);
+            return res.json();
+        })
+        .then(renderQuiz)
+        .catch(() => {
+            root.innerHTML = '<p>퀴즈를 불러오지 못했습니다.</p>';
+        });
+}
+
+/* ================== 렌더링 ================== */
+function renderQuiz(quizData) {
+    root.innerHTML = '';
+
+    /* 제목 */
+    const h1 = document.createElement('h1');
+    h1.textContent = quizData.title;
+    root.appendChild(h1);
+
+    /* 설명 */
+    if (quizData.description) {
+        const desc = document.createElement('p');
+        desc.className = 'lead';
+        desc.textContent = quizData.description;
+        root.appendChild(desc);
+    }
+
+    const form = document.createElement('form');
+    form.id = 'quiz-form';
+
+	quizData.questions.forEach((q, idx) => {
+
+	    const type = Number(q.quizTypeCode); // ⭐ 핵심 (무조건 숫자화)
+
+	    console.log(
+	        'questionId=', q.questionId,
+	        'quizTypeCode=', q.quizTypeCode,
+	        'type(after)=', type
+	    );
+
+	    const wrap = document.createElement('div');
+	    wrap.className = 'question';
+
+	    /* 좌측 */
+	    const left = document.createElement('div');
+	    left.className = 'q-left';
+	    left.innerHTML = `
+	        <div>${idx + 1}번</div>
+	        <div class="small">${q.point ?? 0}점</div>
+	    `;
+
+	    /* 우측 */
+	    const right = document.createElement('div');
+	    right.className = 'q-right';
+
+	    const title = document.createElement('div');
+	    title.className = 'q-title';
+	    title.textContent = q.questionText;
+
+	    const meta = document.createElement('div');
+	    meta.className = 'q-meta';
+
+	    right.appendChild(title);
+	    right.appendChild(meta);
+
+	    /* ================== 서술형 (1) ================== */
+	    if (type === 1) {
+	        meta.textContent = '서술형';
+
+	        const textarea = document.createElement('textarea');
+	        textarea.name = `q_${q.questionId}`;
+	        textarea.placeholder = '답안을 입력하세요';
+	        right.appendChild(textarea);
+	    }
+
+	    /* ================== 객관식 (2) ================== */
+	    else if (type === 2) {
+	        meta.textContent = '객관식';
+
+	        if (Array.isArray(q.options) && q.options.length > 0) {
+	            q.options.forEach(opt => {
+	                const label = document.createElement('label');
+	                label.className = 'option';
+
+	                label.innerHTML = `
+	                    <input type="radio"
+	                           name="q_${q.questionId}"
+	                           value="${opt.optionNumber}">
+	                    ${opt.optionNumber}. ${opt.optionText}
+	                `;
+	                right.appendChild(label);
+	            });
+	        } else {
+	            right.innerHTML += `<p style="color:red">객관식 보기 없음</p>`;
+	        }
+	    }
+
+	    /* ================== 알 수 없는 타입 ================== */
+	    else {
+	        meta.textContent = `알 수 없는 타입 (${q.quizTypeCode})`;
+	        right.innerHTML += `<p style="color:red">quizTypeCode 오류</p>`;
+	    }
+
+	    wrap.appendChild(left);
+	    wrap.appendChild(right);
+	    form.appendChild(wrap);
+	});
+
+	const quizId = getLastPathSegment();
+	const LOCAL_KEY = `quiz_temp_${quizId}`;
+
+    /* 버튼 */
+    const controls = document.createElement('div');
+    controls.className = 'controls';
+
+    const resetBtn = document.createElement('button');
+    resetBtn.type = 'button';
+    resetBtn.className = 'secondary';
+    resetBtn.textContent = '다시하기';
+    resetBtn.onclick = () => form.reset();
+
+    const submitBtn = document.createElement('button');
+    submitBtn.type = 'submit';
+    submitBtn.textContent = '제출';
+
+    controls.appendChild(resetBtn);
+    controls.appendChild(submitBtn);
+    form.appendChild(controls);
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        alert('제출 완료 (채점 로직은 다음 단계)');
+    });
+
+    root.appendChild(form);
+	attachAutoSaveEvents();   // ⭐ 이벤트 연결
+	autoRestoreIfExists(); 
+}
+
+function collectQuizDataForLocal() {
+  const result = {
+    quizId,
+    answers: {}
+  };
+
+  document.querySelectorAll('.question').forEach(qEl => {
+    const qid = qEl.querySelector('[name^="q_"]')?.name?.replace('q_', '');
+    if (!qid) return;
+
+    // 서술형
+    const textarea = qEl.querySelector('textarea');
+    if (textarea) {
+      result.answers[qid] = {
+        type: 'subjective',
+        value: textarea.value
+      };
+      return;
+    }
+
+    // 객관식
+    const checked = qEl.querySelector('input[type="radio"]:checked');
+    if (checked) {
+      result.answers[qid] = {
+        type: 'objective',
+        value: checked.value
+      };
+    }
+  });
+
+  return result;
+}
+
+function loadQuizFromLocal(data) {
+  if (!data || !data.answers) return;
+
+  Object.entries(data.answers).forEach(([qid, answer]) => {
+    // 서술형
+    if (answer.type === 'subjective') {
+      const textarea = document.querySelector(`textarea[name="q_${qid}"]`);
+      if (textarea) textarea.value = answer.value;
+    }
+
+    // 객관식
+    if (answer.type === 'objective') {
+      const radio = document.querySelector(
+        `input[type="radio"][name="q_${qid}"][value="${answer.value}"]`
+      );
+      if (radio) radio.checked = true;
+    }
+  });
+}
+
+let autosaveTimer = null;
+
+function debounceAutoSave() {
+  if (!LOCAL_KEY) return;
+
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    const data = collectQuizDataForLocal();
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+    console.log("[autosave] 로컬에 저장됨", data);
+  }, 500);
+}
+
+function attachAutoSaveEvents() {
+  document.querySelectorAll('textarea, input[type="radio"]').forEach(el => {
+    el.addEventListener('input', debounceAutoSave);
+    el.addEventListener('change', debounceAutoSave);
+  });
+}
+
+function autoRestoreIfExists() {
+  if (!LOCAL_KEY) return;
+
+  const saved = localStorage.getItem(LOCAL_KEY);
+  if (!saved) return;
+
+  try {
+    loadQuizFromLocal(JSON.parse(saved));
+    console.log("[autosave] 로컬 임시본 복원 완료");
+  } catch (e) {
+    console.warn("로컬 임시본 파싱 실패", e);
+  }
+}
+
+
+
+</script>
+
+</body>
+</html>
