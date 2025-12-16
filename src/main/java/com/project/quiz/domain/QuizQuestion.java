@@ -11,23 +11,26 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "quiz_question")
-@Getter
-@Setter
+@Getter @Setter
 public class QuizQuestion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long questionId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quiz_id")
     private Quiz quiz;
 
+    @Column(name = "quiz_type_code", nullable = false)
     private Integer quizTypeCode;
-    
+
+    @Column(name = "question_text")
     private String questionText;
+
+    @Column(name = "point")
     private Integer point;
-    
+
     @Column(name = "answer_option")
     private String answerOption;
 
@@ -38,6 +41,5 @@ public class QuizQuestion {
     private String image;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<QuizOption> options;
-
+    private List<QuizOption> options = new ArrayList<>();
 }

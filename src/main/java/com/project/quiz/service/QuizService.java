@@ -13,6 +13,7 @@ import com.project.quiz.domain.Quiz;
 import com.project.quiz.domain.QuizOption;
 import com.project.quiz.domain.QuizQuestion;
 import com.project.quiz.dto.QuizDto;
+import com.project.quiz.repository.QuizQuestionRepository;
 import com.project.quiz.repository.QuizRepository;
 
 import jakarta.transaction.Transactional;
@@ -25,101 +26,79 @@ public class QuizService {
 
     private final QuizRepository quizRepository;
 
-    // 기존 saveQuiz 수정: 신규/수정 모두 처리
+    /* ================== 저장 ================== */
     public Long saveQuiz(QuizDto quizDto) {
 
         Quiz quiz;
 
         if (quizDto.getQuizId() != null) {
-            // ── 기존 퀴즈 수정 ──
             quiz = quizRepository.findById(quizDto.getQuizId())
-                    .orElseThrow(() -> new RuntimeException("퀴즈가 존재하지 않습니다."));
+                    .orElseThrow(() ->
+                            new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
+
             quiz.setTitle(quizDto.getTitle());
             quiz.setDescription(quizDto.getDescription());
             quiz.setUpdatedAt(LocalDateTime.now());
 
-            List<QuizQuestion> newQuestions = new ArrayList<>();
-            for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
-                QuizQuestion question = new QuizQuestion();
-                question.setQuiz(quiz);
-                question.setQuestionText(q.getQuestionText());
-                question.setQuizTypeCode(q.getQuizTypeCode());
-                question.setImage(q.getImage());
-                question.setPoint(q.getPoint());
-                question.setAnswerOption(q.getAnswerOption());
-                question.setSubjectiveAnswer(q.getSubjectiveAnswer());
-
-                List<QuizOption> options = new ArrayList<>();
-                if (q.getOptions() != null) {
-                    int number = 1;
-                    for (String text : q.getOptions()) {
-                        QuizOption option = new QuizOption();
-                        option.setQuestion(question);
-                        option.setOptionNumber(number++);
-                        option.setOptionText(text);
-                        options.add(option);
-                    }
-                }
-                question.setOptions(options);
-                newQuestions.add(question);
-            }
-
-            // 기존 컬렉션 유지하면서 업데이트
-            quiz.getQuestions().clear();
-            quiz.getQuestions().addAll(newQuestions);
-
+            quiz.getQuestions().clear(); // orphanRemoval
         } else {
-            // ── 새 퀴즈 생성 ──
             quiz = new Quiz();
             quiz.setTitle(quizDto.getTitle());
             quiz.setDescription(quizDto.getDescription());
             quiz.setUserId(quizDto.getUserId());
             quiz.setCreatedAt(LocalDateTime.now());
             quiz.setUpdatedAt(LocalDateTime.now());
-
-            List<QuizQuestion> questionEntities = new ArrayList<>();
-            for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
-                QuizQuestion question = new QuizQuestion();
-                question.setQuiz(quiz);
-                question.setQuestionText(q.getQuestionText());
-                question.setQuizTypeCode(q.getQuizTypeCode());
-                question.setImage(q.getImage());
-                question.setPoint(q.getPoint());
-                question.setAnswerOption(q.getAnswerOption());
-                question.setSubjectiveAnswer(q.getSubjectiveAnswer());
-
-                List<QuizOption> options = new ArrayList<>();
-                if (q.getOptions() != null) {
-                    int number = 1;
-                    for (String text : q.getOptions()) {
-                        QuizOption option = new QuizOption();
-                        option.setQuestion(question);
-                        option.setOptionNumber(number++);
-                        option.setOptionText(text);
-                        options.add(option);
-                    }
-                }
-                question.setOptions(options);
-                questionEntities.add(question);
-            }
-
-            quiz.setQuestions(questionEntities);
         }
 
+        List<QuizQuestion> questionEntities = new ArrayList<>();
+
+        for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
+
+            QuizQuestion question = new QuizQuestion();
+            question.setQuiz(quiz);
+            question.setQuestionText(q.getQuestionText());
+            question.setQuizTypeCode(q.getQuizTypeCode());
+            question.setPoint(q.getPoint());
+            question.setImage(q.getImage());
+
+            /* ===== 객관식 ===== */
+            if (q.getQuizTypeCode() == 1) {
+                question.setAnswerOption(q.getAnswerOption());
+                question.setSubjectiveAnswer(null);
+
+                List<QuizOption> optionEntities = new ArrayList<>();
+
+                if (q.getOptions() != null) {
+                    for (QuizDto.OptionDto opt : q.getOptions()) {
+                        QuizOption option = new QuizOption();
+                        option.setQuestion(question);
+                        option.setOptionNumber(opt.getOptionNumber());
+                        option.setOptionText(opt.getOptionText());
+                        optionEntities.add(option);
+                    }
+                }
+
+                question.setOptions(optionEntities);
+
+            /* ===== 서술형 ===== */
+            } else {
+                question.setSubjectiveAnswer(q.getSubjectiveAnswer());
+                question.setAnswerOption(null);
+                question.setOptions(null);
+            }
+
+            questionEntities.add(question);
+        }
+
+        quiz.setQuestions(questionEntities);
         quizRepository.save(quiz);
+
         return quiz.getQuizId();
     }
-
-
-    public QuizDto getQuiz(Long quizId) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizId));
-        return QuizDto.fromEntity(quiz);
-    }
-
+    
     public String storeImage(MultipartFile file) throws Exception {
 
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new Exception("Empty file");
         }
 
@@ -129,7 +108,7 @@ public class QuizService {
 
         String original = file.getOriginalFilename();
         String ext = original.substring(original.lastIndexOf("."));
-        String fileName = UUID.randomUUID().toString() + ext;
+        String fileName = UUID.randomUUID() + ext;
 
         File target = new File(uploadDir + fileName);
         file.transferTo(target);
@@ -137,10 +116,15 @@ public class QuizService {
         return fileName;
     }
 
-    public List<QuizDto> getQuizList() {
-        List<Quiz> list = quizRepository.findAll();
-        return list.stream()
-                .map(QuizDto::fromEntity)
-                .toList();
+
+    /* ================== 조회 ================== */
+    public QuizDto findQuizDto(Long id) {
+        Quiz quiz = quizRepository.findByIdWithQuestions(id)
+                .orElseThrow(() -> new IllegalArgumentException("Quiz not found: " + id));
+        return QuizDto.fromEntity(quiz);
+    }
+
+    public List<Quiz> findAll() {
+        return quizRepository.findAll();
     }
 }
