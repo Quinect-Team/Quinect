@@ -15,33 +15,38 @@ import lombok.RequiredArgsConstructor;
 @Controller
 public class LoginController {
 
-    private final UserService userService; // 서비스 주입
+	private final UserService userService; // 서비스 주입
 
-    @GetMapping("/login")
-    public String loginPage(Principal principal) {
-        if (principal != null) {
-            return "redirect:/main";
-        }
-        return "login";
-    }
+	@GetMapping("/login")
+	public String loginPage(Principal principal) {
+		if (principal != null) {
+			return "redirect:/main";
+		}
+		return "login";
+	}
 
-    @GetMapping("/signup")
-    public String signupPage(Principal principal) {
-    	if (principal != null) {
-            return "redirect:/main";
-        }
-        return "signup"; // signup.html 보여줌
-    }
+	@GetMapping("/signup")
+	public String signupPage(Principal principal) {
+		if (principal != null) {
+			return "redirect:/main";
+		}
+		return "signup"; // signup.html 보여줌
+	}
 
-    // ▼▼▼ 회원가입 처리 로직 추가 ▼▼▼
-    @PostMapping("/register")
+	// ▼▼▼ 회원가입 처리 로직 추가 ▼▼▼
+	@PostMapping("/register")
     public String signup(UserCreateForm userCreateForm) {
-        // 서비스 호출하여 회원 생성
         userService.create(userCreateForm.getUsername(), 
                            userCreateForm.getEmail(), 
                            userCreateForm.getPassword());
         
-        // 가입 완료 후 로그인 페이지로 이동
-        return "redirect:/login"; 
+        // [변경] 로그인 페이지가 아니라 -> 가입 성공 페이지로 이동
+        return "redirect:/signup/success"; 
+    }
+
+    // ▼▼▼ [추가] 가입 성공 페이지 매핑 ▼▼▼
+    @GetMapping("/signup/success")
+    public String signupSuccess() {
+        return "signupsuccess"; // templates/signupsuccess.html 호출
     }
 }

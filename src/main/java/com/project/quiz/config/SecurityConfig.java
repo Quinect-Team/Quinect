@@ -11,25 +11,30 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import com.project.quiz.service.CustomOAuth2UserService;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+	
+	private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService)
 			throws Exception {
 		http.authorizeHttpRequests((auth) -> auth
 				// 1. 허용할 URL: 인덱스, 로그인, 회원가입, 정적 리소스(css, js, 이미지)
-				.requestMatchers("/", "/index", "/login", "/signup", "/register", "/api/user/check-email", "/guest/**",
-						"/css/**", "/js/**", "/images/**", "/vendor/**", "/joinroom", "/waitroom/**", "/ws/**",
-						"/forgot/**", "/send", "/verify", "/check", "/reset", "/success", "/img/**", "/quiz/**")
+				.requestMatchers("/", "/index", "/login", "/signup/**", "/register", "/api/user/check-email",
+						"/guest/**", "/css/**", "/js/**", "/images/**", "/vendor/**", "/joinroom", "/waitroom/**",
+						"/ws/**", "/forgot/**", "/send", "/verify", "/check", "/reset", "/success", "/img/**",
+						"/quiz/**")
 				.permitAll().requestMatchers("/api/**").authenticated()
-				
-				
-				.requestMatchers("/notice/write").hasRole("ADMIN") 
-			    // [추가] 공지사항 목록/상세는 누구나(혹은 로그인 유저) 허용
-			    .requestMatchers("/notice/**").permitAll()
-			    
+
+				.requestMatchers("/notice/write").hasRole("ADMIN")
+				// [추가] 공지사항 목록/상세는 누구나(혹은 로그인 유저) 허용
+				.requestMatchers("/notice/**").permitAll()
+
 				// 2. 그 외 요청은 인증(로그인) 필요
 				.anyRequest().authenticated()).formLogin((form) -> form.loginPage("/login") // 로그인 페이지 URL
 						.usernameParameter("email") // HTML 폼의 input name (이메일로 로그인 시)
@@ -37,10 +42,11 @@ public class SecurityConfig {
 						.defaultSuccessUrl("/main", true) // 로그인 성공 시 이동할 페이지
 						.failureUrl("/login?error").permitAll())
 
-				.oauth2Login(oauth2 -> oauth2.loginPage("/login") // 커스텀 로그인 페이지
-						.defaultSuccessUrl("/main", true) // 성공 시 이동
-						.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService) // 사용자 정보 처리 서비스 등록
-						))
+				.oauth2Login(oauth2 -> oauth2.loginPage("/login")
+						.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+
+						// ⭐ [수정] 성공 시 핸들러 연결 (기존 defaultSuccessUrl 대신 사용)
+						.successHandler(oAuth2SuccessHandler))
 				.logout((logout) -> logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
 						.logoutSuccessUrl("/login?logout") // 로그아웃 성공 시 이동할 페이지
 						.invalidateHttpSession(true).deleteCookies("JSESSIONID"))

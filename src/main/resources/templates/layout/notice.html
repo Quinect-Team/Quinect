@@ -27,20 +27,12 @@
 					<thead class="thead-light text-center">
 						<tr>
 							<th style="width: 10%">번호</th>
-							<th style="width: 50%">제목</th>
+							<th style="width: 60%">제목</th>
 							<th style="width: 15%">작성자</th>
 							<th style="width: 15%">작성일</th>
-							<th style="width: 10%">조회수</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr th:if="${#lists.isEmpty(notices)}">
-							<td colspan="5" class="text-center py-5 text-gray-500">
-								<i class="fas fa-info-circle fa-2x mb-3"></i><br>
-								등록된 공지사항이 없습니다.
-							</td>
-						</tr>
-
 						<tr th:each="post, stat : ${notices}">
 							<td class="text-center" th:text="${stat.count}">1</td>
 
@@ -60,7 +52,6 @@
 							<td class="text-center" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd')}">
 								2023-01-01</td>
 
-							<td class="text-center" th:text="${post.viewCount}">0</td>
 						</tr>
 					</tbody>
 				</table>

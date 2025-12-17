@@ -29,13 +29,14 @@ public class BoardService {
     }
 
     // 공지사항 상세 조회
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true) // 💡 다시 readOnly = true로 변경 (성능 향상)
     public BoardPost getPost(Long postId) {
         BoardPost post = boardRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
         
-        // 조회수 증가 로직 (선택 사항)
-        post.setViewCount(post.getViewCount() + 1);
+        // ❌ 삭제: post.setViewCount(post.getViewCount() + 1); 
+        // 조회수 증가 로직 제거
+        
         return post;
     }
 
