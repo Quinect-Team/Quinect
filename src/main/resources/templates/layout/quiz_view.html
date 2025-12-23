@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
+
+		<meta name="_csrf" th:content="${_csrf.token}"/>
+		<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Quiz</title>
@@ -45,20 +48,33 @@ const quizId = getLastPathSegment();
 const root = document.getElementById('quiz-root');
 const LOCAL_KEY = quizId ? `quiz_temp_${quizId}` : null;
 
+const csrfToken = document
+  .querySelector('meta[name="_csrf"]')
+  ?.getAttribute('content');
+
+const csrfHeader = document
+  .querySelector('meta[name="_csrf_header"]')
+  ?.getAttribute('content');
+
+console.log('CSRF TOKEN =', csrfToken);
+console.log('CSRF HEADER =', csrfHeader);
+
 
 if (!quizId) {
-    root.innerHTML = '<p>퀴즈 ID가 없습니다.</p>';
+  root.innerHTML = '<p>퀴즈 ID가 없습니다.</p>';
 } else {
-    fetch(`/api/quiz/${quizId}`)
-        .then(res => {
-            if (!res.ok) throw new Error(res.status);
-            return res.json();
-        })
-        .then(renderQuiz)
-        .catch(() => {
-            root.innerHTML = '<p>퀴즈를 불러오지 못했습니다.</p>';
-        });
+  fetch(`/api/quiz/${quizId}`)
+    .then(res => {
+      if (!res.ok) throw new Error('퀴즈 로드 실패');
+      return res.json();
+    })
+    .then(renderQuiz)
+    .catch(err => {
+      console.error(err);
+      root.innerHTML = '<p>퀴즈를 불러오지 못했습니다.</p>';
+    });
 }
+
 
 /* ================== 렌더링 ================== */
 function renderQuiz(quizData) {
@@ -158,8 +174,6 @@ function renderQuiz(quizData) {
 	    form.appendChild(wrap);
 	});
 
-	const quizId = getLastPathSegment();
-	const LOCAL_KEY = `quiz_temp_${quizId}`;
 
     /* 버튼 */
     const controls = document.createElement('div');
@@ -179,10 +193,37 @@ function renderQuiz(quizData) {
     controls.appendChild(submitBtn);
     form.appendChild(controls);
 
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        alert('제출 완료 (채점 로직은 다음 단계)');
-    });
+	form.addEventListener('submit', async e => {
+	  e.preventDefault();
+
+	  const payload = collectSubmitPayload();
+
+	  console.log("제출 payload", payload);
+
+	  try {
+	    const res = await fetch(`/api/quiz/${quizId}/submit`, {
+	      method: 'POST',
+		  credentials: 'same-origin',
+	      headers: {
+	        'Content-Type': 'application/json',
+			[csrfHeader]: csrfToken
+	      },
+	      body: JSON.stringify(payload)
+	    });
+
+	    if (!res.ok) throw new Error('제출 실패');
+
+	    const submissionId = await res.json();
+
+	    if (LOCAL_KEY) localStorage.removeItem(LOCAL_KEY);
+
+	    alert(`제출 완료 (submissionId=${submissionId})`);
+	  } catch (err) {
+	    console.error(err);
+	    alert('제출 중 오류 발생');
+	  }
+	});
+
 
     root.appendChild(form);
 	attachAutoSaveEvents();   // ⭐ 이벤트 연결
@@ -274,6 +315,44 @@ function autoRestoreIfExists() {
   } catch (e) {
     console.warn("로컬 임시본 파싱 실패", e);
   }
+}
+function collectSubmitPayload() {
+  const payload = {
+    userId: 1,   // TODO: 로그인 연동 시 교체
+    answers: []
+  };
+
+  document.querySelectorAll('.question').forEach(qEl => {
+
+    const textarea = qEl.querySelector('textarea');
+    const checkedRadio = qEl.querySelector('input[type="radio"]:checked');
+
+    let nameSource = textarea || checkedRadio;
+    if (!nameSource) return;
+
+    const questionId = Number(nameSource.name.replace('q_', ''));
+
+    // 서술형
+    if (textarea) {
+      payload.answers.push({
+        questionId,
+        answerText: textarea.value || null,
+        selectedOption: null
+      });
+      return;
+    }
+
+    // 객관식
+    payload.answers.push({
+      questionId,
+      answerText: null,
+      selectedOption: checkedRadio
+        ? Number(checkedRadio.value)
+        : null
+    });
+  });
+
+  return payload;
 }
 
 
