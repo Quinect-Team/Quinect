@@ -1,75 +1,40 @@
 /**
- * notification.js
- * 웹소켓을 통해 실시간 알림을 수신하고 Topbar의 뱃지와 목록을 업데이트합니다.
+ * ✅ notification.js
+ * 알림 + 메시지 드롭다운 UI (순수 UI만)
  */
 
-var stompClient = null;
-
 $(document).ready(function() {
-
 	var token = $("meta[name='_csrf']").attr("content");
 	var header = $("meta[name='_csrf_header']").attr("content");
 
-	// 모든 AJAX 요청 헤더에 CSRF 토큰을 포함시킵니다.
 	if (token && header) {
 		$(document).ajaxSend(function(e, xhr, options) {
 			xhr.setRequestHeader(header, token);
 		});
 	}
 
-	connectWebSocket();
 });
 
-function connectWebSocket() {
-	// 1. 웹소켓 연결
-	var socket = new SockJS('/ws');
-	stompClient = Stomp.over(socket);
-	stompClient.debug = null; // 콘솔 로그 끄기 (배포 시 유용)
-
-	stompClient.connect({}, function(frame) {
-		console.log('Notification WS Connected');
-
-		// 2. 내 전용 알림 채널 구독 (/user/queue/notifications)
-		stompClient.subscribe('/user/queue/notifications', function(message) {
-			var notification = JSON.parse(message.body);
-			updateTopbarAlert(notification);
-		});
-
-	}, function(error) {
-		console.log('WS Error, Reconnecting in 5s...');
-		setTimeout(connectWebSocket, 5000);
-	});
-}
+// ====================================
+// ⭐ 알림 관련 함수들
+// ====================================
 
 /**
  * 알림 수신 시 UI 업데이트 함수
  */
 function updateTopbarAlert(notification) {
-	// ----------------------------------------
-	// 1. 뱃지 숫자 업데이트 (빨간색 숫자)
-	// ----------------------------------------
-	var $badge = $('#alertBadge');
 
-	// 현재 숫자 가져오기 ("3+" -> "3", 없으면 0)
+	var $badge = $('#alertBadge');
 	var currentText = $badge.text().replace('+', '');
 	var currentCount = parseInt(currentText) || 0;
 
-	// 숫자가 0(숨김 상태)이었다면 보이게 전환
 	if (currentCount === 0) {
 		$badge.show();
 	}
 
-	// 숫자 증가 후 적용
 	$badge.text((currentCount + 1) + "+");
-
-	// ----------------------------------------
-	// 2. 드롭다운 목록에 새 알림 끼워넣기
-	// ----------------------------------------
-
-	// "알림이 없습니다" 메시지가 떠 있다면 숨김
 	$('#noAlertsMessage').hide();
 
-	// 현재 시간 포맷팅 (YYYY-MM-DD HH:mm) - 간단하게 구현
 	var now = new Date();
 	var timeString = now.getFullYear() + "-" +
 		String(now.getMonth() + 1).padStart(2, '0') + "-" +
@@ -77,64 +42,54 @@ function updateTopbarAlert(notification) {
 		String(now.getHours()).padStart(2, '0') + ":" +
 		String(now.getMinutes()).padStart(2, '0');
 
-	// 새 알림 아이템 HTML 생성 (Thymeleaf 구조와 동일하게 맞춤)
-	var linkUrl = notification.url ? notification.url : "#"; // URL 없으면 #
+	var linkUrl = notification.url ? notification.url : "#";
 	var notiId = notification.id;
 
 	var newItemHtml = `
-	        <a class="dropdown-item d-flex align-items-center" href="#" 
-	           onclick="readNotification(${notiId}, '${linkUrl}', event)">
-	            <div class="mr-3">
-	                <div class="icon-circle bg-primary">
-	                    <i class="fas fa-trophy text-white"></i>
-	                </div>
-	            </div>
-	            <div>
-	                <div class="small text-gray-500">${timeString}</div>
-	                <span class="font-weight-bold">${notification.content}</span>
-	            </div>
-	        </a>
-	    `;
+        <a class="dropdown-item d-flex align-items-center" href="#" 
+           onclick="readNotification(${notiId}, '${linkUrl}', event)">
+            <div class="mr-3">
+                <div class="icon-circle bg-primary">
+                    <i class="fas fa-trophy text-white"></i>
+                </div>
+            </div>
+            <div>
+                <div class="small text-gray-500">${timeString}</div>
+                <span class="font-weight-bold">${notification.content}</span>
+            </div>
+        </a>
+    `;
 
 	$('#notificationItems').prepend(newItemHtml);
 }
 
 function readNotification(id, url, event) {
-	event.preventDefault(); // 즉시 이동 방지
+	event.preventDefault();
 
-	// AJAX 요청: 읽음 처리
 	$.post("/api/notification/" + id + "/read")
 		.done(function() {
-			// 성공하면 페이지 이동 (이동 후 새로고침되면 뱃지는 자동으로 사라짐)
 			if (url && url !== '#' && url !== 'null') {
 				window.location.href = url;
 			} else {
-				// 이동할 곳이 없으면(단순 알림) 현재 페이지 새로고침 or 뱃지만 제거
 				location.reload();
 			}
 		})
 		.fail(function() {
-			console.log("알림 읽음 처리 실패");
-			// 실패해도 이동은 시켜줌
 			if (url) window.location.href = url;
 		});
 }
 
-
+// ====================================
+// ⭐ 메시지 드롭다운 관련 함수들
+// ====================================
 
 /**
- * 안 읽은 친구 메시지 5개 조회 (드롭다운용)
+ * 안 읽은 친구 메시지 조회 (페이지 로드 시)
  */
 function loadUnreadMessages() {
-	const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
 	fetch('/api/friend-messages/unread/list', {
-		method: 'GET',
-		headers: {
-			[csrfHeader]: csrfToken,
-			'Content-Type': 'application/json'
-		}
+		method: 'GET'
 	})
 		.then(response => response.json())
 		.then(data => {
@@ -144,46 +99,34 @@ function loadUnreadMessages() {
 }
 
 /**
- * 메시지 드롭다운 업데이트 (프로필 이미지 포함, 중복 제거, Show All 버튼)
+ * 메시지 드롭다운 업데이트 (초기 로드 시)
  */
 function updateMessageDropdown(messages) {
 	const messageItems = document.getElementById('messageItems');
 	const messageBadge = document.getElementById('messageBadge');
 	const noMessagesMessage = document.getElementById('noMessagesMessage');
 
-	// 기존 아이템 모두 제거
 	messageItems.innerHTML = '';
 
 	if (!messages || messages.length === 0) {
 		messageBadge.style.display = 'none';
+		messageBadge.textContent = '';
 		if (noMessagesMessage) noMessagesMessage.style.display = 'block';
 		return;
 	}
 
-	// ⭐ 발신자별 중복 제거 (JavaScript에서도 한 번 더)
-	const uniqueMessages = [];
-	const senderIds = new Set();
-
+	let totalMessageCount = 0;
 	messages.forEach(function(msg) {
-		if (!senderIds.has(msg.senderId)) {
-			senderIds.add(msg.senderId);
-			uniqueMessages.push(msg);
-		}
+		totalMessageCount += (msg.messageCount || 1);
 	});
 
-	// 최대 5개까지만 표시
-	const displayMessages = uniqueMessages.slice(0, 5);
+	const displayMessages = messages.slice(0, 5);
 
-	// 배지 업데이트 (실제 고유 발신자 수)
-	if (uniqueMessages.length <= 5) {
-		messageBadge.textContent = uniqueMessages.length.toString();
-	} else {
-		messageBadge.textContent = '5+';
-	}
+	messageBadge.textContent = totalMessageCount > 5 ? '5+' : totalMessageCount.toString();
 	messageBadge.style.display = 'block';
+
 	if (noMessagesMessage) noMessagesMessage.style.display = 'none';
 
-	// 메시지 아이템 생성
 	displayMessages.forEach(function(msg) {
 		const item = document.createElement('a');
 		item.className = 'dropdown-item d-flex align-items-center';
@@ -192,19 +135,34 @@ function updateMessageDropdown(messages) {
 
 		item.onclick = function(e) {
 			e.preventDefault();
-			// 드롭다운 닫기
 			document.getElementById('messagesDropdown').click();
-			// 채팅 시작
-			goToFriendChat(msg.senderId, msg.senderName);
+
+			// ⭐ 배지 감소
+			if (typeof decrementMessageBadgeByCount === 'function') {
+				decrementMessageBadgeByCount(msg.messageCount || 1);
+			}
+
+			// ⭐ switchToChatView() 직접 호출
+			if (typeof openFriendModal === 'function') {
+				openFriendModal();
+			}
+
+			setTimeout(() => {
+				if (typeof switchToChatView === 'function') {
+					switchToChatView(
+						msg.senderId,
+						msg.senderName,
+						msg.friendshipId  // ⭐ 이미 있는 데이터
+					);
+				}
+			}, 300);
 		};
 
-		// 메시지 미리보기 자르기
-		let preview = msg.content;
+		let preview = msg.lastMessage || msg.content || '';
 		if (preview.length > 50) {
 			preview = preview.substring(0, 50) + '...';
 		}
 
-		// ⭐ 프로필 이미지 또는 기본 아이콘
 		let profileImageHtml;
 		if (msg.profileImage) {
 			profileImageHtml = `<img src="${escapeHtml(msg.profileImage)}" 
@@ -227,14 +185,17 @@ function updateMessageDropdown(messages) {
                 <span class="font-weight-bold" style="font-size: 13px;">
                     ${escapeHtml(preview)}
                 </span>
+                <small class="text-muted d-block" style="font-size: 11px;">
+                    ${msg.messageCount || 1}개의 메시지
+                </small>
             </div>
         `;
 
 		messageItems.appendChild(item);
 	});
 
-	// ⭐ "Show All Messages" 버튼 추가 (고유 발신자가 5명 초과일 때)
-	if (uniqueMessages.length > 5) {
+	// Show All 버튼
+	if (messages.length > 5) {
 		const showAllItem = document.createElement('a');
 		showAllItem.className = 'dropdown-item text-center small text-primary';
 		showAllItem.href = '#';
@@ -243,9 +204,7 @@ function updateMessageDropdown(messages) {
 
 		showAllItem.onclick = function(e) {
 			e.preventDefault();
-			// 드롭다운 닫기
 			document.getElementById('messagesDropdown').click();
-			// 친구 창으로 이동
 			goToFriendsModal();
 		};
 
@@ -253,11 +212,220 @@ function updateMessageDropdown(messages) {
 	}
 }
 
+
 /**
- * ⭐ 친구 창으로 이동하는 함수
+ * WebSocket으로 수신한 친구 메시지를 드롭다운에 실시간 추가
+ */
+function updateFriendMessageDropdown(message) {
+	const messageItems = document.getElementById('messageItems');
+	const messageBadge = document.getElementById('messageBadge');
+	const noMessagesMessage = document.getElementById('noMessagesMessage');
+
+	if (!messageItems) {
+		console.warn('⚠️ messageItems 엘리먼트 없음');
+		return;
+	}
+
+	if (noMessagesMessage) {
+		noMessagesMessage.style.display = 'none';
+	}
+
+	messageBadge.style.display = 'block';
+
+	const existingItems = messageItems.querySelectorAll('a.dropdown-item:not(.text-center)');
+	existingItems.forEach(function(item) {
+		const senderName = message.senderName || '';
+		if (item.textContent.includes(senderName)) {
+			item.remove();
+		}
+	});
+
+	const item = document.createElement('a');
+	item.className = 'dropdown-item d-flex align-items-center';
+	item.href = '#';
+	item.style.cursor = 'pointer';
+
+	item.onclick = function(e) {
+		e.preventDefault();
+		document.getElementById('messagesDropdown').click();
+
+		if (typeof decrementMessageBadgeByCount === 'function') {
+			decrementMessageBadgeByCount(1);
+		}
+
+		// ⭐ switchToChatView() 직접 호출
+		if (typeof openFriendModal === 'function') {
+			openFriendModal();
+		}
+
+		setTimeout(() => {
+			if (typeof switchToChatView === 'function') {
+				switchToChatView(
+					message.senderId,
+					message.senderName,
+					message.friendshipId  // ⭐ WebSocket 메시지에 friendshipId가 있는지 확인!
+				);
+			}
+		}, 300);
+	};
+
+	let preview = message.messageText || message.content || '';
+	if (preview.length > 50) {
+		preview = preview.substring(0, 50) + '...';
+	}
+
+	let profileImageHtml;
+	if (message.profileImage) {
+		profileImageHtml = `<img src="${escapeHtml(message.profileImage)}" 
+                             style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">`;
+	} else {
+		profileImageHtml = `<div class="icon-circle bg-info">
+                            <i class="fas fa-envelope text-white"></i>
+                        </div>`;
+	}
+
+	item.innerHTML = `
+        <div class="mr-3">
+        ${profileImageHtml}
+        </div>
+        <div style="flex-grow: 1;">
+        <div class="small text-gray-500">
+        ${escapeHtml(message.senderName || '알 수 없는 사용자')}
+        </div>
+        <span class="font-weight-bold" style="font-size: 13px;">
+        ${escapeHtml(preview)}
+        </span>
+        <small class="text-muted d-block" style="font-size: 11px;">
+            1개의 메시지
+        </small>
+        </div>
+    `;
+
+	if (messageItems.firstChild) {
+		messageItems.insertBefore(item, messageItems.firstChild);
+	} else {
+		messageItems.appendChild(item);
+	}
+
+	const displayItems = messageItems.querySelectorAll('a.dropdown-item:not(.text-center)');
+	while (displayItems.length > 5) {
+		displayItems[displayItems.length - 1].remove();
+	}
+}
+
+
+/**
+ * ⭐ 배지 숫자 증가 (WebSocket 메시지 1개)
+ */
+function incrementMessageBadge() {
+
+	const messageBadge = document.getElementById('messageBadge');
+
+	if (!messageBadge) {
+		console.error('❌ messageBadge 엘리먼트를 찾을 수 없습니다!');
+		return;
+	}
+
+
+	// ⭐ 배지가 숨겨져 있으면 1부터 시작
+	if (messageBadge.style.display === 'none' || messageBadge.textContent === '') {
+		messageBadge.textContent = '1';
+	} else {
+		// ⭐ 배지가 이미 표시되면 숫자 증가
+		let currentBadgeText = messageBadge.textContent.replace('+', '');
+		let currentCount = parseInt(currentBadgeText) || 0;
+
+		const newCount = currentCount + 1;
+
+		// ⭐ 5 초과일 때만 5+ 표시
+		messageBadge.textContent = newCount > 5 ? '5+' : newCount.toString();
+	}
+
+	messageBadge.style.display = 'block';
+}
+
+/**
+ * ⭐ 배지를 특정 개수만큼 감소 (친구 클릭할 때)
+ */
+function decrementMessageBadgeByCount(count) {
+
+	const messageBadge = document.getElementById('messageBadge');
+	const noMessagesMessage = document.getElementById('noMessagesMessage');
+
+	if (!messageBadge) {
+		console.error('❌ messageBadge 엘리먼트를 찾을 수 없습니다!');
+		return;
+	}
+
+
+	let currentBadgeText = messageBadge.textContent.replace('+', '');
+	let currentCount = parseInt(currentBadgeText) || 0;
+
+
+	// ⭐ 해당 개수만큼 감소
+	const newCount = currentCount - count;
+
+	if (newCount <= 0) {
+		// ⭐ 0이면 배지 숨기기
+		messageBadge.style.display = 'none';
+		messageBadge.textContent = '';
+
+		if (noMessagesMessage) {
+			noMessagesMessage.style.display = 'block';
+		}
+
+	} else if (newCount > 5) {
+		// ⭐ 5 초과면 5+
+		messageBadge.textContent = '5+';
+
+	} else {
+		// ⭐ 1-5 사이
+		messageBadge.textContent = newCount.toString();
+	}
+}
+
+/**
+ * 친구 채팅창으로 이동
+ */
+/**
+ * 친구 채팅창으로 이동 (수정된 버전)
+ */
+function goToFriendChat(friendId, friendName) {
+
+	fetch(`/api/friend-messages/friendships/find/${friendId}`, {
+		method: 'GET'
+	})
+		.then(response => response.json())
+		.then(data => {
+			if (!data || !data.id) {
+				console.error('❌ 서버에서 friendshipId를 찾을 수 없습니다');
+				return;
+			}
+
+			const friendshipId = data.id;
+
+			// ⭐ 친구 모달이 이미 열려있지 않으면 열기
+			if (typeof openFriendModal === 'function') {
+				openFriendModal();
+			}
+
+			// ⭐ switchToChatView() 호출 (DOM data 설정 + loadMessageHistory 등)
+			setTimeout(() => {
+				if (typeof switchToChatView === 'function') {
+					switchToChatView(friendId, friendName, friendshipId);
+				} else {
+					console.error('❌ switchToChatView 함수를 찾을 수 없습니다');
+				}
+			}, 300);
+		})
+		.catch(error => console.error('❌ friendshipId 조회 실패:', error));
+}
+
+
+/**
+ * 친구 목록 모달로 이동
  */
 function goToFriendsModal() {
-	console.log('✅ 친구 목록 창으로 이동');
 
 	if (typeof openFriendModal === 'function') {
 		openFriendModal();
@@ -266,66 +434,9 @@ function goToFriendsModal() {
 	}
 }
 
-/**
- * 친구 채팅창으로 이동 (friendshipId를 서버에서 조회)
- */
-function goToFriendChat(friendId, friendName) {
-	console.log('✅ 친구 채팅창으로 이동:', friendName);
-
-	const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-
-	// ⭐ 서버에서 friendshipId 조회
-	fetch(`/api/friendships/find/${friendId}`, {
-		method: 'GET',
-		headers: {
-			[csrfHeader]: csrfToken,
-			'Content-Type': 'application/json'
-		}
-	})
-		.then(response => response.json())
-		.then(data => {
-			if (data && data.id) {
-				const friendshipId = data.id;
-
-				window.currentChatUserId = friendId;
-				window.currentChatUsername = friendName;
-
-				if (typeof openFriendModal === 'function') {
-					openFriendModal();
-
-					setTimeout(() => {
-						$('#friendsModal').hide();
-						$('#chatModal').show();
-
-						$('#chatFriendName').text(friendName || '알 수 없는 사용자');
-						$('#chatFriendEmail').text('');
-						$('#messageHistory').html(
-							'<p class="text-center text-muted small">메시지가 없습니다.</p>'
-						);
-
-						setTimeout(function() {
-							$('#messageInput').focus();
-						}, 100);
-
-						if (typeof loadMessageHistory === 'function') {
-							loadMessageHistory(friendshipId);
-						}
-
-						if (typeof markChatRoomAsRead === 'function') {
-							markChatRoomAsRead(friendshipId);
-						}
-					}, 300);
-				} else {
-					console.error('❌ openFriendModal 함수를 찾을 수 없습니다');
-				}
-			} else {
-				console.error('❌ 서버에서 friendshipId를 찾을 수 없습니다');
-			}
-		})
-		.catch(error => console.error('❌ 서버 요청 실패:', error));
-}
-
+// ====================================
+// ⭐ 유틸리티 함수
+// ====================================
 
 /**
  * HTML 특수문자 이스케이프 (XSS 방지)
@@ -343,24 +454,23 @@ function escapeHtml(text) {
 	return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-/**
- * 글로벌 함수 노출
- */
+// ====================================
+// ⭐ 글로벌 함수 노출
+// ====================================
+
+window.updateTopbarAlert = updateTopbarAlert;
+window.readNotification = readNotification;
 window.loadUnreadMessages = loadUnreadMessages;
 window.updateMessageDropdown = updateMessageDropdown;
+window.updateFriendMessageDropdown = updateFriendMessageDropdown;
+window.incrementMessageBadge = incrementMessageBadge;
+window.decrementMessageBadgeByCount = decrementMessageBadgeByCount;
 window.goToFriendChat = goToFriendChat;
 window.goToFriendsModal = goToFriendsModal;
+window.escapeHtml = escapeHtml;
 
 /**
  * 페이지 로드 시 초기화
  */
 document.addEventListener('DOMContentLoaded', function() {
-	console.log('📍 friend-message-dropdown.js 로드됨');
-
-	// 초기 로드
-	loadUnreadMessages();
-
-	// 5초마다 자동 갱신
-	setInterval(loadUnreadMessages, 5000);
 });
-

@@ -14,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import com.project.quiz.domain.Friendship;
 import com.project.quiz.domain.User;
 import com.project.quiz.dto.UserSearchResponse;
 import com.project.quiz.service.FriendshipService;

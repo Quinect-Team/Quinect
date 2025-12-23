@@ -68,11 +68,26 @@
 	<!-- ⭐ global-websocket.js (반드시 friends-modal.js 전에!) -->
 	<script th:src="@{/js/global-websocket.js}"></script>
 
+	<!-- 알림 JS-->
+	<script src="/js/notification.js"></script>
+	
 	<!-- ⭐ friends-modal.js (마지막) -->
 	<script th:src="@{/js/friends-modal.js}"></script>
 
-	<!-- 알림 JS-->
-	<script src="/js/notification.js"></script>
+	<script>
+	$(document).ready(function() {
+	    if (typeof initGlobalWebSocket === 'function') {
+	        initGlobalWebSocket().then(function() {
+	            console.log('✅ WebSocket 준비 완료');
+	            
+	            // ⭐ 메시지 드롭다운 초기 로드
+	            if (typeof loadUnreadMessages === 'function') {
+	                loadUnreadMessages();
+	            }
+	        });
+	    }
+	});
+	</script>
 
 </body>
 </html>

@@ -113,13 +113,29 @@ public class FriendshipService {
 	}
 
 	/**
-	 * 수락된 친구 목록 (기존 메서드 유지)
+	 * 수락된 친구 목록 (Friendship ID 포함)
 	 */
 	public List<UserSearchResponse> getAcceptedFriends(Long currentUserId) {
-		List<Friendship> friendships = friendshipRepository.findByUserIdAndStatus(currentUserId, "accepted");
+		// user_id = 나인 경우 (내가 보낸 요청이 수락됨)
+		List<Friendship> friendshipsAsSender = friendshipRepository.findByUserIdAndStatus(currentUserId, "accepted");
 
-		return friendships.stream().map(f -> UserSearchResponse.from(f.getFriendUser(), "ACCEPTED"))
-				.collect(Collectors.toList());
+		// friend_user_id = 나인 경우 (내가 받은 요청이 수락됨)
+		List<Friendship> friendshipsAsReceiver = friendshipRepository.findByFriendUserIdAndStatus(currentUserId,
+				"accepted");
+
+		List<UserSearchResponse> accepted = new ArrayList<>();
+
+		// 내가 보낸 요청이 수락된 경우 - ✅ fromFriendship() 사용!
+		accepted.addAll(friendshipsAsSender.stream()
+				.map(f -> UserSearchResponse.fromFriendship(f.getFriendUser(), f.getId(), "ACCEPTED"))
+				.collect(Collectors.toList()));
+
+		// 내가 받은 요청이 수락된 경우 - ✅ fromFriendship() 사용!
+		accepted.addAll(friendshipsAsReceiver.stream()
+				.map(f -> UserSearchResponse.fromFriendship(f.getUser(), f.getId(), "ACCEPTED"))
+				.collect(Collectors.toList()));
+
+		return accepted;
 	}
 
 	/**
@@ -285,6 +301,24 @@ public class FriendshipService {
 	public Friendship findFriendship(Long userId1, Long userId2) {
 		return friendshipRepository.findByUserIdAndFriendUserId(userId1, userId2)
 				.orElseGet(() -> friendshipRepository.findByUserIdAndFriendUserId(userId2, userId1).orElse(null));
+	}
+
+	/**
+	 * ⭐ 현재 사용자가 포함된 모든 friendship 조회 (양방향)
+	 */
+	public List<Friendship> findAllFriendshipsForUser(Long userId) {
+		// 내가 user_id인 경우
+		List<Friendship> userSide = friendshipRepository.findByUserIdAndStatus(userId, "accepted");
+
+		// 내가 friend_user_id인 경우
+		List<Friendship> friendUserSide = friendshipRepository.findByFriendUserIdAndStatus(userId, "accepted");
+
+		// 둘 다 합치기
+		List<Friendship> result = new ArrayList<>();
+		result.addAll(userSide);
+		result.addAll(friendUserSide);
+
+		return result;
 	}
 
 }

@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class FriendMessageController {
 
 	private final FriendMessageService friendMessageService;
+	private final FriendMessageRepository friendMessageRepository;
 	private final FriendshipRepository friendshipRepository;
 	private final UserRepository userRepository;
 	private final SimpMessagingTemplate messagingTemplate; // ⭐ WebSocket 전송용
@@ -40,46 +41,34 @@ public class FriendMessageController {
 			}
 
 			// ⭐ 1단계: Service로 메시지 저장
-			FriendMessageDTO message = friendMessageService.sendMessage(friendshipId, currentUserId, content);
-
-			if (message == null) {
-				return ResponseEntity.badRequest().body("메시지 저장에 실패했습니다");
-			}
+			FriendMessageDTO dto = friendMessageService.sendMessage(friendshipId, currentUserId, content);
 
 			// ⭐ 2단계: 발신자 정보 설정 (userProfile에서 닉네임 가져오기)
 			User sender = userRepository.findById(currentUserId).orElse(null);
-			String senderName = "알 수 없음";
-
 			if (sender != null && sender.getUserProfile() != null) {
-				senderName = sender.getUserProfile().getUsername();
+				dto.setSenderName(sender.getUserProfile().getUsername());
 			} else if (sender != null) {
-				senderName = sender.getEmail();
+				dto.setSenderName(sender.getEmail());
+			} else {
+				dto.setSenderName("알 수 없음");
 			}
-
-			message.setSenderName(senderName);
 
 			// ⭐ 3단계: 상대방(수신자) 찾기
 			Friendship friendship = friendshipRepository.findById(friendshipId)
 					.orElseThrow(() -> new IllegalArgumentException("친구 관계가 없습니다"));
 
-			User receiver;
-			if (friendship.getUser().getId().equals(currentUserId)) {
-				receiver = friendship.getFriendUser();
-			} else {
-				receiver = friendship.getUser();
-			}
+			User receiver = friendship.getUser().getId().equals(currentUserId) ? friendship.getFriendUser()
+					: friendship.getUser();
 
 			try {
-				messagingTemplate.convertAndSendToUser(receiver.getEmail(), // 받는 사람 ID
-						"/queue/friend-messages", // 목적지
-						message // 메시지 객체
+				messagingTemplate.convertAndSendToUser(receiver.getEmail(), // Principal name
+						"/queue/friend-messages", dto // ⭐ DTO ONLY
 				);
 			} catch (Exception e) {
-				System.out.println("⚠️ WebSocket 전송 실패 (HTTP 응답으로 보상): " + e.getMessage());
-				// WebSocket 실패 시에도 HTTP 응답으로 메시지 반환 (클라이언트에서 처리 가능)
+				System.out.println("⚠️ WebSocket 전송 실패: " + e.getMessage());
 			}
 
-			return ResponseEntity.ok(message);
+			return ResponseEntity.ok(dto);
 
 		} catch (Exception e) {
 			System.err.println("❌ 예외 발생: " + e.getMessage());
@@ -99,19 +88,20 @@ public class FriendMessageController {
 		// 1. Principal 타입 확인 없이 바로 이름을 가져옵니다. (가장 안전한 방법)
 		// 일반 로그인: 이메일/ID, OAuth2: 이메일/Sub ID 등이 들어옴
 		String emailOrUsername = authentication.getName();
-        
+
 		// 2. DB에서 조회
 		User user = userRepository.findByEmail(emailOrUsername).orElse(null);
 
 		// 3. 만약 이메일로 못 찾았다면, 혹시 닉네임일 수도 있으니 추가 로직 (필요 시)
-        // (지금 구조상 이메일이 ID라면 위 코드로 충분합니다)
-        
+		// (지금 구조상 이메일이 ID라면 위 코드로 충분합니다)
+
 		if (user != null) {
 			return user.getId();
 		}
 
 		return null;
 	}
+
 	/**
 	 * ⭐ 현재 사용자의 안 읽은 친구 메시지 5개 조회 (드롭다운용) GET /api/friend-messages/unread/list
 	 */
@@ -124,6 +114,7 @@ public class FriendMessageController {
 				return ResponseEntity.badRequest().body(new ArrayList<>());
 			}
 
+			// ⭐ 발신자별 그룹화된 메시지 조회
 			List<Map<String, Object>> messages = friendMessageService.getUnreadMessages(currentUserId);
 
 			return ResponseEntity.ok(messages);
@@ -250,6 +241,38 @@ public class FriendMessageController {
 	}
 
 	/**
+	 * ⭐ 상대방 사용자 ID로 friendshipId 조회 GET
+	 */
+	@GetMapping("/friendships/find/{userId}")
+	public ResponseEntity<?> findFriendshipIdByUserId(@PathVariable("userId") Long userId,
+			Authentication authentication) {
+
+		try {
+			Long currentUserId = getCurrentUserId(authentication);
+
+			if (currentUserId == null) {
+				return ResponseEntity.badRequest().body("사용자 정보를 찾을 수 없습니다");
+			}
+
+			// 현재 사용자와 상대방 사이의 친구 관계 조회
+			Friendship friendship = friendshipRepository.findByUserIdAndFriendUserId(currentUserId, userId).orElseGet(
+					() -> friendshipRepository.findByUserIdAndFriendUserId(userId, currentUserId).orElse(null));
+
+			if (friendship == null) {
+				return ResponseEntity.status(404).body(Map.of("error", "친구 관계를 찾을 수 없습니다", "userId", userId));
+			}
+
+			return ResponseEntity.ok(Map.of("id", friendship.getId(), "friendshipId", friendship.getId(), "status",
+					friendship.getStatus()));
+
+		} catch (Exception e) {
+			System.err.println("❌ friendshipId 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).body(Map.of("error", "friendshipId 조회에 실패했습니다"));
+		}
+	}
+
+	/**
 	 * 채팅방 열 때 - 해당 대화의 모든 메시지를 읽음 처리 PUT
 	 * /api/friend-messages/friendship/{friendshipId}/mark-as-read
 	 */
@@ -264,7 +287,6 @@ public class FriendMessageController {
 				return ResponseEntity.badRequest().body("사용자 정보를 찾을 수 없습니다");
 			}
 
-			// 해당 friendship이 현재 사용자와 관련 있는지 확인 (권한 체크)
 			Friendship friendship = friendshipRepository.findById(friendshipId)
 					.orElseThrow(() -> new IllegalArgumentException("친구 관계가 없습니다"));
 
@@ -273,10 +295,18 @@ public class FriendMessageController {
 				return ResponseEntity.status(403).body("권한이 없습니다");
 			}
 
-			// ⭐ Service 메서드 호출 (엔티티 활용)
+			// ⭐ 읽음 처리 전에 메시지 개수 조회
+			List<FriendMessage> unreadMessages = friendMessageRepository
+					.findByFriendshipIdAndSenderIdNotAndIsReadFalse(friendshipId, currentUserId);
+
+			int messageCount = unreadMessages.size();
+
+			// 읽음 처리
 			friendMessageService.markChatRoomAsRead(friendshipId, currentUserId);
 
-			return ResponseEntity.ok("채팅 메시지가 읽음 처리되었습니다");
+			// ⭐ messageCount와 함께 반환
+			return ResponseEntity.ok(Map.of("message", "채팅 메시지가 읽음 처리되었습니다", "messageCount", messageCount // ⭐ 추가
+			));
 
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.badRequest().body(e.getMessage());

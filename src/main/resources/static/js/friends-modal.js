@@ -1,14 +1,76 @@
-// ⭐ 전역 변수: 현재 친구 관계 데이터 저장 (IIFE 밖에!)
+// ⭐ 상단에 전역 변수 추가
 window.currentFriendships = { received: [], sent: [], accepted: [] };
-
-// ⭐ 현재 열려 있는 채팅 대상 전역 보관
 window.currentChatUserId = null;
 window.currentChatUsername = null;
 window.currentChatEmail = null;
 
+// ⭐ 새로 추가
+window.privateMessagesSubscribed = false;
+window.invitationsSubscribed = false;
 
 (function($) {
 	'use strict';
+
+	/**
+	 * 1:1 채팅 메시지 실시간 수신 대기
+	 */
+	function subscribeToPrivateMessages() {
+		// ⭐ 이미 구독했으면 스킵!
+		if (window.privateMessagesSubscribed) {
+			return;
+		}
+
+		if (!window.stompClient || !window.stompClient.connected) {
+			console.warn('⚠️ WebSocket 연결 대기 중...');
+			setTimeout(subscribeToPrivateMessages, 3000);
+			return;
+		}
+
+		window.privateMessageSubscription =
+			window.stompClient.subscribe('/user/queue/friend-messages', function(message) {
+				var msg = JSON.parse(message.body);
+
+				displayMessage(msg);
+
+				if (typeof updateFriendMessageDropdown === 'function') {
+					updateFriendMessageDropdown(msg);
+				}
+
+				if (typeof incrementMessageBadge === 'function') {
+					incrementMessageBadge();
+				}
+			});
+
+		window.privateMessagesSubscribed = true;
+	}
+
+	/**
+	 * 초대 메시지 수신 대기
+	 */
+	function subscribeToInvitations() {
+		// ⭐ 이미 구독했으면 스킵!
+		if (window.invitationsSubscribed) {
+			return;
+		}
+
+		if (!stompClient || !stompClient.connected) {
+			console.warn('⚠️ WebSocket 연결 대기 중...');
+			setTimeout(subscribeToInvitations, 5000);
+			return;
+		}
+
+
+		try {
+			window.invitationSubscription = stompClient.subscribe('/user/queue/room-invitations', function(message) {
+				var invitation = JSON.parse(message.body);
+				showInvitationNotification(invitation);
+			});
+
+			window.invitationsSubscribed = true;
+		} catch (error) {
+			console.error('❌ 초대 구독 중 에러 발생:', error);
+		}
+	}
 
 	/**
 	 * 친구 모달 열기
@@ -24,81 +86,121 @@ window.currentChatEmail = null;
 			}, 300);
 		}
 
-		// ✅ show 클래스가 없으면 추가
 		if (!$('.modalPOP').hasClass('show')) {
 			$('.modalPOP').addClass('show');
 		}
 
-		/*$('#sidebarModalBackdrop').css('display', 'block');*/
 		$('#friendsModal').css('display', 'flex');
 		$('#chatModal').css('display', 'none');
 
 		loadAllFriendships();
+
+	}
+
+	function switchToChatView(userId, username, friendshipId) {
+		currentChatUserId = userId;
+		currentChatUsername = username;
+
+		// ⭐ DOM에 저장 (전역 변수 대신)
+		$('#chatModal').data({
+			'friendshipId': friendshipId,
+			'userId': userId,
+			'username': username
+		});
+
+		$('#friendsModal').hide();
+		$('#chatModal').show();
+		$('#chatFriendName').text(username || '알 수 없는 사용자');
+		$('#messageHistory').html('<p class="text-center text-muted small">메시지가 없습니다.</p>');
+
+		console.log('✅ 채팅 전환:', $('#chatModal').data());
+
+		setTimeout(function() {
+			$('#messageInput').focus();
+		}, 100);
+
+		loadMessageHistory(friendshipId);
+		markChatRoomAsRead(friendshipId);
+	}
+
+	function sendMessage() {
+		const text = $('#messageInput').val().trim();
+
+		if (!text) {
+			alert('메시지를 입력해주세요');
+			return;
+		}
+
+		// ⭐ DOM에서 읽어오기
+		const chatData = $('#chatModal').data();
+		const friendshipId = chatData.friendshipId;
+		const userId = chatData.userId;
+
+		if (!friendshipId || !userId) {
+			alert('채팅 정보를 찾을 수 없습니다. 다시 친구를 선택해주세요.');
+			return;
+		}
+
+		const csrfToken = $('meta[name="_csrf"]').attr('content');
+		const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+
+		$.ajax({
+			url: '/api/friend-messages/send',
+			type: 'POST',
+			data: {
+				friendshipId: friendshipId,
+				content: text
+			},
+			beforeSend: function(xhr) {
+				if (csrfToken && csrfHeader) {
+					xhr.setRequestHeader(csrfHeader, csrfToken);
+				}
+			},
+			success: function(response) {
+				console.log('✅ 메시지 전송 성공:', response);
+				$('#messageInput').val('').focus();
+
+				if (response && response.id) {
+					displayMessage(response);
+					setTimeout(function() {
+						var historyDiv = $('#messageHistory');
+						historyDiv.scrollTop(historyDiv[0].scrollHeight);
+					}, 50);
+				}
+			},
+			error: function(xhr) {
+				console.error('❌ 메시지 전송 실패:', xhr);
+				alert(xhr.responseText || '메시지 전송에 실패했습니다');
+			}
+		});
+	}
+
+	function backToFriendsList() {
+		$('#chatModal').hide();
+		$('#friendsModal').show();
+
+		$('#messageHistory').empty();
+		$('#messageInput').val('');
+
+		// ⭐ DOM 데이터도 초기화
+		$('#chatModal').removeData();
 	}
 
 	function closeFriendModal() {
-		// ✅ .hide() 메서드 → .removeClass('show') 클래스 제거로 변경
-		$('.modalPOP').removeClass('show');  // ← 이렇게!
+		$('.modalPOP').removeClass('show');
 		$('#sidebarModalBackdrop').css('display', 'none');
 
 		$('#friendshipContainer').html('');
 		$('#friendSearch').val('');
 		currentFriendships = { received: [], sent: [], accepted: [] };
 
-		currentChatUserId = null;
-		currentChatUsername = null;
-		currentChatEmail = null;
 		$('#messageHistory').empty();
 		$('#messageInput').val('');
-	}
 
-	/**
-	 * ✅ 친구 목록 → 채팅창으로 전환
-	 */
-	function switchToChatView(userId, username, friendshipId) {
-
-		currentChatUserId = userId;
-		currentChatUsername = username;
-		// currentChatEmail = email;  // 이건 이제 사용 안 함
-
-		// 친구 목록 숨기고 채팅 영역 보이기
-		$('#friendsModal').hide();
-		$('#chatModal').show();
-
-		// 채팅 상대 정보 세팅
-		$('#chatFriendName').text(username || '알 수 없는 사용자');
-		$('#chatFriendEmail').text('');
-
-		// 기존 메시지 영역 초기화
-		$('#messageHistory').html(
-			'<p class="text-center text-muted small">메시지가 없습니다.</p>'
-		);
-
-		// 입력창 포커스
-		setTimeout(function() {
-			$('#messageInput').focus();
-		}, 100);
-
-		// ⭐ 1단계: 메시지 히스토리 조회 (friendshipId 사용)
-		loadMessageHistory(friendshipId);
-
-		// ⭐ 2단계: 읽음 처리 (friendshipId 사용)
-		markChatRoomAsRead(friendshipId);
-	}
-
-	/**
-	 * ✅ 채팅창 → 친구 목록으로 복귀
-	 */
-	function backToFriendsList() {
-
-		$('#chatModal').hide();
-		$('#friendsModal').show();
-
+		// ⭐ DOM 데이터만 초기화 (충분함)
 		currentChatUserId = null;
 		currentChatUsername = null;
-		currentChatEmail = null;
-		$('#messageHistory').empty();
-		$('#messageInput').val('');
+		$('#chatModal').removeData();
 	}
 
 	/**
@@ -366,6 +468,7 @@ window.currentChatEmail = null;
                         class="btn btn-info btn-sm send-message-btn"
                         data-user-id="${user.id}"
                         data-username="${user.username}"
+						data-friendship-id="${user.friendshipId}"
                         title="메시지 보내기">
                     <i class="fas fa-comments"></i> 메시지
                 </button>
@@ -587,23 +690,19 @@ window.currentChatEmail = null;
 			return;
 		}
 
-		if (!currentChatUserId) {
-			alert('대화 대상이 선택되지 않았습니다');
+		// ⭐ DOM에서 읽어오기 (NEW!)
+		const chatData = $('#chatModal').data();
+		const friendshipId = chatData.friendshipId;
+		const userId = chatData.userId;
+
+		if (!friendshipId || !userId) {
+			alert('채팅 정보를 찾을 수 없습니다. 다시 친구를 선택해주세요.');
 			return;
 		}
 
-		// ⭐ CSRF 토큰 가져오기
 		const csrfToken = $('meta[name="_csrf"]').attr('content');
 		const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
 
-		// ⭐ Friendship ID 가져오기
-		const friendshipId = findFriendshipId(currentChatUserId);
-		if (!friendshipId) {
-			alert('친구 관계를 찾을 수 없습니다');
-			return;
-		}
-
-		// ⭐ Step 1: HTTP로 메시지 저장
 		$.ajax({
 			url: '/api/friend-messages/send',
 			type: 'POST',
@@ -617,47 +716,20 @@ window.currentChatEmail = null;
 				}
 			},
 			success: function(response) {
-
-				// ⭐ [중요] 입력창 즉시 클리어
+				console.log('✅ 메시지 전송 성공:', response);
 				$('#messageInput').val('').focus();
 
-				// ⭐ [중요] 응답으로 받은 메시지를 즉시 화면에 표시
 				if (response && response.id) {
 					displayMessage(response);
-
-					// 스크롤 자동 아래로
 					setTimeout(function() {
 						var historyDiv = $('#messageHistory');
 						historyDiv.scrollTop(historyDiv[0].scrollHeight);
 					}, 50);
 				}
-
-				// ⭐ Step 2: WebSocket으로도 상대방에게 실시간 전송!
-				if (stompClient && stompClient.connected) {
-
-					try {
-						stompClient.send(
-							'/app/friend/send',  // ← FriendChatWebSocketController의 @MessageMapping
-							{
-								'X-User-ID': String(window.currentUserId || ''),
-								'Content-Type': 'application/json'
-							},
-							JSON.stringify({
-								recipientId: currentChatUserId,  // 받는 사람 ID
-								friendshipId: friendshipId,      // 친구 관계 ID
-								content: text                     // 메시지 내용
-							})
-						);
-
-					} catch (error) {
-					}
-				} else {
-				}
 			},
 			error: function(xhr) {
 				console.error('❌ 메시지 전송 실패:', xhr);
-				const errorMsg = xhr.responseText || '메시지 전송에 실패했습니다';
-				alert(errorMsg);
+				alert(xhr.responseText || '메시지 전송에 실패했습니다');
 			}
 		});
 	}
@@ -665,14 +737,12 @@ window.currentChatEmail = null;
 	/**
 	 * 메시지 기록 조회 및 표시
 	 */
-	function loadMessageHistory(friendUserId) {
-
-		// ⭐ CSRF 토큰
+	function loadMessageHistory(friendshipId) {  // ← 파라미터명을 friendshipId로 변경
 		const csrfToken = $('meta[name="_csrf"]').attr('content');
 		const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
 
 		$.ajax({
-			url: '/api/friend-messages/' + friendUserId,
+			url: '/api/friend-messages/' + friendshipId,  // ← 명확함
 			type: 'GET',
 			beforeSend: function(xhr) {
 				if (csrfToken && csrfHeader) {
@@ -680,7 +750,6 @@ window.currentChatEmail = null;
 				}
 			},
 			success: function(messages) {
-
 				if (!messages || messages.length === 0) {
 					$('#messageHistory').html(
 						'<p class="text-center text-muted small">메시지가 없습니다.</p>'
@@ -688,17 +757,11 @@ window.currentChatEmail = null;
 					return;
 				}
 
-				// 첫 번째 메시지 구조 상세히 출력
-
-				// 메시지 히스토리 초기화
 				$('#messageHistory').empty();
-
-				// 메시지 표시
 				messages.forEach(function(msg) {
 					displayMessage(msg);
 				});
 
-				// 스크롤을 맨 아래로
 				setTimeout(function() {
 					$('#messageHistory').scrollTop($('#messageHistory')[0].scrollHeight);
 				}, 100);
@@ -713,11 +776,20 @@ window.currentChatEmail = null;
 	}
 
 	/**
-	 * 메시지 하나 표시
+	 * 메시지 하나 표시 (디버깅 강화)
 	 */
 	function displayMessage(msg) {
+		console.log('📨 displayMessage() 호출:', msg);
 
 		const currentUserId = $('body').data('user-id');
+		console.log('  currentUserId:', currentUserId);
+		console.log('  msg.senderId:', msg.senderId);
+		console.log('  msg.messageText:', msg.messageText);
+
+		if (!currentUserId) {
+			console.error('❌ currentUserId가 없음!');
+			return;
+		}
 
 		// ⭐ sentAt을 Date 객체로 변환
 		const messageTime = new Date(msg.sentAt).toLocaleTimeString('ko-KR', {
@@ -725,89 +797,26 @@ window.currentChatEmail = null;
 			minute: '2-digit'
 		});
 
-		// ⭐ 게임 초대 메시지 판별 (messageText에서 방 코드 추출)
+		console.log('  messageTime:', messageTime);
+
+		// ⭐ 게임 초대 메시지 판별
 		const roomCodeMatch = msg.messageText.match(/방 코드:\s*(\w+)/);
 		const isGameInvitation = roomCodeMatch !== null;
 		const roomCode = isGameInvitation ? roomCodeMatch[1] : null;
 
-		// ⭐ 게임 초대 메시지 처리
-		if (isGameInvitation && roomCode) {
-			// 받은 초대 (상대가 보낸 메시지)
-			if (msg.senderId !== currentUserId) {
-				$('#messageHistory').append(`
-		            <div class="mb-2 d-flex justify-content-start">
-		                <div class="card bg-success text-white" style="max-width: 70%; word-break: break-word; border-left: 4px solid #ffc107;">
-		                    <div class="card-body p-3">
-		                        <div class="d-flex align-items-center mb-2">
-		                            <i class="fas fa-gamepad" style="font-size: 20px; margin-right: 8px;"></i>
-		                            <strong>게임 초대</strong>
-		                        </div>
-		                        
-		                        <!-- ⭐ 받은 초대: "누가 날 초대했다" -->
-		                        <p class="mb-2" style="font-size: 14px;">
-		                            ${escapeHtml(msg.senderName)}님이 게임에 초대했습니다.
-		                        </p>
-		                        
-		                        <div style="background: rgba(255, 255, 255, 0.15); padding: 10px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
-		                            <small style="color: #e9ecef;">방 코드</small>
-		                            <p class="mb-0" style="font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 1px;">
-		                                ${escapeHtml(roomCode)}
-		                            </p>
-		                        </div>
-		                        
-		                        <button class="btn btn-warning btn-sm w-100" onclick="acceptGameInvitation('${roomCode}')">
-		                            <i class="fas fa-sign-in-alt"></i> 게임 입장
-		                        </button>
-		                        
-		                        <small class="text-white-50 d-block mt-2" style="font-size: 0.75rem; text-align: right;">
-		                            ${messageTime}
-		                        </small>
-		                    </div>
-		                </div>
-		            </div>
-		        `);
-			} else {
-				// 보낸 초대 (내가 보낸 메시지)
-				// ⭐ friendshipId 또는 상대 정보가 필요함
-				const friendName = window.currentChatUsername || '친구';
+		console.log('  isGameInvitation:', isGameInvitation);
 
-				$('#messageHistory').append(`
-		            <div class="mb-2 d-flex justify-content-end">
-		                <div class="card bg-success text-white" style="max-width: 70%; word-break: break-word; border-right: 4px solid #ffc107;">
-		                    <div class="card-body p-3">
-		                        <div class="d-flex align-items-center mb-2">
-		                            <strong>게임 초대</strong>
-		                            <i class="fas fa-gamepad" style="font-size: 20px; margin-left: 8px;"></i>
-		                        </div>
-		                        
-		                        <!-- ⭐ 보낸 초대: "누구를 초대했다" -->
-		                        <p class="mb-2" style="font-size: 14px;">
-		                            ${escapeHtml(friendName)}님을 게임에 초대했습니다.
-		                        </p>
-		                        
-		                        <div style="background: rgba(255, 255, 255, 0.15); padding: 10px; border-radius: 6px; margin-bottom: 0; text-align: center;">
-		                            <small style="color: #e9ecef;">방 코드</small>
-		                            <p class="mb-0" style="font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 1px;">
-		                                ${escapeHtml(roomCode)}
-		                            </p>
-		                        </div>
-		                        
-		                        <small class="text-white-50 d-block mt-2" style="font-size: 0.75rem; text-align: left;">
-		                            ${messageTime}
-		                        </small>
-		                    </div>
-		                </div>
-		            </div>
-		        `);
-			}
-			return;  // ⭐ 일반 메시지 처리 건너뛰기
+		// 게임 초대 처리...
+		if (isGameInvitation && roomCode) {
+			// ... 게임 초대 HTML
+			return;
 		}
 
-
-
 		// ⭐ 일반 메시지 처리
+		console.log('📝 일반 메시지 처리 시작');
+
 		if (msg.senderId === currentUserId) {
-			// 내 메시지
+			console.log('📤 내 메시지 표시');
 			$('#messageHistory').append(`
 	            <div class="mb-2 d-flex justify-content-end">
 	                <div class="card bg-success text-white" style="max-width: 70%; word-break: break-word;">
@@ -821,7 +830,7 @@ window.currentChatEmail = null;
 	            </div>
 	        `);
 		} else {
-			// 상대 메시지
+			console.log('📥 상대 메시지 표시');
 			$('#messageHistory').append(`
 	            <div class="mb-2 d-flex justify-content-start">
 	                <div class="card bg-light" style="max-width: 70%; word-break: break-word;">
@@ -835,35 +844,33 @@ window.currentChatEmail = null;
 	            </div>
 	        `);
 		}
+
+		// 스크롤
+		console.log('⬇️ 스크롤 처리');
+		setTimeout(function() {
+			var historyDiv = $('#messageHistory');
+			if (historyDiv.length > 0) {
+				historyDiv.scrollTop(historyDiv[0].scrollHeight);
+				console.log('✅ 스크롤 완료');
+			} else {
+				console.error('❌ #messageHistory를 찾을 수 없음!');
+			}
+		}, 50);
 	}
+
 
 	/**
 	 * ⭐ 게임 초대 수락
 	 */
 	function acceptGameInvitation(roomCode) {
-		console.log('✅ 게임 초대 수락:', roomCode);
 		window.location.href = '/waitroom/' + roomCode;
 	}
 
 	window.acceptGameInvitation = acceptGameInvitation;
 
-	/**
-	 * User ID로 Friendship ID 찾기
-	 */
-	function findFriendshipId(userId) {
-		const accepted = currentFriendships.accepted || [];
 
-		for (let friend of accepted) {
 
-			// ⭐ friend.id가 userId와 일치하면, friend 객체 자체가 friendship
-			if (friend.id === userId) {
-				// friendshipId 또는 id를 반환 (API 응답 구조에 따라)
-				return friend.friendshipId || friend.id;
-			}
-		}
 
-		return null;
-	}
 
 	/**
 	 * HTML 특수문자 이스케이프 (XSS 방지)
@@ -892,7 +899,6 @@ window.currentChatEmail = null;
 	window.backToFriendsList = backToFriendsList;
 	window.sendMessage = sendMessage;
 
-	window.findFriendshipId = findFriendshipId;
 	window.loadMessageHistory = loadMessageHistory;
 	window.markChatRoomAsRead = markChatRoomAsRead;
 
@@ -900,37 +906,35 @@ window.currentChatEmail = null;
 	 * 1:1 채팅 메시지 실시간 수신 대기 (재구독 가능한 버전)
 	 */
 	function subscribeToPrivateMessages() {
-
-		if (!stompClient || !stompClient.connected) {
-			setTimeout(subscribeToPrivateMessages, 5000);
+		if (!window.stompClient || !window.stompClient.connected) {
+			console.warn('⚠️ WebSocket 연결 대기 중...');
+			setTimeout(subscribeToPrivateMessages, 3000);
 			return;
 		}
 
-		if (window.messageSubscription) {
-			window.messageSubscription.unsubscribe();
+		// ⭐ 이미 구독했으면 스킵!
+		if (window.privateMessagesSubscribed) {
+			return;
 		}
 
-		try {
-			window.messageSubscription = stompClient.subscribe('/user/queue/friend-messages', function(message) {
+		window.privateMessageSubscription =
+			window.stompClient.subscribe('/user/queue/friend-messages', function(message) {
+
 				var msg = JSON.parse(message.body);
-				console.log('⚡ [WS RECV] friend-messages:', msg);
+
 				displayMessage(msg);
 
-				// ⭐ 자동 스크롤 (메시지 도착하면 아래로)
-				setTimeout(function() {
-					var historyDiv = $('#messageHistory');
-					if (historyDiv.length > 0) {
-						historyDiv.scrollTop(historyDiv[0].scrollHeight);
-					}
-				}, 50);
+				if (typeof updateFriendMessageDropdown === 'function') {
+					updateFriendMessageDropdown(msg);
+				}
 
+				if (typeof incrementMessageBadge === 'function') {
+					incrementMessageBadge();
+				}
 			});
 
-			window.messageSubscribed = true;
-
-		} catch (error) {
-			console.error('❌ 구독 중 에러 발생:', error);
-		}
+		// ⭐ 플래그 설정
+		window.privateMessagesSubscribed = true;
 	}
 
 	/**
@@ -944,9 +948,9 @@ window.currentChatEmail = null;
 			return;
 		}
 
-		// ⭐ 이미 구독한 경우도 다시 구독
-		if (window.invitationSubscription) {
-			window.invitationSubscription.unsubscribe();
+		// ⭐ 이미 구독했으면 스킵!
+		if (window.invitationsSubscribed) {
+			return;
 		}
 
 		try {
@@ -955,9 +959,10 @@ window.currentChatEmail = null;
 				showInvitationNotification(invitation);
 			});
 
-			window.invitationSubscribed = true;
+			// ⭐ 플래그 설정
+			window.invitationsSubscribed = true;
 		} catch (error) {
-			console.error('❌ 초대 구독 중 에러 발생:', error);
+			console.error('❌ 초대 구독 중 에러:', error);
 		}
 	}
 
@@ -965,7 +970,6 @@ window.currentChatEmail = null;
 	 * 친구 채팅창으로 이동
 	 */
 	function goToFriendChat(friendId, friendName) {
-		console.log('✅ 친구 채팅창으로 이동:', friendName);
 
 		// TODO: 친구 채팅 페이지 경로 설정
 		window.location.href = '/chat/friend/' + friendId;
@@ -975,37 +979,16 @@ window.currentChatEmail = null;
 	}
 
 	/**
-	 * WebSocket 메시지 수신 시 드롭다운 업데이트
-	 * (friend-messages.js의 subscribeToPrivateMessages()에서 호출)
-	 */
-	function onNewFriendMessage(msg) {
-		console.log('💬 새 메시지 수신:', msg);
-
-		// 배지 업데이트
-		const badge = document.getElementById('messageBadge');
-		const currentCount = parseInt(badge.textContent) || 0;
-		badge.textContent = (currentCount + 1) + '+';
-		badge.style.display = 'block';
-	}
-
-
-	window.subscribeToPrivateMessages = subscribeToPrivateMessages;
-	window.subscribeToInvitations = subscribeToInvitations;
-
-	/**
 	 * ⭐ 채팅방의 모든 메시지를 읽음 처리
 	 */
 	function markChatRoomAsRead(friendshipId) {
 		const csrfToken = $('meta[name="_csrf"]').attr('content');
 		const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
 
-		// ⭐ friendshipId를 직접 받으므로 더 이상 찾을 필요 없음
 		if (!friendshipId) {
 			console.warn('⚠️ friendshipId가 없습니다');
 			return;
 		}
-
-		console.log('📍 읽음 처리 시작: friendshipId=' + friendshipId);
 
 		$.ajax({
 			url: '/api/friend-messages/friendship/' + friendshipId + '/mark-as-read',
@@ -1016,8 +999,11 @@ window.currentChatEmail = null;
 				}
 			},
 			success: function(response) {
-				console.log('✅ 채팅방 읽음 처리 완료:', response);
 
+				// ⭐ 백엔드에서 받은 messageCount로 배지 감소
+				if (response.messageCount && typeof decrementMessageBadgeByCount === 'function') {
+					decrementMessageBadgeByCount(response.messageCount);
+				}
 			},
 			error: function(xhr) {
 				console.warn('⚠️ 읽음 처리 실패 (무시):', xhr);
@@ -1031,19 +1017,12 @@ window.currentChatEmail = null;
 	$(document).ready(function() {
 
 		initGlobalWebSocket().then(function() {
-
 			$.ajax({
 				url: '/api/user/current',
 				type: 'GET',
 				success: function(user) {
 					$('body').data('user-id', user.id);
 					$('body').data('user-email', user.email);
-
-					subscribeToPrivateMessages();
-					subscribeToInvitations();
-				},
-				error: function(xhr) {
-					console.error('❌ [2단계 실패] 사용자 정보를 가져올 수 없습니다');
 				}
 			});
 
@@ -1114,28 +1093,19 @@ window.currentChatEmail = null;
 		});
 
 		// 메시지 버튼 → 채팅 모달로 전환
-		// 메시지 버튼 → 채팅 모달로 전환
 		$(document).on('click', '.send-message-btn', function() {
 			const userId = $(this).data('user-id');
 			const username = $(this).data('username');
+			const friendshipId = $(this).data('friendship-id');
 
-			const email = $(this)
-				.closest('.friend-item')
-				.find('.text-muted.small')
-				.text()
-				.trim();
+			console.log('🧪 클릭 시 값들');
+			console.log('userId:', userId);
+			console.log('username:', username);
+			console.log('friendshipId:', friendshipId);
 
-			// ⭐ friendshipId 먼저 구하기
-			const friendshipId = findFriendshipId(userId);
-
-			if (!friendshipId) {
-				console.error('❌ friendshipId를 찾을 수 없습니다');
-				return;
-			}
-
-			// friendshipId 전달
 			switchToChatView(userId, username, friendshipId);
 		});
+
 
 
 		// 채팅 입력창 엔터로 전송

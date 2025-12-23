@@ -1,10 +1,7 @@
 package com.project.quiz.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -29,6 +26,7 @@ public class FriendMessageService {
 
 	private final FriendMessageRepository friendMessageRepository;
 	private final FriendshipRepository friendshipRepository;
+	private final FriendshipService friendshipService; // ⭐ 추가
 	private final UserRepository userRepository;
 	private final UserProfileRepository userProfileRepository;
 
@@ -95,50 +93,81 @@ public class FriendMessageService {
 	/**
 	 * ⭐ 현재 사용자의 안 읽은 친구 메시지 5개 조회 현재 사용자가 포함된 friendship의 메시지만 조회
 	 */
+	/**
+	 * ⭐ 안 읽은 메시지를 발신자별로 그룹화하여 조회
+	 */
+	/**
+	 * ⭐ 안 읽은 메시지를 발신자별로 그룹화하여 조회
+	 */
 	public List<Map<String, Object>> getUnreadMessages(Long currentUserId) {
-		// 1단계: 현재 사용자가 포함된 모든 friendship ID 조회
-		// (user_id가 currentUserId OR friend_user_id가 currentUserId인 것들)
-		List<Friendship> myFriendships = friendshipRepository.findByUserIdOrFriendUserId(currentUserId, currentUserId);
+		// ⭐ Step 1: 현재 사용자의 모든 accepted friendship 조회
+		List<Friendship> friendships = friendshipService.findAllFriendshipsForUser(currentUserId);
 
-		List<Long> friendshipIds = myFriendships.stream().map(Friendship::getId).collect(Collectors.toList());
+		List<Long> friendshipIds = friendships.stream().map(Friendship::getId).collect(Collectors.toList());
 
 		if (friendshipIds.isEmpty()) {
 			return new ArrayList<>();
 		}
 
-		// 2단계: 그 friendshipId들에 속한 unread 메시지만 조회
+		// ⭐ Step 2: 현재 사용자가 받은 미읽은 메시지 조회
 		List<FriendMessage> unreadMessages = friendMessageRepository
 				.findByFriendshipIdInAndSenderIdNotAndIsReadFalseOrderBySentAtDesc(friendshipIds, currentUserId);
 
-		Map<Long, FriendMessage> latestByUser = new LinkedHashMap<>();
-		for (FriendMessage msg : unreadMessages) {
-			latestByUser.putIfAbsent(msg.getSenderId(), msg); // 첫 번째만 추가 (이미 최신순)
+		if (unreadMessages.isEmpty()) {
+			return new ArrayList<>();
 		}
 
-		// 3단계: DTO로 변환
-		return unreadMessages.stream().limit(5).map(msg -> {
-			String senderName = getUserName(msg.getSenderId());
-			String profileImage = getUserProfileImage(msg.getSenderId()); // ⭐ 추가
+		// ⭐ Step 3: 발신자별로 그룹화
+		Map<Long, List<FriendMessage>> groupedBySender = unreadMessages.stream()
+				.collect(Collectors.groupingBy(msg -> msg.getSenderId()));
 
-			Map<String, Object> resultMap = new java.util.HashMap<>();
-			resultMap.put("messageId", msg.getId());
-			resultMap.put("senderId", msg.getSenderId());
-			resultMap.put("senderName", senderName);
-			resultMap.put("profileImage", profileImage);
-			resultMap.put("content", msg.getMessageText());
-			resultMap.put("sentAt", msg.getSentAt().toString());
+		// ⭐ Step 4: 결과 맵 생성
+		List<Map<String, Object>> result = new ArrayList<>();
 
-			return resultMap;
-		}).collect(Collectors.toList());
-	}
+		for (Map.Entry<Long, List<FriendMessage>> entry : groupedBySender.entrySet()) {
+			Long senderId = entry.getKey();
+			List<FriendMessage> messages = entry.getValue();
 
-	// ⭐ 프로필 이미지 조회 메서드
-	private String getUserProfileImage(Long userId) {
-		UserProfile userProfile = userProfileRepository.findById(userId).orElse(null);
-		if (userProfile != null && userProfile.getProfileImage() != null) {
-			return userProfile.getProfileImage();
+			FriendMessage lastMessage = messages.get(messages.size() - 1);
+
+			User sender = userRepository.findById(senderId).orElse(null);
+
+			if (sender == null) {
+				continue;
+			}
+
+			String senderName = "알 수 없음";
+			if (sender.getUserProfile() != null) {
+				senderName = sender.getUserProfile().getUsername();
+			} else {
+				senderName = sender.getEmail();
+			}
+
+			String profileImage = null;
+			if (sender.getUserProfile() != null) {
+				profileImage = sender.getUserProfile().getProfileImage();
+			}
+
+			Map<String, Object> messageGroup = new HashMap<>();
+			messageGroup.put("senderId", senderId);
+			messageGroup.put("senderName", senderName);
+			messageGroup.put("messageCount", messages.size()); // ⭐ 중요!
+			messageGroup.put("lastMessage", lastMessage.getMessageText());
+			messageGroup.put("profileImage", profileImage);
+			messageGroup.put("sentAt", lastMessage.getSentAt());
+
+			result.add(messageGroup);
+
 		}
-		return null; // 프로필 이미지가 없으면 null 반환 (프론트에서 기본 이미지 사용)
+
+		// ⭐ Step 5: 시간 역순 정렬
+		result.sort((a, b) -> {
+			LocalDateTime timeA = (LocalDateTime) a.get("sentAt");
+			LocalDateTime timeB = (LocalDateTime) b.get("sentAt");
+			return timeB.compareTo(timeA);
+		});
+
+		return result;
 	}
 
 	/**
@@ -184,8 +213,6 @@ public class FriendMessageService {
 		// 3단계: DB에 저장 (변경감지로 자동 update)
 		friendMessageRepository.saveAll(unreadMessages);
 
-		System.out.println("✅ 채팅방 #" + friendshipId + "의 " + unreadMessages.size() + "개 메시지 읽음 처리 완료 (사용자: "
-				+ currentUserId + ")");
 	}
 
 	/**
@@ -209,13 +236,10 @@ public class FriendMessageService {
 		}
 	}
 
-	/**
-	 * Entity → DTO 변환
-	 */
 	private FriendMessageDTO convertToDTO(FriendMessage message) {
-		String senderName = getUserName(message.getSenderId());
-
-		return new FriendMessageDTO(message.getId(), message.getMessageText(), message.getIsRead(), message.getSentAt(),
-				message.getSenderId(), senderName);
+		FriendMessageDTO dto = new FriendMessageDTO(message);
+		dto.setSenderName(getUserName(message.getSenderId()));
+		return dto;
 	}
+
 }
