@@ -4,32 +4,38 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.project.quiz.service.GeminiTestService; // 인터페이스 import
+import com.project.quiz.service.GeminiTestService; // 기존꺼
+import com.project.quiz.service.QuizAiService;   // ⭐ [추가] 새로 만든 인터페이스
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
-import dev.langchain4j.service.AiServices; // 이 import가 중요합니다!
+import dev.langchain4j.service.AiServices;
 
 @Configuration
 public class GeminiConfig {
-	
-	@Value("${gemini.api.key}")
+    
+    @Value("${gemini.api.key}") // application.properties 확인 필수
     private String apiKey;
 
-    // 1. Gemini 모델 생성 (이건 기존과 동일)
+    // 1. 모델 생성
     @Bean
     public ChatLanguageModel geminiChatModel() {
         return GoogleAiGeminiChatModel.builder()
-                .apiKey(apiKey) // ★ 꼭 확인: 키가 비어있지 않은지!
-                .modelName("gemini-2.5-flash-lite")
+                .apiKey(apiKey)
+                .modelName("gemini-2.5-flash-lite") // ⭐ 모델명 확인 (2.5는 아직 없을 수 있음, 1.5 flash 추천)
                 .temperature(0.7)
                 .build();
     }
 
-    // 2. 서비스와 모델을 강제로 연결 (★ 여기를 추가하세요)
+    // 2. 기존 테스트 서비스 (유지)
     @Bean
     public GeminiTestService geminiTestService(ChatLanguageModel model) {
-        // "GeminiTestService 인터페이스를 저 모델(model)을 써서 구현해라" 라고 명시
         return AiServices.create(GeminiTestService.class, model);
+    }
+
+    // 3. ⭐ [추가] 퀴즈 생성 서비스 등록
+    @Bean
+    public QuizAiService quizAiService(ChatLanguageModel model) {
+        return AiServices.create(QuizAiService.class, model);
     }
 }
