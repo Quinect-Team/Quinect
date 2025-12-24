@@ -3,6 +3,7 @@ package com.project.quiz.controller;
 import java.security.Principal;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,19 +49,31 @@ public class MainController {
 	// 3. 메인 페이지 (로그인 후 접근 후 바로 출석체크 불러옴. 수정-2025-11-27)
 	@GetMapping("/main")
 	public String mainPage(Model model, Principal principal) {
-		if (principal != null) {
-			User user = userRepository.findByEmail(principal.getName()).orElse(null);
-			if (user != null) {
-				// 1. 출석 여부 (기존 코드)
-				boolean checkedIn = attendanceService.hasCheckedInToday(principal.getName());
-				model.addAttribute("checkedIn", checkedIn);
+	    if (principal != null) {
+	        User user = userRepository.findByEmail(principal.getName()).orElse(null);
+	        if (user != null) {
+	            
+	            // ▼▼▼ [수정됨] 리다이렉트 대신 모델에 플래그 추가 ▼▼▼
+	            if ("pending".equals(user.getStatus())) {
+	                model.addAttribute("isAccountPending", true);
+	                // 여기서 return을 하지 않고 아래 로직을 그대로 수행하여 main 페이지를 렌더링합니다.
+	            }
+	            
+	            // 삭제된 계정 차단 (기존 로직 유지)
+	            if ("deleted".equals(user.getStatus())) {
+	                SecurityContextHolder.clearContext();
+	                return "redirect:/login?error=deleted";
+	            }
 
-				// 2. [추가] 달성한 업적 개수 가져오기
-				long achievedCount = userAchievementRepository.countByUserAndIsAchievedTrue(user);
-				model.addAttribute("achievedCount", achievedCount);
-			}
-		}
-		return "main";
+	            // 기존 로직들 (출석, 업적 등) 수행
+	            boolean checkedIn = attendanceService.hasCheckedInToday(principal.getName());
+	            model.addAttribute("checkedIn", checkedIn);
+
+	            long achievedCount = userAchievementRepository.countByUserAndIsAchievedTrue(user);
+	            model.addAttribute("achievedCount", achievedCount);
+	        }
+	    }
+	    return "main";
 	}
 
 	// 출석체크 AJAX 요청 처리

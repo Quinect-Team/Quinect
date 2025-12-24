@@ -1,5 +1,7 @@
 package com.project.quiz.controller;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.security.Principal;
 import java.util.List;
 
@@ -23,6 +25,7 @@ import com.project.quiz.service.InventoryService;
 import com.project.quiz.service.TimelineService;
 import com.project.quiz.service.UserService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -38,60 +41,67 @@ public class ProfileController {
 
 	// 프로필 페이지 이동
 	@GetMapping({ "/profile", "/profile/{profileId}" })
-	public String profilePage(@PathVariable(value = "profileId", required = false) String profileId, // ⭐ String으로 받음
-			Model model, Principal principal) {
+	public String profilePage(
+	        @PathVariable(value = "profileId", required = false) String profileId,
+	        Model model, 
+	        Principal principal
+	) { 
+	    // 1. 로그인 체크 및 사용자 로드
+	    User currentUser = null;
+	    if (principal != null) {
+	        currentUser = userRepository.findByEmail(principal.getName()).orElse(null);
+	    }
 
-		// 1. 로그인 체크 (내 정보)
-		User currentUser = null;
-		if (principal != null) {
-			currentUser = userRepository.findByEmail(principal.getName()).orElse(null);
-		}
+	    // 2. 보여줄 대상(Target User) 결정
+	    User targetUser = null;
+	    if (profileId != null) {
+	        // (A) 타인 프로필
+	        UserProfile targetProfile = userProfileRepository.findById(profileId)
+	                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로필입니다."));
+	        targetUser = targetProfile.getUser();
+	    } else if (currentUser != null) {
+	        // (B) 내 프로필
+	        targetUser = currentUser;
+	    } else {
+	        return "redirect:/login";
+	    }
 
-		// 2. 보여줄 대상(Target User) 결정
-		User targetUser = null;
+	    // =================================================================
+	    // ▼▼▼ [수정됨] 탈퇴한 유저 처리 로직 (Alert 대신 화면 분기용 플래그 전달) ▼▼▼
+	    // =================================================================
+	    if (targetUser != null && !"ACTIVE".equals(targetUser.getStatus())) {
+	        model.addAttribute("isWithdrawn", true); // 🚩 탈퇴 상태 플래그
+	        model.addAttribute("isOwner", false);    // 탈퇴한 계정은 내 계정이 아님(또는 접근 불가)
+	        // 여기서 바로 리턴하여, 아래의 인벤토리/업적 조회 로직을 건너뜁니다.
+	        // (탈퇴한 유저의 정보를 조회하다 에러가 날 수 있으므로 안전하게 스킵)
+	        return "profile"; 
+	    }
+	    // ▲▲▲ 수정 끝 ▲▲▲
 
-		if (profileId != null) {
-			// (A) URL에 ID가 있다 -> 남의 프로필 (또는 링크 타고 온 내 프로필)
-			// UUID 문자열로 UserProfile을 먼저 찾고 -> 그 주인의 User 정보를 가져옴
-			UserProfile targetProfile = userProfileRepository.findById(profileId)
-					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로필입니다."));
-			targetUser = targetProfile.getUser();
-		} else if (currentUser != null) {
-			// (B) URL에 ID가 없다 -> 내 프로필 메뉴 클릭
-			targetUser = currentUser;
-		} else {
-			// (C) 로그인도 안 했고 ID도 없음 -> 로그인 페이지로
-			return "redirect:/login";
-		}
 
-		// 3. 주인 여부 확인 (isOwner)
-		// 내 프로필이면 true -> [설정] 버튼 보임
-		// 남의 프로필이면 false -> [설정] 숨김, [친구추가] 보임
-		boolean isOwner = (currentUser != null && targetUser.getId().equals(currentUser.getId()));
+	    // 3. 정상 회원인 경우 나머지 데이터 로드 (기존 로직)
+	    boolean isOwner = (currentUser != null && targetUser.getId().equals(currentUser.getId()));
+	    
+	    if (targetUser != null) {
+	        model.addAttribute("user", targetUser); // 🚩 정상 유저 정보 담기
+	        model.addAttribute("isOwner", isOwner);
 
-		// 4. 모델에 데이터 담기 (targetUser 기준!)
-		if (targetUser != null) {
-			// 화면에는 "user"라는 이름으로 targetUser 정보를 넘겨주면, HTML 수정 없이 그대로 뜸
-			model.addAttribute("user", targetUser);
-			model.addAttribute("isOwner", isOwner); // ⭐ HTML에서 버튼 분기 처리용
+	        // 인벤토리, 업적, 타임라인 등 조회
+	        String borderUrl = inventoryService.getEquippedItemUrl(targetUser, "BORDER");
+	        model.addAttribute("equippedBorderUrl", borderUrl);
 
-			// 인벤토리, 업적 등도 모두 'targetUser' 기준으로 조회
-			String borderUrl = inventoryService.getEquippedItemUrl(targetUser, "BORDER");
-			model.addAttribute("equippedBorderUrl", borderUrl);
+	        String themeUrl = inventoryService.getEquippedItemUrl(targetUser, "THEME");
+	        model.addAttribute("equippedThemeUrl", themeUrl);
 
-			String themeUrl = inventoryService.getEquippedItemUrl(targetUser, "THEME");
-			model.addAttribute("equippedThemeUrl", themeUrl);
+	        List<UserAchievement> achievements = userAchievementRepository
+	                .findByUserAndIsAchievedTrueOrderByAchievedAtAsc(targetUser);
+	        model.addAttribute("achievements", achievements);
 
-			List<UserAchievement> achievements = userAchievementRepository
-					.findByUserAndIsAchievedTrueOrderByAchievedAtAsc(targetUser);
-			model.addAttribute("achievements", achievements);
+	        List<TimelineDto> timeline = timelineService.getProfileTimeline(targetUser.getEmail());
+	        model.addAttribute("timelineList", timeline);
+	    }
 
-			// 타임라인도 targetUser 것 조회
-			List<TimelineDto> timeline = timelineService.getProfileTimeline(targetUser.getEmail());
-			model.addAttribute("timelineList", timeline);
-		}
-
-		return "profile";
+	    return "profile";
 	}
 
 	// 설정 페이지 이동 // 이제 목록 불러오기 추가됨

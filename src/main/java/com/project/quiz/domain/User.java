@@ -41,6 +41,7 @@ public class User {
     private String status;      // ACTIVE, INACTIVE (계정 상태 유지)
     
     private LocalDateTime createdAt;
+    private LocalDateTime statusChangedAt;
 
     // ▼▼▼ 핵심: UserProfile과 1:1 연결 ▼▼▼
     // CascadeType.ALL: User를 저장하면 Profile도 같이 저장됨

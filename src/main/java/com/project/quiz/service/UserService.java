@@ -188,5 +188,29 @@ public class UserService {
 		return userRepository.findByEmail(email)
 				.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
 	}
+	
+	@Transactional
+    public void withdraw(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        user.setStatus("pending");
+        user.setStatusChangedAt(LocalDateTime.now());
+        // 필요하다면 여기서 user.setRefreshToken(null) 등 토큰 삭제 로직 추가
+    }
+
+    /**
+     * 계정 복구 (Reactivate)
+     */
+    @Transactional
+    public void reactivate(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        if ("pending".equals(user.getStatus())) {
+            user.setStatus("ACTIVE"); // 대문자로 통일 권장 (ACTIVE)
+            user.setStatusChangedAt(null);
+        }
+    }
 
 }

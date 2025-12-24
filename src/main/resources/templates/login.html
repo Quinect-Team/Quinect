@@ -6,6 +6,8 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="_csrf" th:content="${_csrf.token}" />
+	<meta name="_csrf_header" th:content="${_csrf.headerName}" />
 	<title>Quinect - 로그인</title>
 
 	<link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet">
@@ -20,16 +22,16 @@
 	<div class="login-container text-center">
 
 		<div class="mb-5 pb-3">
-		    <div class="d-flex align-items-center justify-content-center">
-		        <div class="rotate-n-15">
-		            <img src="/img/app_icon.png" style="width: 50px; height: 50px;">
-		        </div>
-		        
-		        <div class="ml-3 font-weight-bold text-success" 
-		             style="font-size: 3.5rem; font-family: 'Fredoka', sans-serif;">
-		            Quinect
-		        </div>
-		    </div>
+			<div class="d-flex align-items-center justify-content-center">
+				<div class="rotate-n-15">
+					<img src="/img/app_icon.png" style="width: 50px; height: 50px;">
+				</div>
+
+				<div class="ml-3 font-weight-bold text-success"
+					style="font-size: 3.5rem; font-family: 'Fredoka', sans-serif;">
+					Quinect
+				</div>
+			</div>
 		</div>
 
 		<div class="mb-4">
@@ -93,5 +95,41 @@
 		</div>
 	</div>
 </body>
+
+<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
+<script th:src="@{/js/sb-admin-2.js}"></script>
+<script th:if="${isPending}">
+	window.onload = function () {
+		var token = $("meta[name='_csrf']").attr("content");
+		var header = $("meta[name='_csrf_header']").attr("content");
+
+		if (confirm("현재 삭제 진행 중인 계정입니다.\n복구하시겠습니까?\n('취소'를 누르면 로그인이 취소됩니다.)")) {
+			// 1. [예] 복구 요청 (AJAX)
+			fetch('/api/user/reactivate', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					[header]: token
+				},
+
+			})
+				.then(response => {
+					if (response.ok) {
+						alert("계정이 복구되었습니다. 메인으로 이동합니다.");
+						window.location.href = "/main"; // 복구 후 메인으로
+					} else {
+						alert("복구 실패. 관리자에게 문의하세요.");
+						window.location.href = "/logout";
+					}
+				});
+		} else {
+			// 2. [아니오] 로그인 취소 (로그아웃 처리)
+			alert("로그인을 취소합니다.");
+			window.location.href = "/logout";
+		}
+	};
+</script>
 
 </html>

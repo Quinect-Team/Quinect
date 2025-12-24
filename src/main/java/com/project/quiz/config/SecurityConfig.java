@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 	
 	private final OAuth2SuccessHandler oAuth2SuccessHandler;
+	private final CustomLoginSuccessHandler customLoginSuccessHandler;
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http, CustomOAuth2UserService customOAuth2UserService)
@@ -39,7 +40,7 @@ public class SecurityConfig {
 				.anyRequest().authenticated()).formLogin((form) -> form.loginPage("/login") // 로그인 페이지 URL
 						.usernameParameter("email") // HTML 폼의 input name (이메일로 로그인 시)
 						.passwordParameter("password") // HTML 폼의 input name
-						.defaultSuccessUrl("/main", true) // 로그인 성공 시 이동할 페이지
+						.successHandler(customLoginSuccessHandler)
 						.failureUrl("/login?error").permitAll())
 
 				.oauth2Login(oauth2 -> oauth2.loginPage("/login")

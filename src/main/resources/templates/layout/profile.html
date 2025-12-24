@@ -5,113 +5,127 @@
 		</a>
 
 		<h1 class="h3 mb-0 text-gray-800 font-weight-bold"
-			th:text="${isOwner ? '내 프로필' : user.userProfile.username + '님의 프로필'}">
-			내 프로필
-		</h1>
+		        th:text="${isWithdrawn ? '프로필' : (isOwner ? '내 프로필' : user.userProfile.username + '님의 프로필')}">
+		        내 프로필
+		    </h1>
 	</div>
+	<div th:if="${isWithdrawn}">
+		<div class="card shadow mb-4">
+			<div class="card-body text-center p-5">
+				<div class="mb-4">
+					<i class="fas fa-user-slash fa-4x text-gray-400"></i>
+				</div>
+				<h4 class="text-gray-900 font-weight-bold mb-2">탈퇴한 사용자입니다.</h4>
+				<p class="text-gray-600 mb-0">존재하지 않거나 삭제된 계정입니다.</p>
+			</div>
+		</div>
+	</div>
+	<th:block th:unless="${isWithdrawn}">
 
-	<div class="card shadow mb-4">
-		<div class="card-body"
-			th:style="${equippedThemeUrl != null} ? 'background-image: url(' + @{${equippedThemeUrl}} + ');' : ''">
-			<div class="row align-items-center">
-				<div class="col-auto mr-4">
-					<div class="profile-avatar-wrapper">
+		<div class="card shadow mb-4">
+			<div class="card-body"
+				th:style="${equippedThemeUrl != null} ? 'background-image: url(' + @{${equippedThemeUrl}} + ');' : ''">
+				<div class="row align-items-center">
+					<div class="col-auto mr-4">
+						<div class="profile-avatar-wrapper">
 
-						<img th:if="${equippedBorderUrl != null}" th:src="@{${equippedBorderUrl}}"
-							class="profile-border-bg" alt="Border Frame">
+							<img th:if="${equippedBorderUrl != null}" th:src="@{${equippedBorderUrl}}"
+								class="profile-border-bg" alt="Border Frame">
 
-						<div class="profile-img-container">
-							<img th:if="${user.userProfile.profileImage != null}"
-								th:src="${user.userProfile.profileImage}" alt="Profile Image"
-								style="width: 100%; height: 100%; object-fit: cover;">
+							<div class="profile-img-container">
+								<img th:if="${user.userProfile.profileImage != null}"
+									th:src="${user.userProfile.profileImage}" alt="Profile Image"
+									style="width: 100%; height: 100%; object-fit: cover;">
 
-							<i th:unless="${user.userProfile.profileImage != null}"
-								class="fas fa-user profile-img-placeholder"></i>
+								<i th:unless="${user.userProfile.profileImage != null}"
+									class="fas fa-user profile-img-placeholder"></i>
+							</div>
 						</div>
 					</div>
-				</div>
-				<div class="col">
-					<div class="d-flex align-items-center mb-2">
-						<h2 class="h3 font-weight-bold mb-0 mr-2 text-gray-900" th:text="${user.userProfile.username}">
-							사용자명</h2>
+					<div class="col">
+						<div class="d-flex align-items-center mb-2">
+							<h2 class="h3 font-weight-bold mb-0 mr-2 text-gray-900"
+								th:text="${user.userProfile.username}">
+								사용자명</h2>
 
-						<a th:if="${isOwner}" th:href="@{/profile/settings(source='profile')}"
-							class="text-gray-600 text-decoration-none" title="설정">
-							<i class="fas fa-cog fa-lg"></i>
-						</a>
+							<a th:if="${isOwner}" th:href="@{/profile/settings(source='profile')}"
+								class="text-gray-600 text-decoration-none" title="설정">
+								<i class="fas fa-cog fa-lg"></i>
+							</a>
+						</div>
+						<p class="text-gray-900 font-weight-bold mb-1"
+							th:text="${user.userProfile.organization != null ? user.userProfile.organization : '소속 없음'}">
+							소속
+						</p>
+
+						<p class="text-gray-900 font-weight-bold mb-0"
+							th:text="${user.userProfile.bio != null ? user.userProfile.bio : '상태 메시지가 없습니다.'}">
+							바이오
+						</p>
 					</div>
-					<p class="text-gray-900 font-weight-bold mb-1"
-						th:text="${user.userProfile.organization != null ? user.userProfile.organization : '소속 없음'}">
-						소속
-					</p>
-
-					<p class="text-gray-900 font-weight-bold mb-0"
-						th:text="${user.userProfile.bio != null ? user.userProfile.bio : '상태 메시지가 없습니다.'}">
-						바이오
-					</p>
 				</div>
 			</div>
 		</div>
-	</div>
 
-	<div class="stats-box mb-4">
-		<div class="stats-item">
-			현재 푼 퀴즈 개수: <span class="font-weight-bold text-success">N</span> 개
-		</div>
-		<div class="stats-item">
-			팔로워: <span class="font-weight-bold text-success">N</span> 명
-		</div>
-	</div>
-
-	<h5 class="font-weight-bold text-gray-800 mb-3">업적 내역</h5>
-
-	<div class="d-flex mb-5 flex-wrap">
-
-		<div th:each="ach : ${achievements}" class="mr-3 mb-3 text-center" th:title="${ach.achievement.title}">
-
-			<div class="achievement-icon-wrapper"
-				style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fc; border-radius: 50%; box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15);">
-
-				<img th:if="${ach.achievement.rewardItem != null and ach.achievement.rewardItem.imageUrl != null}"
-					th:src="${ach.achievement.rewardItem.imageUrl}" alt="Medal"
-					style="width: 60px; height: 60px; object-fit: contain;">
-
-				<i th:unless="${ach.achievement.rewardItem != null and ach.achievement.rewardItem.imageUrl != null}"
-					class="fas fa-medal fa-3x text-warning"></i>
+		<div class="stats-box mb-4">
+			<div class="stats-item">
+				현재 푼 퀴즈 개수: <span class="font-weight-bold text-success">N</span> 개
+			</div>
+			<div class="stats-item">
+				팔로워: <span class="font-weight-bold text-success">N</span> 명
 			</div>
 		</div>
 
-		<div th:if="${isOwner and #lists.isEmpty(achievements)}" class="col-12 text-center py-3">
-		    <span class="text-gray-500">아직 달성한 업적이 없습니다. 분발하세요! 🔥</span>
-		</div>
+		<h5 class="font-weight-bold text-gray-800 mb-3">업적 내역</h5>
 
-		<div th:if="${!isOwner and #lists.isEmpty(achievements)}" class="col-12 text-center py-3">
-		</div>
-	</div>
-	<h5 class="font-weight-bold text-gray-800 mb-3">타임라인</h5>
+		<div class="d-flex mb-5 flex-wrap">
 
-	<div class="timeline-section mb-5" style="padding-bottom: 60px;">
+			<div th:each="ach : ${achievements}" class="mr-3 mb-3 text-center" th:title="${ach.achievement.title}">
 
-		<div th:each="log : ${timelineList}" class="timeline-item">
-			<div class="timeline-icon shadow-sm" th:classappend="${log.colorClass}">
-				<i class="fas" th:classappend="${log.iconClass}"></i>
+				<div class="achievement-icon-wrapper"
+					style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fc; border-radius: 50%; box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15);">
+
+					<img th:if="${ach.achievement.rewardItem != null and ach.achievement.rewardItem.imageUrl != null}"
+						th:src="${ach.achievement.rewardItem.imageUrl}" alt="Medal"
+						style="width: 60px; height: 60px; object-fit: contain;">
+
+					<i th:unless="${ach.achievement.rewardItem != null and ach.achievement.rewardItem.imageUrl != null}"
+						class="fas fa-medal fa-3x text-warning"></i>
+				</div>
 			</div>
-			<div class="timeline-content">
-				<div class="timeline-date" th:text="${log.date}">2025.11.17</div>
-				<p class="timeline-text" th:text="${log.description}">활동 내용</p>
+
+			<div th:if="${isOwner and #lists.isEmpty(achievements)}" class="col-12 text-center py-3">
+				<span class="text-gray-500">아직 달성한 업적이 없습니다. 분발하세요! 🔥</span>
+			</div>
+
+			<div th:if="${!isOwner and #lists.isEmpty(achievements)}" class="col-12 text-center py-3">
 			</div>
 		</div>
+		<h5 class="font-weight-bold text-gray-800 mb-3">타임라인</h5>
 
-		<div th:if="${#lists.isEmpty(timelineList)}" class="text-center py-4">
-			<p class="text-gray-500 mb-0">아직 활동 기록이 없습니다.</p>
+		<div class="timeline-section mb-5" style="padding-bottom: 60px;">
+
+			<div th:each="log : ${timelineList}" class="timeline-item">
+				<div class="timeline-icon shadow-sm" th:classappend="${log.colorClass}">
+					<i class="fas" th:classappend="${log.iconClass}"></i>
+				</div>
+				<div class="timeline-content">
+					<div class="timeline-date" th:text="${log.date}">2025.11.17</div>
+					<p class="timeline-text" th:text="${log.description}">활동 내용</p>
+				</div>
+			</div>
+
+			<div th:if="${#lists.isEmpty(timelineList)}" class="text-center py-4">
+				<p class="text-gray-500 mb-0">아직 활동 기록이 없습니다.</p>
+			</div>
+
+			<div class="text-center more-btn-wrapper"
+				style="padding-left: 80px; text-align: left !important; top: 30px;">
+				<a th:href="@{/profile/timeline}" class="font-weight-bold text-dark text-decoration-none"
+					style="font-size: 1.1rem;">
+					+ 더보기
+				</a>
+			</div>
+
 		</div>
-
-		<div class="text-center more-btn-wrapper" style="padding-left: 80px; text-align: left !important; top: 30px;">
-			<a th:href="@{/profile/timeline}" class="font-weight-bold text-dark text-decoration-none"
-				style="font-size: 1.1rem;">
-				+ 더보기
-			</a>
-		</div>
-
-	</div>
 </div>
