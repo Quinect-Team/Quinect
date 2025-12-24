@@ -2,14 +2,17 @@ package com.project.quiz.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class UserProfile {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+    @UuidGenerator
+    @Column(length = 36)
+    private String id;
 
     // ▼▼▼ User 테이블의 PK를 FK로 가짐 (여기가 주인) ▼▼▼
     @OneToOne(fetch = FetchType.LAZY)

@@ -208,3 +208,34 @@ function saveViaAjax(formId, url) {
         }
     });
 }
+
+// 탈퇴 모달: 체크박스 동의 시 버튼 활성화
+function toggleWithdrawBtn() {
+    const checkBox = document.getElementById('checkWithdrawal');
+    const btn = document.getElementById('btnFinalWithdraw');
+    btn.disabled = !checkBox.checked;
+}
+
+// 탈퇴 요청 전송 (AJAX 또는 Form Submit)
+function submitWithdrawal() {
+    if(!confirm("정말로 탈퇴 처리를 진행하시겠습니까?")) return;
+
+
+    fetch('/api/user/withdraw', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            // CSRF 토큰 필요 시 추가
+        }
+    }).then(res => {
+        if(res.ok) {
+            alert("탈퇴 처리가 완료되었습니다.\n로그인 페이지로 이동합니다.");
+            window.location.href = "/login?logout";
+        } else {
+            alert("처리 중 오류가 발생했습니다.");
+        }
+    });
+
+    // Form Submit 방식일 경우 (위 HTML form 사용 시)
+    document.getElementById('withdrawForm').submit();
+}

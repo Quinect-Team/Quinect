@@ -3,7 +3,11 @@
 		<a th:href="@{/main}" class="text-decoration-none text-gray-800">
 			<i class="fas fa-arrow-left fa-2x mr-2"></i>
 		</a>
-		<h1 class="h3 mb-0 text-gray-800 font-weight-bold">내 프로필</h1>
+
+		<h1 class="h3 mb-0 text-gray-800 font-weight-bold"
+			th:text="${isOwner ? '내 프로필' : user.userProfile.username + '님의 프로필'}">
+			내 프로필
+		</h1>
 	</div>
 
 	<div class="card shadow mb-4">
@@ -31,8 +35,8 @@
 						<h2 class="h3 font-weight-bold mb-0 mr-2 text-gray-900" th:text="${user.userProfile.username}">
 							사용자명</h2>
 
-						<a th:href="@{/profile/settings(source='profile')}" class="text-gray-600 text-decoration-none"
-							title="설정">
+						<a th:if="${isOwner}" th:href="@{/profile/settings(source='profile')}"
+							class="text-gray-600 text-decoration-none" title="설정">
 							<i class="fas fa-cog fa-lg"></i>
 						</a>
 					</div>
@@ -77,10 +81,12 @@
 			</div>
 		</div>
 
-		<div th:if="${#lists.isEmpty(achievements)}" class="col-12 text-center py-3">
-			<span class="text-gray-500">아직 달성한 업적이 없습니다. 분발하세요! 🔥</span>
+		<div th:if="${isOwner and #lists.isEmpty(achievements)}" class="col-12 text-center py-3">
+		    <span class="text-gray-500">아직 달성한 업적이 없습니다. 분발하세요! 🔥</span>
 		</div>
 
+		<div th:if="${!isOwner and #lists.isEmpty(achievements)}" class="col-12 text-center py-3">
+		</div>
 	</div>
 	<h5 class="font-weight-bold text-gray-800 mb-3">타임라인</h5>
 
