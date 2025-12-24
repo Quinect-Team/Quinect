@@ -62,33 +62,29 @@ public class QuizService {
             question.setImage(q.getImage());
 
             /* ===== 객관식 ===== */
-            if (q.getQuizTypeCode() == 1) {
+            if (q.getQuizTypeCode() == 2) {
                 question.setAnswerOption(q.getAnswerOption());
                 question.setSubjectiveAnswer(null);
-
-                List<QuizOption> optionEntities = new ArrayList<>();
 
                 if (q.getOptions() != null) {
                     for (QuizDto.OptionDto opt : q.getOptions()) {
                         QuizOption option = new QuizOption();
-                        option.setQuestion(question);
                         option.setOptionNumber(opt.getOptionNumber());
                         option.setOptionText(opt.getOptionText());
-                        optionEntities.add(option);
+                        question.addOption(option);
                     }
                 }
-
-                question.setOptions(optionEntities);
 
             /* ===== 서술형 ===== */
             } else {
                 question.setSubjectiveAnswer(q.getSubjectiveAnswer());
                 question.setAnswerOption(null);
-                question.setOptions(null);
+                // options 건드리지 않음
             }
 
             questionEntities.add(question);
         }
+
 
         quiz.setQuestions(questionEntities);
         quizRepository.save(quiz);
