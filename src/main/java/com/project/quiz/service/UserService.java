@@ -2,8 +2,10 @@ package com.project.quiz.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -210,6 +212,43 @@ public class UserService {
         if ("pending".equals(user.getStatus())) {
             user.setStatus("ACTIVE"); // 대문자로 통일 권장 (ACTIVE)
             user.setStatusChangedAt(null);
+        }
+    }
+    
+    @Transactional
+    public void cleanupWithdrawnUsers() {
+        // 1. 현재 시간 기준 7일 전
+        // LocalDateTime sevenDaysAgo = LocalDateTime.now().minusMinutes(1); 테스트용
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        
+        // 2. 대상 조회 (pending 상태 + 7일 경과)
+        List<User> users = userRepository.findByStatusAndStatusChangedAtBefore("pending", sevenDaysAgo);
+
+        for (User user : users) {
+            // (1) 이메일 익명화 (Unique 제약조건 회피를 위해 UUID 사용)
+            // 예: deleted_550e8400-e29b...@quinect.com
+            String randomStr = UUID.randomUUID().toString().substring(0, 8);
+            user.setEmail("deleted_" + user.getId() + "_" + randomStr + "@quinect.com");
+            
+            // (2) 소셜 로그인 정보 파기
+            user.setProvider(null);
+            user.setProviderId(null);
+            user.setPassword(null); // 혹시 모를 비번 삭제
+
+            // (3) 프로필 정보 익명화
+            UserProfile profile = user.getUserProfile();
+            if (profile != null) {
+                profile.setUsername("(알 수 없음)"); // 닉네임 변경
+                profile.setBio(null);             // 자기소개 삭제
+                profile.setOrganization(null);    // 소속 삭제
+                profile.setProfileImage(null);    // 프사 삭제 (기본이미지로)
+                // 포인트는 남길지 말지 선택 (보통은 0으로 초기화)
+                // profile.setPointBalance(0L); 
+            }
+
+            // (4) 상태 변경 (최종 삭제 처리)
+            user.setStatus("deleted"); 
+            user.setStatusChangedAt(LocalDateTime.now());
         }
     }
 
