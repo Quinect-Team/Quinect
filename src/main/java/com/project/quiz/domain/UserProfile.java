@@ -21,9 +21,12 @@ public class UserProfile {
 
     private String username;      // 닉네임 (이사옴)
     
+    @Builder.Default
     @Column(nullable = true)
     private String profileImage = "/img/undraw_profile.svg";  // 기본 이미지
-    private Long pointBalance;    // 포인트 (이사옴)
+    
+    @Builder.Default
+    private Long pointBalance = 100L;    // 포인트 (이사옴)
     
     @Column(length = 255)
     private String bio;           // 상태 메시지

@@ -19,6 +19,7 @@ public class FriendMessageDTO {
 	private LocalDateTime sentAt;
 	private Long senderId;
 	private String senderName;
+	private String profileImage;
 
 	public FriendMessageDTO(FriendMessage message) {
 		this.id = message.getId();

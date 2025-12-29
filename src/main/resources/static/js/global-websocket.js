@@ -12,6 +12,8 @@ var isInitializing = false;
 window.notificationsSubscribed = false;
 window.privateMessagesSubscribed = false;
 window.invitationsSubscribed = false;
+window.messageReadSubscribed = false;  // ⭐ 새로 추가!
+
 
 /**
  * 웹소켓 연결 (사용자 ID와 함께)
@@ -71,9 +73,13 @@ function initGlobalWebSocket() {
 					$('body').data('user-id', user.id);
 					$('body').data('user-email', user.email);
 
+					console.log('=== WebSocket CONNECT 성공 ===');
+					console.log('user.id:', user.id);
+					console.log('user.id 타입:', typeof user.id);
+					console.log('headers[X-User-ID]:', headers['X-User-ID']);
+					console.log('===========================');
+
 					subscribeToNotifications();
-					subscribeToPrivateMessages();
-					subscribeToInvitations();
 
 					isInitializing = false;
 					resolve(stompClient);
@@ -192,6 +198,45 @@ function subscribeToInvitations() {
 }
 
 /**
+ * ⭐ 메시지 읽음 이벤트 구독 (notification.js의 removeFriendMessageFromDropdown 호출)
+ */
+function subscribeToMessageRead() {
+	if (!window.stompClient || !window.stompClient.connected) {
+		console.warn('⚠️ WebSocket 연결 대기 중...');
+		setTimeout(subscribeToMessageRead, 3000);
+		return;
+	}
+
+	if (window.messageReadSubscribed) {
+		return;
+	}
+
+	try {
+		window.messageReadSubscription = window.stompClient.subscribe('/user/queue/friend-messages-read', function(message) {
+			var readEvent = JSON.parse(message.body);
+
+			console.log('📖 읽음 이벤트 수신:', readEvent);
+
+			if (readEvent.event === 'message-read') {
+				console.log('📖 friendshipId ' + readEvent.friendshipId + '의 메시지를 읽음');
+
+				// ⭐ notification.js의 함수 호출
+				if (typeof removeFriendMessageFromDropdown === 'function') {
+					removeFriendMessageFromDropdown(readEvent.friendshipId);
+				} else {
+					console.warn('⚠️ removeFriendMessageFromDropdown 함수를 찾을 수 없습니다');
+				}
+			}
+		});
+
+		window.messageReadSubscribed = true;
+		console.log('✅ 메시지 읽음 이벤트 구독 성공');
+	} catch (error) {
+		console.error('❌ 읽음 이벤트 구독 중 에러 발생:', error);
+	}
+}
+
+/**
  * 웹소켓 연결 해제
  */
 function disconnectWebSocket() {
@@ -215,3 +260,4 @@ window.disconnectWebSocket = disconnectWebSocket;
 window.subscribeToNotifications = subscribeToNotifications;
 window.subscribeToPrivateMessages = subscribeToPrivateMessages;
 window.subscribeToInvitations = subscribeToInvitations;
+window.subscribeToMessageRead = subscribeToMessageRead;  // ⭐ 추가

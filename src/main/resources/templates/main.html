@@ -75,18 +75,19 @@
 	<script th:src="@{/js/friends-modal.js}"></script>
 
 	<script>
-	$(document).ready(function() {
-	    if (typeof initGlobalWebSocket === 'function') {
+	    $(document).ready(function() {
+	        // ⭐ WebSocket 연결 초기화
 	        initGlobalWebSocket().then(function() {
-	            console.log('✅ WebSocket 준비 완료');
+	            console.log('✅ WebSocket 연결 완료');
 	            
-	            // ⭐ 메시지 드롭다운 초기 로드
-	            if (typeof loadUnreadMessages === 'function') {
-	                loadUnreadMessages();
-	            }
+	            // ⭐ 이 시점에 friends-modal 함수들이 준비됨
+	            subscribeToPrivateMessages();
+	            subscribeToInvitations();
+				loadUnreadMessages();
+	        }).catch(function(error) {
+	            console.error('❌ WebSocket 연결 실패:', error);
 	        });
-	    }
-	});
+	    });
 	</script>
 
 </body>

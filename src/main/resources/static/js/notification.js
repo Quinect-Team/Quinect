@@ -149,11 +149,7 @@ function updateMessageDropdown(messages) {
 
 			setTimeout(() => {
 				if (typeof switchToChatView === 'function') {
-					switchToChatView(
-						msg.senderId,
-						msg.senderName,
-						msg.friendshipId  // ⭐ 이미 있는 데이터
-					);
+					goToFriendChat(msg.senderId, msg.senderName);
 				}
 			}, 300);
 		};
@@ -217,6 +213,12 @@ function updateMessageDropdown(messages) {
  * WebSocket으로 수신한 친구 메시지를 드롭다운에 실시간 추가
  */
 function updateFriendMessageDropdown(message) {
+	console.log('📩 메시지 #', {
+		id: message.id,
+		senderId: message.senderId,
+		friendshipId: message.friendshipId,  // ⭐ 중요!
+		messageText: message.messageText.substring(0, 20)
+	});
 	const messageItems = document.getElementById('messageItems');
 	const messageBadge = document.getElementById('messageBadge');
 	const noMessagesMessage = document.getElementById('noMessagesMessage');
@@ -232,18 +234,42 @@ function updateFriendMessageDropdown(message) {
 
 	messageBadge.style.display = 'block';
 
-	const existingItems = messageItems.querySelectorAll('a.dropdown-item:not(.text-center)');
-	existingItems.forEach(function(item) {
-		const senderName = message.senderName || '';
-		if (item.textContent.includes(senderName)) {
-			item.remove();
-		}
-	});
+	// ⭐ friendshipId가 있으면 그걸 사용, 없으면 senderId로 대체
+	// 하지만 클릭할 때는 goToFriendChat으로 friendshipId를 자동 조회!
+	const itemId = 'msg-item-' + (message.friendshipId || message.senderId);
+	const existingItem = document.getElementById(itemId);
 
+	if (existingItem) {
+		// 기존 아이템 업데이트
+		const messageInfo = existingItem.querySelector('div:nth-child(2)');
+		if (messageInfo) {
+			let preview = message.messageText || message.content || '';
+			if (preview.length > 50) {
+				preview = preview.substring(0, 50) + '...';
+			}
+
+			messageInfo.innerHTML = `
+                <div class="small text-gray-500">
+                    ${escapeHtml(message.senderName || '알 수 없는 사용자')}
+                </div>
+                <span class="font-weight-bold" style="font-size: 13px;">
+                    ${escapeHtml(preview)}
+                </span>
+                <small class="text-muted d-block" style="font-size: 11px;">
+                    1개의 메시지
+                </small>
+            `;
+		}
+		messageItems.insertBefore(existingItem, messageItems.firstChild);
+		return;
+	}
+
+	// 새 아이템 생성
 	const item = document.createElement('a');
 	item.className = 'dropdown-item d-flex align-items-center';
 	item.href = '#';
 	item.style.cursor = 'pointer';
+	item.id = itemId;
 
 	item.onclick = function(e) {
 		e.preventDefault();
@@ -253,18 +279,14 @@ function updateFriendMessageDropdown(message) {
 			decrementMessageBadgeByCount(1);
 		}
 
-		// ⭐ switchToChatView() 직접 호출
 		if (typeof openFriendModal === 'function') {
 			openFriendModal();
 		}
 
 		setTimeout(() => {
-			if (typeof switchToChatView === 'function') {
-				switchToChatView(
-					message.senderId,
-					message.senderName,
-					message.friendshipId  // ⭐ WebSocket 메시지에 friendshipId가 있는지 확인!
-				);
+			// ⭐ goToFriendChat 사용 (자동으로 friendshipId 조회!)
+			if (typeof goToFriendChat === 'function') {
+				goToFriendChat(message.senderId, message.senderName);
 			}
 		}, 300);
 	};
@@ -277,27 +299,27 @@ function updateFriendMessageDropdown(message) {
 	let profileImageHtml;
 	if (message.profileImage) {
 		profileImageHtml = `<img src="${escapeHtml(message.profileImage)}" 
-                             style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">`;
+                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">`;
 	} else {
 		profileImageHtml = `<div class="icon-circle bg-info">
-                            <i class="fas fa-envelope text-white"></i>
-                        </div>`;
+                                <i class="fas fa-envelope text-white"></i>
+                            </div>`;
 	}
 
 	item.innerHTML = `
         <div class="mr-3">
-        ${profileImageHtml}
+            ${profileImageHtml}
         </div>
         <div style="flex-grow: 1;">
-        <div class="small text-gray-500">
-        ${escapeHtml(message.senderName || '알 수 없는 사용자')}
-        </div>
-        <span class="font-weight-bold" style="font-size: 13px;">
-        ${escapeHtml(preview)}
-        </span>
-        <small class="text-muted d-block" style="font-size: 11px;">
-            1개의 메시지
-        </small>
+            <div class="small text-gray-500">
+                ${escapeHtml(message.senderName || '알 수 없는 사용자')}
+            </div>
+            <span class="font-weight-bold" style="font-size: 13px;">
+                ${escapeHtml(preview)}
+            </span>
+            <small class="text-muted d-block" style="font-size: 11px;">
+                1개의 메시지
+            </small>
         </div>
     `;
 
@@ -312,7 +334,6 @@ function updateFriendMessageDropdown(message) {
 		displayItems[displayItems.length - 1].remove();
 	}
 }
-
 
 /**
  * ⭐ 배지 숫자 증가 (WebSocket 메시지 1개)

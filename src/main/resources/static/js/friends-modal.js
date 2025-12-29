@@ -14,63 +14,7 @@ window.invitationsSubscribed = false;
 	/**
 	 * 1:1 채팅 메시지 실시간 수신 대기
 	 */
-	function subscribeToPrivateMessages() {
-		// ⭐ 이미 구독했으면 스킵!
-		if (window.privateMessagesSubscribed) {
-			return;
-		}
 
-		if (!window.stompClient || !window.stompClient.connected) {
-			console.warn('⚠️ WebSocket 연결 대기 중...');
-			setTimeout(subscribeToPrivateMessages, 3000);
-			return;
-		}
-
-		window.privateMessageSubscription =
-			window.stompClient.subscribe('/user/queue/friend-messages', function(message) {
-				var msg = JSON.parse(message.body);
-
-				displayMessage(msg);
-
-				if (typeof updateFriendMessageDropdown === 'function') {
-					updateFriendMessageDropdown(msg);
-				}
-
-				if (typeof incrementMessageBadge === 'function') {
-					incrementMessageBadge();
-				}
-			});
-
-		window.privateMessagesSubscribed = true;
-	}
-
-	/**
-	 * 초대 메시지 수신 대기
-	 */
-	function subscribeToInvitations() {
-		// ⭐ 이미 구독했으면 스킵!
-		if (window.invitationsSubscribed) {
-			return;
-		}
-
-		if (!stompClient || !stompClient.connected) {
-			console.warn('⚠️ WebSocket 연결 대기 중...');
-			setTimeout(subscribeToInvitations, 5000);
-			return;
-		}
-
-
-		try {
-			window.invitationSubscription = stompClient.subscribe('/user/queue/room-invitations', function(message) {
-				var invitation = JSON.parse(message.body);
-				showInvitationNotification(invitation);
-			});
-
-			window.invitationsSubscribed = true;
-		} catch (error) {
-			console.error('❌ 초대 구독 중 에러 발생:', error);
-		}
-	}
 
 	/**
 	 * 친구 모달 열기
@@ -92,6 +36,10 @@ window.invitationsSubscribed = false;
 
 		$('#friendsModal').css('display', 'flex');
 		$('#chatModal').css('display', 'none');
+
+		if (!window.privateMessagesSubscribed) {
+			subscribeToPrivateMessages();
+		}
 
 		loadAllFriendships();
 
@@ -868,10 +816,6 @@ window.invitationsSubscribed = false;
 
 	window.acceptGameInvitation = acceptGameInvitation;
 
-
-
-
-
 	/**
 	 * HTML 특수문자 이스케이프 (XSS 방지)
 	 */
@@ -906,61 +850,103 @@ window.invitationsSubscribed = false;
 	 * 1:1 채팅 메시지 실시간 수신 대기 (재구독 가능한 버전)
 	 */
 	function subscribeToPrivateMessages() {
-		if (!window.stompClient || !window.stompClient.connected) {
-			console.warn('⚠️ WebSocket 연결 대기 중...');
-			setTimeout(subscribeToPrivateMessages, 3000);
-			return;
-		}
+	    console.log('[PM] subscribeToPrivateMessages 호출');
 
-		// ⭐ 이미 구독했으면 스킵!
-		if (window.privateMessagesSubscribed) {
-			return;
-		}
+	    if (!window.stompClient || !window.stompClient.connected) {
+	        console.warn('⚠️ WebSocket 연결 대기 중...');
+	        setTimeout(subscribeToPrivateMessages, 3000);
+	        return;
+	    }
 
-		window.privateMessageSubscription =
-			window.stompClient.subscribe('/user/queue/friend-messages', function(message) {
+	    if (window.privateMessagesSubscribed) {
+	        console.log('[PM] 이미 구독됨, 재사용');
+	        return;
+	    }
 
-				var msg = JSON.parse(message.body);
+	    const userEmail = $('body').data('user-email');
+	    if (!userEmail) {
+	        console.warn('⚠️ user-email이 없음, 재시도');
+	        setTimeout(subscribeToPrivateMessages, 2000);
+	        return;
+	    }
 
-				displayMessage(msg);
+	    const subscribePath = '/user/' + userEmail + '/queue/friend-messages';
+	    console.log('[PM] 구독 경로:', subscribePath);
 
-				if (typeof updateFriendMessageDropdown === 'function') {
-					updateFriendMessageDropdown(msg);
-				}
+	    window.privateMessageSubscription =
+	        window.stompClient.subscribe(subscribePath, function(message) {
+	            console.log('[PM] 수신 raw:', message);
+	            const msg = JSON.parse(message.body);
+	            console.log('[PM] 파싱된 msg:', msg);
 
-				if (typeof incrementMessageBadge === 'function') {
-					incrementMessageBadge();
-				}
-			});
+	            // ⭐ 현재 열려 있는 채팅방의 friendshipId
+	            const chatData = $('#chatModal').data() || {};
+	            const currentFriendshipId = chatData.friendshipId;
 
-		// ⭐ 플래그 설정
-		window.privateMessagesSubscribed = true;
+	            // msg.friendshipId 없다면 백엔드에서 DTO에 꼭 넣어줘야 함
+	            const msgFriendshipId = msg.friendshipId;
+
+	            // 1) 현재 열려 있는 방과 같은 friendshipId일 때만 채팅창에 표시
+	            if (currentFriendshipId && msgFriendshipId === currentFriendshipId) {
+	                console.log('[PM] 현재 열린 대화방 메시지, 화면에 표시');
+	                displayMessage(msg);
+	            } else {
+	                console.log('[PM] 다른 대화방 메시지, 채팅창에는 표시 안 함');
+	            }
+
+	            // 2) 채팅 모달이 닫혀 있거나, 다른 방 메시지인 경우에만 드롭다운/뱃지 갱신
+	            const isChatModalOpen = $('#chatModal').css('display') !== 'none';
+	            const isSameRoom = currentFriendshipId && msgFriendshipId === currentFriendshipId;
+
+	            if (!isChatModalOpen || !isSameRoom) {
+	                if (typeof updateFriendMessageDropdown === 'function') {
+	                    updateFriendMessageDropdown(msg);
+	                }
+	                if (typeof incrementMessageBadge === 'function') {
+	                    incrementMessageBadge();
+	                }
+	            } else {
+	                console.log('[PM] 현재 방 메시지 + 채팅창 열려 있음 → 드롭다운/배지 갱신 스킵');
+	            }
+	        });
+
+	    window.privateMessagesSubscribed = true;
+	    console.log('[PM] 구독 완료: ' + subscribePath);
 	}
 
 	/**
-	 * 초대 메시지 수신 대기 (재구독 가능한 버전)
+	 * 초대 메시지 수신 (최종 버전, 이거 하나만 둔다)
 	 */
 	function subscribeToInvitations() {
+		console.log('[INV] subscribeToInvitations 호출');
 
-		if (!stompClient || !stompClient.connected) {
-
+		if (!window.stompClient || !window.stompClient.connected) {
+			console.warn('⚠️ WebSocket 연결 대기 중...');
 			setTimeout(subscribeToInvitations, 5000);
 			return;
 		}
 
-		// ⭐ 이미 구독했으면 스킵!
 		if (window.invitationsSubscribed) {
+			console.log('[INV] 이미 구독됨, 재사용');
 			return;
 		}
 
 		try {
-			window.invitationSubscription = stompClient.subscribe('/user/queue/room-invitations', function(message) {
-				var invitation = JSON.parse(message.body);
-				showInvitationNotification(invitation);
-			});
+			console.log('[INV] /user/queue/room-invitations 구독 시작');
 
-			// ⭐ 플래그 설정
+			window.invitationSubscription =
+				window.stompClient.subscribe('/user/queue/room-invitations', function(message) {
+					console.log('[INV] 수신 raw:', message);
+					var invitation = JSON.parse(message.body);
+					if (typeof showInvitationNotification === 'function') {
+						showInvitationNotification(invitation);
+					} else {
+						console.warn('[INV] showInvitationNotification 없음');
+					}
+				});
+
 			window.invitationsSubscribed = true;
+			console.log('[INV] 구독 완료');
 		} catch (error) {
 			console.error('❌ 초대 구독 중 에러:', error);
 		}
@@ -1014,21 +1000,31 @@ window.invitationsSubscribed = false;
 	/**
 	 * DOM 로드 후 초기화 (올바른 순서)
 	 */
+	/**
+	 * DOM 로드 후 초기화
+	 */
 	$(document).ready(function() {
 
-		initGlobalWebSocket().then(function() {
-			$.ajax({
-				url: '/api/user/current',
-				type: 'GET',
-				success: function(user) {
-					$('body').data('user-id', user.id);
-					$('body').data('user-email', user.email);
-				}
-			});
+		// 1단계: WebSocket 연결
+		initGlobalWebSocket()
+			.then(function() {
+				// 2단계: 현재 사용자 정보 셋업
+				$.ajax({
+					url: '/api/user/current',
+					type: 'GET',
+					success: function(user) {
+						$('body').data('user-id', user.id);
+						$('body').data('user-email', user.email);
+					}
+				});
 
-		}).catch(function(error) {
-			console.error('❌ [1단계 실패] WebSocket 연결 실패:', error);
-		});
+				// 3단계: 메시지/초대 구독 시작
+				subscribeToPrivateMessages();
+				subscribeToInvitations();
+			})
+			.catch(function(error) {
+				console.error('❌ [1단계 실패] WebSocket 연결 실패:', error);
+			});
 
 		// 닫기 버튼 클릭
 		$('.closebtn').on('click', closeFriendModal);
