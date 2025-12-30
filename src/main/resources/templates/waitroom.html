@@ -89,6 +89,9 @@ th:attr="data-room-code=${room.roomCode},
             <button id="voteBtn" class="btn btn-danger btn-lg mr-2" style="display:none;" onclick="openCreateVoteModal()">
                 <i class="fas fa-poll"></i> 투표 시작
             </button>
+			<button id="selectQuizBtn" class="btn btn-warning btn-lg mr-2" style="display:none;" onclick="openSelectQuizModal()">
+               <i class="fas fa-book-open"></i> 퀴즈 선택
+           </button>
             <button id="teamSelectBtn" class="btn btn-secondary btn-lg mr-2" onclick="openTeamSelectModal()">
 				<i class="fas fa-users-cog"></i> 팀 선택
 			</button>
@@ -272,6 +275,49 @@ th:attr="data-room-code=${room.roomCode},
     </div>
 </div>
 
+<div class="modal fade" id="selectQuizModal" tabindex="-1" role="dialog" aria-labelledby="selectQuizModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="selectQuizModalLabel">
+                    <i class="fas fa-book-open mr-2"></i>퀴즈 선택
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 로딩 스피너 -->
+                <div id="quizLoadingSpinner" class="text-center" style="display: none;">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="sr-only">로딩 중...</span>
+                    </div>
+                    <p class="mt-2 text-muted">퀴즈 목록을 불러오는 중...</p>
+                </div>
+                
+                <!-- 퀴즈 목록 -->
+                <div id="quizListContainer" style="display: none;">
+                    <div class="list-group" id="quizList">
+                        <!-- JavaScript에서 동적으로 생성됨 -->
+                    </div>
+                </div>
+
+                <!-- 빈 상태 -->
+                <div id="emptyQuizState" style="display: none;" class="text-center py-5">
+                    <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">사용 가능한 퀴즈가 없습니다.</p>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>닫기
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

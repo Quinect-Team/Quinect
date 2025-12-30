@@ -14,15 +14,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.project.quiz.config.QRCodeService;
-import com.project.quiz.domain.CodeTable;
+import com.project.quiz.domain.Quiz;
 import com.project.quiz.domain.Room;
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserProfile;
 import com.project.quiz.dto.GuestUserDto;
 import com.project.quiz.dto.VoteRequest;
 import com.project.quiz.dto.VoteResponse;
-import com.project.quiz.repository.CodeTableRepository;
 import com.project.quiz.service.ParticipantService;
+import com.project.quiz.service.QuizService;
+import com.project.quiz.service.RoomQuizService;
 import com.project.quiz.service.RoomService;
 import com.project.quiz.service.UserService;
 import com.project.quiz.service.VoteManager;
@@ -35,13 +36,16 @@ public class RoomController {
 	private RoomService roomService;
 
 	@Autowired
-	private CodeTableRepository codeTableRepository;
-
-	@Autowired
 	private QRCodeService qrCodeService;
 
 	@Autowired
 	private UserService userService;
+
+	@Autowired
+	private QuizService quizService; // ✅ QuizService 주입
+
+	@Autowired
+	private RoomQuizService roomQuizService; // ✅ 이 줄 추가
 
 	@Autowired
 	private ParticipantService participantService;
@@ -52,26 +56,25 @@ public class RoomController {
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
 
-	@GetMapping("/waitroom/form")
-	public String showRoomForm(Model model, Principal principal, HttpSession session) {
-		if (principal != null) {
-			List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
-			model.addAttribute("roomTypes", roomTypes);
-			return "waitroom_form";
-		}
+//	@GetMapping("/waitroom/form")
+//	public String showRoomForm(Model model, Principal principal, HttpSession session) {
+//		if (principal != null) {
+//			List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
+//			model.addAttribute("roomTypes", roomTypes);
+//			return "waitroom_form";
+//		}
+//
+//		if (session.getAttribute("guestUser") == null) {
+//			return "redirect:/guest/setup?next=/waitroom/form";
+//		}
+//
+//		List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
+//		model.addAttribute("roomTypes", roomTypes);
+//		return "waitroom_form";
+//	}
 
-		if (session.getAttribute("guestUser") == null) {
-			return "redirect:/guest/setup?next=/waitroom/form";
-		}
-
-		List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
-		model.addAttribute("roomTypes", roomTypes);
-		return "waitroom_form";
-	}
-
-	@PostMapping("/waitroom/create")
-	public String createRoomPost(@RequestParam(name = "roomTypeCode") String roomTypeCode, Principal principal,
-			HttpSession session) {
+	@GetMapping("/waitroom/create")
+	public String createRoomPost(Principal principal, HttpSession session) {
 		if (principal == null) {
 			return "redirect:/login";
 		}
@@ -83,7 +86,7 @@ public class RoomController {
 		}
 
 		// user.getId()를 호스트유저아이디로 사용
-		Room room = roomService.createRoom(user.getId(), roomTypeCode, "opened");
+		Room room = roomService.createRoom(user.getId(), "opened");
 
 		return "redirect:/waitroom/" + room.getRoomCode();
 	}
@@ -93,17 +96,12 @@ public class RoomController {
 			HttpSession session) {
 		Room room = roomService.getRoomByCode(roomCode);
 		if (room == null) {
-			return "error/404"; // 방 없음 처리 페이지
+			return "404"; // 방 없음 처리 페이지
 		}
 
 		if ("CLOSED".equals(room.getStatusCode())) {
 			return "room_closed"; // "이 방은 종료되었습니다" 같은 안내 템플릿 만들기
 		}
-
-		// codeTableRepository를 활용하여 roomTypeCode에 해당하는 이름 조회
-		CodeTable codeInfo = codeTableRepository.findById(room.getRoomTypeCode()).orElse(null);
-
-		String roomTypeName = (codeInfo != null) ? codeInfo.getName() : "알 수 없음";
 
 		User user = null;
 		String guestId = null;
@@ -140,7 +138,6 @@ public class RoomController {
 		participantService.joinRoomIfNotExists(room, user, guestId, nickname, avatarUrl);
 
 		model.addAttribute("room", room);
-		model.addAttribute("roomTypeName", roomTypeName);
 		model.addAttribute("participants", participantService.findByRoom(room));
 		model.addAttribute("guestNickname", nickname);
 		model.addAttribute("guestAvatarUrl", avatarUrl);
@@ -160,6 +157,9 @@ public class RoomController {
 			// 에러시 기본 값 등 처리
 			model.addAttribute("qrCodeBase64", null);
 		}
+
+		List<Quiz> quizzes = quizService.findAll();
+		model.addAttribute("quizzes", quizzes);
 
 		String joinMessage = nickname + "님이 입장하셨습니다.";
 		Map<String, Object> joinNotification = new HashMap<>();

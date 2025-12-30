@@ -15,7 +15,7 @@ public class RoomService {
 	private RoomRepository roomRepository;
 
 	@Transactional
-	public Room createRoom(Long hostUserId, String roomTypeCode, String statusCode) {
+	public Room createRoom(Long hostUserId, String statusCode) {
 		// 고유 room_code 중복 체크
 		String roomCode;
 		do {
@@ -23,7 +23,7 @@ public class RoomService {
 		} while (roomRepository.existsByRoomCode(roomCode));
 
 		Room room = Room.builder().createdAt(java.time.LocalDateTime.now()).hostUserId(hostUserId)
-				.roomTypeCode(roomTypeCode).statusCode(statusCode).roomCode(roomCode).build();
+				.statusCode(statusCode).roomCode(roomCode).build();
 
 		return roomRepository.save(room);
 	}
@@ -31,12 +31,12 @@ public class RoomService {
 	public Room getRoomByCode(String code) {
 		return roomRepository.findByRoomCode(code).orElse(null);
 	}
-	
+
 	@Transactional
-    public void closeRoom(String roomCode) {
-        Room room = roomRepository.findByRoomCode(roomCode)
-                .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다."));
-        room.setStatusCode("CLOSED");
-        room.setClosedAt(LocalDateTime.now());
-    }
+	public void closeRoom(String roomCode) {
+		Room room = roomRepository.findByRoomCode(roomCode)
+				.orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다."));
+		room.setStatusCode("CLOSED");
+		room.setClosedAt(LocalDateTime.now());
+	}
 }

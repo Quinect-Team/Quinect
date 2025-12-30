@@ -24,9 +24,6 @@ public class Room {
     @Column(name = "host_user_id")
     private Long hostUserId;
 
-    @Column(name = "room_type_code", length = 50)
-    private String roomTypeCode;
-
     @Column(name = "status_code", length = 50)
     private String statusCode;
 
@@ -51,7 +48,6 @@ public class Room {
         return Room.builder()
                 .createdAt(LocalDateTime.now())
                 .hostUserId(hostUserId)
-                .roomTypeCode(roomTypeCode)
                 .statusCode(statusCode)
                 .roomCode(generateRoomCode())
                 .build();

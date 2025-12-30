@@ -76,12 +76,29 @@ function initWebSocket() {
 			}
 		});
 
+		// ✅ 퀴즈 선택 WebSocket 구독 추가
+		stompClient.subscribe('/topic/room/' + roomCode, function(message) {
+			var data = JSON.parse(message.body);
+
+			if (data.type === 'QUIZ_SELECTED') {
+				handleQuizSelection(data);
+			}
+		});
+
 		if (isRoomMaster) {
 			var voteBtnEl = document.getElementById('voteBtn');
 			if (voteBtnEl) {
 				voteBtnEl.style.display = 'inline-block';
 				voteBtnEl.onclick = function() {
 					openCreateVoteModal();
+				};
+			}
+
+			var selectQuizBtnEl = document.getElementById('selectQuizBtn');
+			if (selectQuizBtnEl) {
+				selectQuizBtnEl.style.display = 'inline-block';
+				selectQuizBtnEl.onclick = function() {
+					openSelectQuizModal();
 				};
 			}
 		}
@@ -725,7 +742,208 @@ function initializeReadyUI() {
 	updateReadyButton();
 }
 
-// ========== 8단계: 친구 초대 기능 ==========
+// ========== 퀴즈 선택 함수들 ==========
+
+/**
+ * 퀴즈 선택 모달 열기
+ */
+function openSelectQuizModal() {
+	console.log('퀴즈 선택 모달 열기');
+
+	// 방장만 퀴즈 선택 가능
+	if (!isRoomMaster) {
+		alert('방장만 퀴즈를 선택할 수 있습니다.');
+		return;
+	}
+
+	$('#selectQuizModal').modal('show');
+	loadQuizList();
+}
+
+/**
+ * 퀴즈 목록 로드
+ */
+function loadQuizList() {
+	const spinner = document.getElementById('quizLoadingSpinner');
+	const container = document.getElementById('quizListContainer');
+	const emptyState = document.getElementById('emptyQuizState');
+	const quizList = document.getElementById('quizList');
+
+	// UI 초기화
+	spinner.style.display = 'block';
+	container.style.display = 'none';
+	emptyState.style.display = 'none';
+	quizList.innerHTML = '';
+
+	const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+	fetch('/quiz/list', {
+		method: 'GET',
+		headers: {
+			[csrfHeader]: csrfToken,
+			'Content-Type': 'application/json'
+		}
+	})
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('퀴즈 목록 조회 실패');
+			}
+			return response.json();
+		})
+		.then(quizzes => {
+			console.log('✅ 퀴즈 목록 조회 성공:', quizzes);
+
+			spinner.style.display = 'none';
+
+			if (!quizzes || quizzes.length === 0) {
+				emptyState.style.display = 'block';
+			} else {
+				container.style.display = 'block';
+				renderQuizzes(quizzes);
+			}
+		})
+		.catch(error => {
+			console.error('❌ 퀴즈 목록 조회 실패:', error);
+			spinner.style.display = 'none';
+			emptyState.style.display = 'block';
+		});
+}
+
+/**
+ * 퀴즈 목록 렌더링
+ */
+function renderQuizzes(quizzes) {
+	const quizList = document.getElementById('quizList');
+	quizList.innerHTML = '';
+
+	quizzes.forEach(quiz => {
+		const quizItem = document.createElement('a');
+		quizItem.href = 'javascript:void(0)';
+		quizItem.className = 'list-group-item list-group-item-action';
+		quizItem.style.cursor = 'pointer';
+
+		quizItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="mb-1 font-weight-bold text-dark">
+                        ${escapeHtml(quiz.title)}
+                    </h6>
+                    ${quiz.description ? `
+                        <p class="mb-1 text-muted small">
+                            ${escapeHtml(quiz.description)}
+                        </p>
+                    ` : ''}
+                </div>
+                <button type="button" class="btn btn-sm btn-primary ml-2" 
+                        onclick="selectQuiz(${quiz.quizId})">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+        `;
+
+		quizItem.addEventListener('mouseenter', function() {
+			this.style.backgroundColor = '#f8f9fa';
+		});
+		quizItem.addEventListener('mouseleave', function() {
+			this.style.backgroundColor = '';
+		});
+
+		quizList.appendChild(quizItem);
+	});
+}
+
+
+/**
+ * 퀴즈 선택
+ */
+function selectQuiz(quizId) {
+	console.log('퀴즈 선택:', quizId);
+
+	const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+	fetch(`/api/room/${roomCode}/select-quiz`, {
+		method: 'POST',
+		headers: {
+			[csrfHeader]: csrfToken,
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		body: `quizId=${quizId}`
+	})
+		.then(response => {
+			if (!response.ok) {
+				return response.json().then(data => {
+					throw new Error(data.message || '퀴즈 선택 실패');
+				});
+			}
+			return response.json();
+		})
+		.then(data => {
+			if (data.success) {
+				console.log('✅ 퀴즈 선택 성공:', data);
+
+				// 성공 메시지
+				var messagesDiv = document.getElementById('messages');
+				var msgDiv = document.createElement('div');
+				msgDiv.innerHTML = '<strong style="color: #28a745;">✓ 시스템:</strong> <em>' +
+					escapeHtml(data.quizTitle) + '이(가) 선택되었습니다.</em>';
+				msgDiv.style.padding = '8px';
+				msgDiv.style.marginBottom = '8px';
+				msgDiv.style.borderBottom = '1px solid #eee';
+				msgDiv.style.color = '#666';
+				msgDiv.style.fontStyle = 'italic';
+				messagesDiv.appendChild(msgDiv);
+				messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+				// 로컬스토리지에 선택된 퀴즈 저장
+				localStorage.setItem('selectedQuiz_' + roomCode, JSON.stringify({
+					id: quizId,
+					title: data.quizTitle
+				}));
+
+				// 모달 닫기
+				$('#selectQuizModal').modal('hide');
+
+				// 화면 업데이트 (필요시)
+				alert('퀴즈 "' + data.quizTitle + '"이(가) 선택되었습니다!');
+			} else {
+				alert('퀴즈 선택 실패: ' + data.message);
+			}
+		})
+		.catch(error => {
+			console.error('❌ 퀴즈 선택 중 오류:', error);
+			alert('퀴즈 선택 중 오류가 발생했습니다: ' + error.message);
+		});
+}
+
+/**
+ * WebSocket에서 퀴즈 선택 알림 받기
+ */
+function handleQuizSelection(quizData) {
+	console.log('퀴즈 선택 알림 받음:', quizData);
+
+	// 로컬스토리지에 저장
+	localStorage.setItem('selectedQuiz_' + roomCode, JSON.stringify({
+		id: quizData.quizId,
+		title: quizData.quizTitle
+	}));
+
+	// 채팅에 메시지 표시
+	var messagesDiv = document.getElementById('messages');
+	var msgDiv = document.createElement('div');
+	msgDiv.innerHTML = '<strong style="color: #007bff;">📚 시스템:</strong> <em>' +
+		escapeHtml(quizData.quizTitle) + '이(가) 선택되었습니다.</em>';
+	msgDiv.style.padding = '8px';
+	msgDiv.style.marginBottom = '8px';
+	msgDiv.style.borderBottom = '1px solid #eee';
+	msgDiv.style.color = '#666';
+	msgDiv.style.fontStyle = 'italic';
+	messagesDiv.appendChild(msgDiv);
+	messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// ========== 친구 초대 기능 ==========
 
 /**
  * 친구 초대 모달 열기
@@ -734,7 +952,7 @@ function openInviteFriendModal() {
 	console.log('친구 초대 모달 열기');
 
 	var body = document.body;
-	currentQuizRoomId = body.getAttribute('data-room-code');  // ⭐ roomCode 사용
+	currentQuizRoomId = body.getAttribute('data-room-code');
 	console.log('현재 대기방 코드:', currentQuizRoomId);
 
 	var inviteModal = document.getElementById('inviteFriendModal');
@@ -774,11 +992,9 @@ function loadFriendsForInvite() {
 		.then(data => {
 			console.log('✅ 친구 목록 조회 성공:', data);
 
-			// ⭐ friends-modal.js의 함수 호출 (있으면)
 			if (typeof displayFriendListForInvite === 'function') {
 				displayFriendListForInvite(data.accepted);
 			} else {
-				// friends-modal.js 없을 때 처리
 				displayFriendListForInviteLocal(data.accepted);
 			}
 		})
@@ -806,23 +1022,23 @@ function displayFriendListForInviteLocal(friends) {
 	} else {
 		friends.forEach(function(friend) {
 			html += `
-                <div class="card mb-2 p-3 d-flex flex-row justify-content-between align-items-center">
-                    <div class="d-flex align-items-center flex-grow-1">
-                        <img src="${friend.profileImage || '/img/default-avatar.png'}" 
-                             class="rounded-circle mr-3" width="40" height="40" alt="프로필"
-                             onerror="this.src='/img/default-avatar.png'">
-                        <div>
-                            <strong>${escapeHtml(friend.username)}</strong><br>
-                            <small class="text-muted">${escapeHtml(friend.email)}</small>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-primary ml-2 invite-friend-btn"
-                            data-email="${friend.email}"
-                            data-username="${friend.username}">
-                        <i class="fas fa-check"></i> 초대
-                    </button>
-                </div>
-            `;
+				<div class="card mb-2 p-3 d-flex flex-row justify-content-between align-items-center">
+					<div class="d-flex align-items-center flex-grow-1">
+						<img src="${friend.profileImage || '/img/default-avatar.png'}" 
+							 class="rounded-circle mr-3" width="40" height="40" alt="프로필"
+							 onerror="this.src='/img/default-avatar.png'">
+						<div>
+							<strong>${escapeHtml(friend.username)}</strong><br>
+							<small class="text-muted">${escapeHtml(friend.email)}</small>
+						</div>
+					</div>
+					<button type="button" class="btn btn-sm btn-primary ml-2 invite-friend-btn"
+							data-email="${friend.email}"
+							data-username="${friend.username}">
+						<i class="fas fa-check"></i> 초대
+					</button>
+				</div>
+			`;
 		});
 	}
 
@@ -854,7 +1070,6 @@ function inviteFriendToQuizRoom(friendEmail, friendName) {
 	$btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 초대 중...';
 
 	// ⭐ Step 1: 먼저 friendshipId 조회
-	// (친구 목록에서 해당 친구의 friendshipId를 찾아야 함)
 	fetch('/api/friends/all', {
 		method: 'GET',
 		headers: {
@@ -949,9 +1164,6 @@ ${window.location.origin}/quiz/wait-room/${currentQuizRoomId}`;
 
 /**
  * ⭐ 추가 기능: 초대 메시지 수신 및 처리
- * 
- * friend-messages.js의 subscribeToPrivateMessages()에서 자동 호출됨
- * 초대 메시지를 감지하면 별도 UI 표시
  */
 function handleInvitationMessage(msg) {
 	// 메시지 내용에서 "방 코드" 확인
@@ -981,31 +1193,31 @@ function showInvitationBanner(senderName, roomCode, messageId) {
 	banner.style.cssText = 'position: fixed; top: 70px; left: 20px; right: 20px; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
 
 	banner.innerHTML = `
-        <div class="d-flex align-items-center justify-content-between">
-            <div>
-                <h5 class="mb-1">
-                    <i class="fas fa-envelope mr-2"></i>
-                    ${senderName}님의 게임 초대
-                </h5>
-                <p class="mb-0 small">
-                    방 코드: <strong>${roomCode}</strong>
-                </p>
-            </div>
-            <div>
-                <button type="button" class="btn btn-success btn-sm mr-2" 
-                        onclick="acceptInvitation('${roomCode}', '${messageId}')">
-                    <i class="fas fa-check"></i> 수락
-                </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" 
-                        onclick="declineInvitation('${messageId}')">
-                    <i class="fas fa-times"></i> 거절
-                </button>
-            </div>
-        </div>
-        <button type="button" class="close" data-dismiss="alert">
-            <span>&times;</span>
-        </button>
-    `;
+		<div class="d-flex align-items-center justify-content-between">
+			<div>
+				<h5 class="mb-1">
+					<i class="fas fa-envelope mr-2"></i>
+					${senderName}님의 게임 초대
+				</h5>
+				<p class="mb-0 small">
+					방 코드: <strong>${roomCode}</strong>
+				</p>
+			</div>
+			<div>
+				<button type="button" class="btn btn-success btn-sm mr-2" 
+						onclick="acceptInvitation('${roomCode}', '${messageId}')">
+					<i class="fas fa-check"></i> 수락
+				</button>
+				<button type="button" class="btn btn-outline-secondary btn-sm" 
+						onclick="declineInvitation('${messageId}')">
+					<i class="fas fa-times"></i> 거절
+				</button>
+			</div>
+		</div>
+		<button type="button" class="close" data-dismiss="alert">
+			<span>&times;</span>
+		</button>
+	`;
 
 	document.body.insertBefore(banner, document.body.firstChild);
 }
@@ -1043,12 +1255,13 @@ function declineInvitation(messageId) {
 		setTimeout(() => banner.remove(), 300);
 	}
 }
+
 window.inviteFriendToQuizRoom = inviteFriendToQuizRoom;
 window.handleInvitationMessage = handleInvitationMessage;
 window.acceptInvitation = acceptInvitation;
 window.declineInvitation = declineInvitation;
 
-// ========== 7단계: DOM 준비 후 초기화 ==========
+// ========== DOM 준비 후 초기화 ==========
 document.addEventListener('DOMContentLoaded', function() {
 	if (initialized) {
 		return;
