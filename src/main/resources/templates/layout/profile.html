@@ -5,7 +5,7 @@
 		</a>
 
 		<h1 class="h3 mb-0 text-gray-800 font-weight-bold"
-		        th:text="${isWithdrawn ? '프로필' : (isOwner ? '내 프로필' : user.userProfile.username + '님의 프로필')}">
+		        th:text="${isWithdrawn ? '프로필' : (isOwner ? '내 프로필' : (user?.userProfile?.username + '님의 프로필'))}">
 		        내 프로필
 		    </h1>
 	</div>

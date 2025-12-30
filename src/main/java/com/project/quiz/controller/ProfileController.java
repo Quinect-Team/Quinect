@@ -85,6 +85,7 @@ public class ProfileController {
 	    if (targetUser != null) {
 	        model.addAttribute("user", targetUser); // 🚩 정상 유저 정보 담기
 	        model.addAttribute("isOwner", isOwner);
+	        model.addAttribute("isWithdrawn", false);
 
 	        // 인벤토리, 업적, 타임라인 등 조회
 	        String borderUrl = inventoryService.getEquippedItemUrl(targetUser, "BORDER");
