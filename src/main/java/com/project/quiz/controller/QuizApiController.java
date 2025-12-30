@@ -41,4 +41,22 @@ public class QuizApiController {
         }
     }
 
+    // JSON ONLY
+    @ResponseBody
+    @GetMapping("/api/{id}")
+    public QuizDto getQuiz(@PathVariable("id") Long id) {
+        return quizService.findQuizDto(id);
+    }
+    
+    @GetMapping("/list")
+    public List<QuizDto.ListResponse> getQuizList() {
+        return quizService.findAll().stream()
+                .map(q -> new QuizDto.ListResponse(
+                        q.getQuizId(),
+                        q.getTitle()
+                ))
+                .toList();
+    }
+
+    
 }

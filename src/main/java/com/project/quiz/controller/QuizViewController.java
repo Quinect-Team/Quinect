@@ -41,11 +41,4 @@ public class QuizViewController {
         model.addAttribute("quizId", id);
         return "layout/quiz_view"; 
     }
-
-    // JSON ONLY
-    @ResponseBody
-    @GetMapping("/api/quiz/{id}")
-    public QuizDto getQuiz(@PathVariable("id") Long id) {
-        return quizService.findQuizDto(id);
-    }
 }
