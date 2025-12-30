@@ -63,7 +63,7 @@ console.log('CSRF HEADER =', csrfHeader);
 if (!quizId) {
   root.innerHTML = '<p>퀴즈 ID가 없습니다.</p>';
 } else {
-  fetch(`/api/quiz/${quizId}`)
+  fetch(`/quiz/api/${quizId}`)
     .then(res => {
       if (!res.ok) throw new Error('퀴즈 로드 실패');
       return res.json();
