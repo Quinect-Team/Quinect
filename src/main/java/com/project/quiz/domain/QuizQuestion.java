@@ -42,6 +42,7 @@ public class QuizQuestion {
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuizOption> options = new ArrayList<>();
+
     
     public void addOption(QuizOption option) {
         options.add(option);

@@ -40,7 +40,7 @@ public class QuizService {
             quiz.setDescription(quizDto.getDescription());
             quiz.setUpdatedAt(LocalDateTime.now());
 
-            quiz.getQuestions().clear(); // orphanRemoval
+            quiz.getQuestions().clear();
         } else {
             quiz = new Quiz();
             quiz.setTitle(quizDto.getTitle());
@@ -55,7 +55,7 @@ public class QuizService {
         for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
 
             QuizQuestion question = new QuizQuestion();
-            question.setQuiz(quiz);
+            
             question.setQuestionText(q.getQuestionText());
             question.setQuizTypeCode(q.getQuizTypeCode());
             question.setPoint(q.getPoint());
@@ -79,14 +79,12 @@ public class QuizService {
             } else {
                 question.setSubjectiveAnswer(q.getSubjectiveAnswer());
                 question.setAnswerOption(null);
-                // options 건드리지 않음
             }
 
-            questionEntities.add(question);
+            quiz.addQuestion(question);
         }
 
 
-        quiz.setQuestions(questionEntities);
         quizRepository.save(quiz);
 
         return quiz.getQuizId();
