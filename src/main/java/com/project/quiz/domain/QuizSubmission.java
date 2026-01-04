@@ -45,4 +45,9 @@ public class QuizSubmission {
         orphanRemoval = true
     )
     private List<QuizAnswer> answers = new ArrayList<>();
+    
+    public void addAnswer(QuizAnswer answer) {
+        answers.add(answer);
+        answer.setSubmission(this);
+    }
 }

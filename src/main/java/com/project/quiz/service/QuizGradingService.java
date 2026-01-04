@@ -1,0 +1,59 @@
+package com.project.quiz.service;
+
+import com.project.quiz.domain.*;
+import com.project.quiz.repository.*;
+import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class QuizGradingService {
+
+    private final QuizSubmissionRepository submissionRepository;
+    private final QuizGradingRepository gradingRepository;
+
+    @Transactional
+    public void grade(Long submissionId) {
+
+        QuizSubmission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new RuntimeException("제출 없음"));
+
+        int totalScore = 0;
+
+        List<QuizAnswer> answers =
+                new ArrayList<>(submission.getAnswers());
+
+        for (QuizAnswer answer : answers) {
+
+            QuizQuestion question = answer.getQuestion();
+            boolean correct = false;
+            int score = 0;
+
+            // 채점 로직 ...
+
+            QuizGrading grading = new QuizGrading();
+            grading.setAnswer(answer);
+            grading.setCorrect(correct);
+            grading.setScore(score);
+            grading.setGrader("AUTO");
+            grading.setGradedAt(LocalDateTime.now());
+
+            answer.setGrading(grading);
+            gradingRepository.save(grading);
+
+            totalScore += score;
+        }
+
+        submission.setTotalScore(totalScore);
+        submission.setGraded(true);
+        submissionRepository.save(submission);
+    }
+
+
+}

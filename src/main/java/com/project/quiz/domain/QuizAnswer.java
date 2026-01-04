@@ -31,4 +31,14 @@ public class QuizAnswer {
     /* 객관식 선택 번호 */
     @Column(name = "selected_option")
     private Integer selectedOption;
+    
+    @OneToOne(mappedBy = "answer", cascade = CascadeType.ALL)
+    private QuizGrading grading;
+    
+    public void setGrading(QuizGrading grading) {
+        this.grading = grading;
+        grading.setAnswer(this);
+    }
+
+
 }

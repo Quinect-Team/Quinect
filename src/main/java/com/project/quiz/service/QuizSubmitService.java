@@ -16,35 +16,40 @@ public class QuizSubmitService {
     private final QuizQuestionRepository quizQuestionRepository;
     private final QuizSubmissionRepository submissionRepository;
     private final QuizAnswerRepository answerRepository;
+    private final QuizGradingService gradingService;
+    
 
+    @Transactional
     public Long submit(Long quizId, QuizSubmitRequest request) {
 
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new IllegalArgumentException("퀴즈 없음"));
 
-        /* 1️⃣ submission 생성 */
         QuizSubmission submission = new QuizSubmission();
         submission.setQuiz(quiz);
         submission.setUserId(request.getUserId());
         submission.setGraded(false);
 
-        submissionRepository.save(submission);
-
-        /* 2️⃣ answer 생성 */
+        /* answer 생성 + 연결 */
         for (QuizSubmitRequest.AnswerRequest ar : request.getAnswers()) {
 
             QuizQuestion question = quizQuestionRepository.findById(ar.getQuestionId())
                     .orElseThrow(() -> new IllegalArgumentException("문제 없음"));
 
             QuizAnswer answer = new QuizAnswer();
-            answer.setSubmission(submission);
             answer.setQuestion(question);
             answer.setAnswerText(ar.getAnswerText());
             answer.setSelectedOption(ar.getSelectedOption());
 
-            answerRepository.save(answer);
+            submission.addAnswer(answer); // ⭐ 핵심
         }
+
+        submissionRepository.save(submission);
+
+        /* 자동 채점 */
+        gradingService.grade(submission.getSubmissionId());
 
         return submission.getSubmissionId();
     }
+
 }
