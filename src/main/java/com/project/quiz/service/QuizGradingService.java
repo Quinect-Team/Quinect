@@ -35,7 +35,40 @@ public class QuizGradingService {
             boolean correct = false;
             int score = 0;
 
-            // 채점 로직 ...
+            /* 1️⃣ 객관식 */
+            if (question.getQuizTypeCode().equals(2)) {
+                if (answer.getSelectedOption() != null &&
+                    question.getAnswerOption() != null) {
+
+                    String correctOption = question.getAnswerOption().trim();
+                    String selected = answer.getSelectedOption().toString().trim();
+
+                    if (correctOption.equals(selected)) {
+                        correct = true;
+                        score = question.getPoint();
+                    }
+                }
+            }
+
+            /* 2️⃣ 서술형 */
+            if (question.getQuizTypeCode().equals(1)) {
+                if (answer.getAnswerText() != null &&
+                    question.getSubjectiveAnswer() != null) {
+
+                    String user = answer.getAnswerText()
+                            .trim()
+                            .replaceAll("\\s+", " ");
+
+                    String correctText = question.getSubjectiveAnswer()
+                            .trim()
+                            .replaceAll("\\s+", " ");
+
+                    if (user.equalsIgnoreCase(correctText)) {
+                        correct = true;
+                        score = question.getPoint();
+                    }
+                }
+            }
 
             QuizGrading grading = new QuizGrading();
             grading.setAnswer(answer);
@@ -54,6 +87,4 @@ public class QuizGradingService {
         submission.setGraded(true);
         submissionRepository.save(submission);
     }
-
-
 }
