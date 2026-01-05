@@ -17,5 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByEmailContaining(String email);
     
     List<User> findByStatusAndStatusChangedAtBefore(String status, LocalDateTime dateTime);
+    
+    List<User> findByStatus(String status);
 
 }
