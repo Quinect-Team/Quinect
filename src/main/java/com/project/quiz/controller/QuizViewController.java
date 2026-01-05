@@ -41,4 +41,9 @@ public class QuizViewController {
         model.addAttribute("quizId", id);
         return "layout/quiz_view"; 
     }
+    
+    @GetMapping("/my")
+    public String myQuizPage() {
+        return "layout/my_quiz";
+    }
 }
