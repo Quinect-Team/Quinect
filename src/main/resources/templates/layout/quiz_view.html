@@ -213,11 +213,11 @@ function renderQuiz(quizData) {
 
 	    if (!res.ok) throw new Error('제출 실패');
 
-	    const submissionId = await res.json();
+		const result = await res.json();
 
 	    if (LOCAL_KEY) localStorage.removeItem(LOCAL_KEY);
 
-	    alert(`제출 완료 (submissionId=${submissionId})`);
+		showResultModal(result.score, result.maxScore);
 	  } catch (err) {
 	    console.error(err);
 	    alert('제출 중 오류 발생');
@@ -355,6 +355,51 @@ function collectSubmitPayload() {
   return payload;
 }
 
+function showResultModal(score, maxScore) {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.background = 'rgba(0,0,0,0.5)';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.zIndex = 9999;
+
+  const modal = document.createElement('div');
+  modal.style.background = '#fff';
+  modal.style.padding = '24px 28px';
+  modal.style.borderRadius = '12px';
+  modal.style.textAlign = 'center';
+  modal.style.minWidth = '260px';
+  modal.style.boxShadow = '0 8px 30px rgba(0,0,0,.25)';
+
+  modal.innerHTML = `
+    <h2 style="margin-top:0">채점 결과</h2>
+    <p style="font-size:18px;font-weight:600">
+      ${score} / ${maxScore} 점
+    </p>
+    <button id="closeModalBtn"
+            style="margin-top:12px;
+                   padding:8px 14px;
+                   border:0;
+                   border-radius:8px;
+                   background:#1a73e8;
+                   color:#fff;
+                   cursor:pointer;">
+      확인
+    </button>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  document
+    .getElementById('closeModalBtn')
+    .onclick = () => overlay.remove();
+}
 
 
 </script>
