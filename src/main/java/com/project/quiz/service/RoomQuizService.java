@@ -6,7 +6,10 @@ import com.project.quiz.repository.RoomQuizRepository;
 import com.project.quiz.repository.QuizRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -42,4 +45,22 @@ public class RoomQuizService {
 
 		return null;
 	}
+
+	// RoomQuizService에 이 메서드가 있는지 확인 (없으면 추가)
+	public Long getLatestQuizIdByRoom(Long roomId) {
+		return roomQuizRepository.findFirstByRoomIdOrderByAssignedAtDesc(roomId).map(RoomQuiz::getQuizId).orElse(null);
+	}
+
+	// RoomQuizService.java
+	@Transactional
+	public void saveRoomQuiz(Long roomId, Long quizId) {
+		RoomQuiz roomQuiz = RoomQuiz.builder().roomId(roomId).quizId(quizId).assignedAt(LocalDateTime.now()).build();
+		roomQuizRepository.save(roomQuiz);
+	}
+
+	@Transactional
+	public void deleteByRoomId(Long roomId) {
+		roomQuizRepository.deleteByRoomId(roomId);
+	}
+
 }

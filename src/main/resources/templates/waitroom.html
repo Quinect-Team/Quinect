@@ -18,6 +18,25 @@
     <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 	
 	<script th:src="@{/js/waitroom.js}"></script>
+	
+<!--	<style>
+	@keyframes slideIn {
+	    from {
+	        opacity: 0;
+	        transform: translateY(-20px);
+	    }
+	    to {
+	        opacity: 1;
+	        transform: translateY(0);
+	    }
+	}
+
+	@keyframes pulse {
+	    0%, 100% { transform: scale(1); }
+	    50% { transform: scale(1.05); }
+	}
+	</style>-->
+
 
 </head>
 
@@ -36,6 +55,7 @@ th:attr="data-room-code=${room.roomCode},
                 <h1 class="display-4 font-weight-bold mr-3" th:text="${room.roomCode}">ABCD</h1>
                 <button class="btn btn-outline-warning btn-sm ml-3" onclick="copyCode()"><i class="fas fa-copy"></i> 복사</button>
                 <img th:if="${qrCodeBase64 != null}" th:src="'data:image/png;base64,' + ${qrCodeBase64}" alt="QR 코드" width="150" height="150"/>
+
                 <span class="ml-auto pr-3 font-weight-bold">방 유형: <span th:text="${roomTypeName}">객관식</span></span>
             </div>
         </div>
@@ -67,38 +87,53 @@ th:attr="data-room-code=${room.roomCode},
         </div>
 
         <!-- 채팅창 -->
-        <div class="col-md-5">
-            <div class="card shadow mb-4 h-100 d-flex flex-column">
-                <div class="card-header py-2 bg-gradient-info">
-                    <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-comments"></i> 채팅</h6>
-                </div>
-                <div class="card-body flex-fill px-2 py-2" id="messages" style="overflow-y:auto; height:260px;"></div>
-                <div class="card-footer p-2 bg-light">
-                    <form class="input-group mt-2" onsubmit="sendMessage(); return false;">
-                        <input id="chat-input" type="text" class="form-control mr-2" placeholder="메시지 입력" autocomplete="off" />
-                        <button class="btn btn-warning font-weight-bold" type="submit">입력</button>
-                    </form>
-                </div>
-            </div>
-        </div>
+		    <!-- 채팅창 -->
+		    <div class="col-md-5">
+		        <div class="card shadow mb-4 h-100 d-flex flex-column">
+		            <div class="card-header py-2 bg-gradient-info">
+		                <h6 class="m-0 font-weight-bold text-white"><i class="fas fa-comments"></i> 채팅</h6>
+		            </div>
+		            
+		            <!-- 👇 카운트다운을 messages 위에 배치 -->
+		            <div id="quizStartContainer" style="display: none; padding: 10px 15px; background: linear-gradient(135deg, #FF6B6B, #FF8E72); border-radius: 10px; text-align: center; color: white; margin: 10px; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); animation: pulse 1s infinite;">
+		                <h5 style="margin: 0 0 5px 0; font-size: 16px;">
+		                    <i class="fas fa-rocket" style="font-size: 1.2rem; margin-right: 5px;"></i>
+		                    퀴즈 시작!
+		                </h5>
+		                <p id="countdownMessage" style="font-size: 14px; opacity: 0.95; margin: 0;">
+		                    <span id="secondsText">5초</span> 안에 이동합니다
+		                </p>
+		            </div>
+		            
+		            <!-- 채팅 메시지 영역 -->
+		            <div class="card-body flex-fill px-2 py-2" id="messages" style="overflow-y:auto; height:200px;"></div>
+		            
+		            <!-- 입력 영역 -->
+		            <div class="card-footer p-2 bg-light">
+		                <form class="input-group mt-2" onsubmit="sendMessage(); return false;">
+		                    <input id="chat-input" type="text" class="form-control mr-2" placeholder="메시지 입력" autocomplete="off" />
+		                    <button class="btn btn-warning font-weight-bold" type="submit">입력</button>
+		                </form>
+		            </div>
+		        </div>
+		    </div>
+		</div>
     </div>
 
     <!-- 하단 버튼 -->
-    <div class="row mt-3">
-        <div class="col text-right vote-btn-container">
-            <button id="voteBtn" class="btn btn-danger btn-lg mr-2" style="display:none;" onclick="openCreateVoteModal()">
-                <i class="fas fa-poll"></i> 투표 시작
-            </button>
-			<button id="selectQuizBtn" class="btn btn-warning btn-lg mr-2" style="display:none;" onclick="openSelectQuizModal()">
-               <i class="fas fa-book-open"></i> 퀴즈 선택
-           </button>
-            <button id="teamSelectBtn" class="btn btn-secondary btn-lg mr-2" onclick="openTeamSelectModal()">
-				<i class="fas fa-users-cog"></i> 팀 선택
-			</button>
-			<button class="btn btn-primary btn-lg font-weight-bold" onclick="toggleReady()" data-ready-btn>
-				<i class="fas fa-hourglass"></i> READY
-			</button>
-        </div>
+    <div class="col text-left vote-btn-container">
+        <button id="voteBtn" class="btn btn-danger btn-lg mr-2" style="display:none;" onclick="openCreateVoteModal()">
+            <i class="fas fa-poll"></i> 투표 시작
+        </button>
+		<button id="selectQuizBtn" class="btn btn-warning btn-lg mr-2" style="display:none;" onclick="openSelectQuizModal()">
+           <i class="fas fa-book-open"></i> 퀴즈 선택
+       </button>
+        <button id="teamSelectBtn" class="btn btn-secondary btn-lg mr-2" onclick="openTeamSelectModal()">
+			<i class="fas fa-users-cog"></i> 팀 선택
+		</button>
+		<button class="btn btn-primary btn-lg font-weight-bold" onclick="toggleReady()" data-ready-btn>
+			<i class="fas fa-hourglass"></i> READY
+		</button>
     </div>
 </div>
 

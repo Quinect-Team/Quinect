@@ -2,6 +2,7 @@ package com.project.quiz.controller;
 
 import java.security.Principal;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,22 +57,7 @@ public class RoomController {
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
 
-//	@GetMapping("/waitroom/form")
-//	public String showRoomForm(Model model, Principal principal, HttpSession session) {
-//		if (principal != null) {
-//			List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
-//			model.addAttribute("roomTypes", roomTypes);
-//			return "waitroom_form";
-//		}
-//
-//		if (session.getAttribute("guestUser") == null) {
-//			return "redirect:/guest/setup?next=/waitroom/form";
-//		}
-//
-//		List<CodeTable> roomTypes = codeTableRepository.findByGroupId("room_type");
-//		model.addAttribute("roomTypes", roomTypes);
-//		return "waitroom_form";
-//	}
+	private final Map<String, Map<Long, Boolean>> roomReadyStatus = new ConcurrentHashMap<>();
 
 	@GetMapping("/waitroom/create")
 	public String createRoomPost(Principal principal, HttpSession session) {
@@ -161,23 +147,6 @@ public class RoomController {
 		List<Quiz> quizzes = quizService.findAll();
 		model.addAttribute("quizzes", quizzes);
 
-		String joinMessage = nickname + "님이 입장하셨습니다.";
-		Map<String, Object> joinNotification = new HashMap<>();
-		joinNotification.put("type", "SYSTEM");
-		joinNotification.put("sender", "시스템");
-		joinNotification.put("content", joinMessage);
-		joinNotification.put("timestamp", System.currentTimeMillis());
-
-		// WebSocket으로 모든 클라이언트에 브로드캐스트
-		messagingTemplate.convertAndSend("/topic/chat/" + roomCode, joinNotification);
-
-		// ✅ 참가자 목록 업데이트 알림
-		Map<String, Object> participantUpdate = new HashMap<>();
-		participantUpdate.put("type", "PARTICIPANT_UPDATE");
-		participantUpdate.put("participants", participantService.findByRoom(room));
-
-		messagingTemplate.convertAndSend("/topic/participants/" + roomCode, participantUpdate);
-
 		return "waitroom";
 	}
 
@@ -256,10 +225,52 @@ public class RoomController {
 	public Map<String, Object> handleReadyStatus(@DestinationVariable("roomCode") String roomCode,
 			Map<String, Object> readyData) {
 
-		System.out.println("Ready status received from room: " + roomCode);
-		System.out.println("Ready data: " + readyData);
+		// 1. userId, isReady 추출
+		Long userId = ((Number) readyData.get("userId")).longValue();
+		boolean isReady = (Boolean) readyData.get("isReady");
 
-		// 그대로 모든 참가자에게 브로드캐스트
+		// 2. 서버 메모리에 상태 저장
+		roomReadyStatus.computeIfAbsent(roomCode, k -> new ConcurrentHashMap<>()).put(userId, isReady);
+
+		System.out
+				.println("Ready status received from room: " + roomCode + ", user: " + userId + ", ready: " + isReady);
+
+		// 3. 모든 참가자 READY인지 체크
+		Room room = roomService.getRoomByCode(roomCode);
+		if (room != null) {
+			var participants = participantService.findByRoom(room);
+			var readyMap = roomReadyStatus.get(roomCode);
+
+			boolean allReady = true;
+			for (var p : participants) {
+				Long pId = p.getUser().getId();
+				if (!Boolean.TRUE.equals(readyMap.get(pId))) {
+					allReady = false;
+					break;
+				}
+			}
+
+			System.out.println("Room " + roomCode + " allReady: " + allReady);
+
+			// 3. 모두 READY면 QUIZ_START 신호 전송
+			if (allReady) {
+				Long quizId = roomQuizService.getLatestQuizIdByRoom(room.getId());
+				if (quizId != null) {
+					Map<String, Object> startSignal = new HashMap<>();
+					startSignal.put("type", "QUIZ_START"); // ← 중요!
+					startSignal.put("quizId", quizId);
+					startSignal.put("countdown", 5); // 5초 카운트다운
+
+					System.out.println("🚀 QUIZ_START 신호 전송: " + roomCode);
+					messagingTemplate.convertAndSend("/topic/ready/" + roomCode, startSignal);
+
+				} else {
+					System.out.println("❌ 퀴즈가 선택되지 않았습니다");
+				}
+			}
+		}
+
+		// 5. 기존 READY 데이터도 브로드캐스트 (UI 업데이트용)
 		return readyData;
 	}
 
@@ -298,33 +309,68 @@ public class RoomController {
 							: invitedUser.getEmail(),
 					invitedUser.getUserProfile() != null ? invitedUser.getUserProfile().getProfileImage() : null);
 
-			// 4. WebSocket으로 참가자 업데이트 브로드캐스트
-			Map<String, Object> participantUpdate = new HashMap<>();
-			participantUpdate.put("type", "PARTICIPANT_UPDATE");
-			participantUpdate.put("participants", participantService.findByRoom(room));
-			messagingTemplate.convertAndSend("/topic/participants/" + roomCode, participantUpdate);
-
-			// 5. 입장 알림 메시지
-			String userName = invitedUser.getUserProfile() != null ? invitedUser.getUserProfile().getUsername()
-					: invitedUser.getEmail();
-			String joinMessage = userName + "님이 입장하셨습니다.";
-
-			Map<String, Object> joinNotification = new HashMap<>();
-			joinNotification.put("type", "SYSTEM");
-			joinNotification.put("sender", "시스템");
-			joinNotification.put("content", joinMessage);
-			joinNotification.put("timestamp", System.currentTimeMillis());
-
-			messagingTemplate.convertAndSend("/topic/chat/" + roomCode, joinNotification);
-
-			response.put("success", true);
-			response.put("message", joinMessage);
-
 		} catch (Exception e) {
 			System.err.println("❌ 친구 초대 실패: " + e.getMessage());
 			e.printStackTrace();
 			response.put("success", false);
 			response.put("message", "초대 중 오류가 발생했습니다: " + e.getMessage());
+		}
+
+		return response;
+	}
+
+	@PostMapping("/api/room/{roomCode}/select-quiz")
+	@ResponseBody
+	public Map<String, Object> selectQuiz(@PathVariable("roomCode") String roomCode,
+			@RequestParam("quizId") Long quizId, Principal principal) {
+		Map<String, Object> response = new HashMap<>();
+
+		try {
+			// 1. 방 조회 & 권한 확인
+			Room room = roomService.getRoomByCode(roomCode);
+			if (room == null) {
+				response.put("success", false);
+				response.put("message", "대기방을 찾을 수 없습니다.");
+				return response;
+			}
+
+			User user = userService.findByEmail(principal.getName());
+			if (user == null || !room.getHostUserId().equals(user.getId())) {
+				response.put("success", false);
+				response.put("message", "방장만 퀴즈를 선택할 수 있습니다.");
+				return response;
+			}
+
+			// 2. 퀴즈 조회
+			Quiz quiz = quizService.findById(quizId);
+			if (quiz == null) {
+				response.put("success", false);
+				response.put("message", "선택한 퀴즈가 존재하지 않습니다.");
+				return response;
+			}
+
+			// 3. 기존 퀴즈 삭제 후 새로 저장 (중복 방지)
+			roomQuizService.deleteByRoomId(room.getId());
+			roomQuizService.saveRoomQuiz(room.getId(), quizId);
+
+			// 4. 성공 응답 (클라이언트가 기대하는 형식)
+			response.put("success", true);
+			response.put("quizId", quizId);
+			response.put("quizTitle", quiz.getTitle());
+
+			// 5. WebSocket으로 모든 참가자에게 알림
+			Map<String, Object> quizNotification = new HashMap<>();
+			quizNotification.put("type", "QUIZ_SELECTED");
+			quizNotification.put("quizId", quizId);
+			quizNotification.put("quizTitle", quiz.getTitle());
+			messagingTemplate.convertAndSend("/topic/room/" + roomCode, quizNotification);
+
+			System.out.println("✅ [퀴즈 선택] " + roomCode + " → " + quiz.getTitle());
+
+		} catch (Exception e) {
+			System.err.println("❌ 퀴즈 선택 오류: " + e.getMessage());
+			response.put("success", false);
+			response.put("message", "퀴즈 선택 중 오류가 발생했습니다: " + e.getMessage());
 		}
 
 		return response;

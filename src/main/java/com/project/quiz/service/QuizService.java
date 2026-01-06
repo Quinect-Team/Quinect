@@ -24,101 +24,103 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class QuizService {
 
-    private final QuizRepository quizRepository;
+	private final QuizRepository quizRepository;
 
-    /* ================== 저장 ================== */
-    public Long saveQuiz(QuizDto quizDto) {
+	/* ================== 저장 ================== */
+	public Long saveQuiz(QuizDto quizDto) {
 
-        Quiz quiz;
+		Quiz quiz;
 
-        if (quizDto.getQuizId() != null) {
-            quiz = quizRepository.findById(quizDto.getQuizId())
-                    .orElseThrow(() ->
-                            new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
+		if (quizDto.getQuizId() != null) {
+			quiz = quizRepository.findById(quizDto.getQuizId())
+					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
 
-            quiz.setTitle(quizDto.getTitle());
-            quiz.setDescription(quizDto.getDescription());
-            quiz.setUpdatedAt(LocalDateTime.now());
+			quiz.setTitle(quizDto.getTitle());
+			quiz.setDescription(quizDto.getDescription());
+			quiz.setUpdatedAt(LocalDateTime.now());
 
-            quiz.getQuestions().clear();
-        } else {
-            quiz = new Quiz();
-            quiz.setTitle(quizDto.getTitle());
-            quiz.setDescription(quizDto.getDescription());
-            quiz.setUserId(quizDto.getUserId());
-            quiz.setCreatedAt(LocalDateTime.now());
-            quiz.setUpdatedAt(LocalDateTime.now());
-        }
+			quiz.getQuestions().clear();
+		} else {
+			quiz = new Quiz();
+			quiz.setTitle(quizDto.getTitle());
+			quiz.setDescription(quizDto.getDescription());
+			quiz.setUserId(quizDto.getUserId());
+			quiz.setCreatedAt(LocalDateTime.now());
+			quiz.setUpdatedAt(LocalDateTime.now());
+		}
 
-        List<QuizQuestion> questionEntities = new ArrayList<>();
+		List<QuizQuestion> questionEntities = new ArrayList<>();
 
-        for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
+		for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
 
-            QuizQuestion question = new QuizQuestion();
-            
-            question.setQuestionText(q.getQuestionText());
-            question.setQuizTypeCode(q.getQuizTypeCode());
-            question.setPoint(q.getPoint());
-            question.setImage(q.getImage());
+			QuizQuestion question = new QuizQuestion();
 
-            /* ===== 객관식 ===== */
-            if (q.getQuizTypeCode() == 2) {
-                question.setAnswerOption(q.getAnswerOption());
-                question.setSubjectiveAnswer(null);
+			question.setQuestionText(q.getQuestionText());
+			question.setQuizTypeCode(q.getQuizTypeCode());
+			question.setPoint(q.getPoint());
+			question.setImage(q.getImage());
 
-                if (q.getOptions() != null) {
-                    for (QuizDto.OptionDto opt : q.getOptions()) {
-                        QuizOption option = new QuizOption();
-                        option.setOptionNumber(opt.getOptionNumber());
-                        option.setOptionText(opt.getOptionText());
-                        question.addOption(option);
-                    }
-                }
+			/* ===== 객관식 ===== */
+			if (q.getQuizTypeCode() == 2) {
+				question.setAnswerOption(q.getAnswerOption());
+				question.setSubjectiveAnswer(null);
 
-            /* ===== 서술형 ===== */
-            } else {
-                question.setSubjectiveAnswer(q.getSubjectiveAnswer());
-                question.setAnswerOption(null);
-            }
+				if (q.getOptions() != null) {
+					for (QuizDto.OptionDto opt : q.getOptions()) {
+						QuizOption option = new QuizOption();
+						option.setOptionNumber(opt.getOptionNumber());
+						option.setOptionText(opt.getOptionText());
+						question.addOption(option);
+					}
+				}
 
-            quiz.addQuestion(question);
-        }
+				/* ===== 서술형 ===== */
+			} else {
+				question.setSubjectiveAnswer(q.getSubjectiveAnswer());
+				question.setAnswerOption(null);
+			}
 
+			quiz.addQuestion(question);
+		}
 
-        quizRepository.save(quiz);
+		quizRepository.save(quiz);
 
-        return quiz.getQuizId();
-    }
-    
-    public String storeImage(MultipartFile file) throws Exception {
+		return quiz.getQuizId();
+	}
 
-        if (file == null || file.isEmpty()) {
-            throw new Exception("Empty file");
-        }
+	public String storeImage(MultipartFile file) throws Exception {
 
-        String uploadDir = System.getProperty("user.dir") + "/uploads/quiz/";
-        File dir = new File(uploadDir);
-        if (!dir.exists()) dir.mkdirs();
+		if (file == null || file.isEmpty()) {
+			throw new Exception("Empty file");
+		}
 
-        String original = file.getOriginalFilename();
-        String ext = original.substring(original.lastIndexOf("."));
-        String fileName = UUID.randomUUID() + ext;
+		String uploadDir = System.getProperty("user.dir") + "/uploads/quiz/";
+		File dir = new File(uploadDir);
+		if (!dir.exists())
+			dir.mkdirs();
 
-        File target = new File(uploadDir + fileName);
-        file.transferTo(target);
+		String original = file.getOriginalFilename();
+		String ext = original.substring(original.lastIndexOf("."));
+		String fileName = UUID.randomUUID() + ext;
 
-        return fileName;
-    }
+		File target = new File(uploadDir + fileName);
+		file.transferTo(target);
 
+		return fileName;
+	}
 
-    /* ================== 조회 ================== */
-    public QuizDto findQuizDto(Long id) {
-        Quiz quiz = quizRepository.findByIdWithQuestions(id)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found: " + id));
-        return QuizDto.fromEntity(quiz);
-    }
+	/* ================== 조회 ================== */
+	public QuizDto findQuizDto(Long id) {
+		Quiz quiz = quizRepository.findByIdWithQuestions(id)
+				.orElseThrow(() -> new IllegalArgumentException("Quiz not found: " + id));
+		return QuizDto.fromEntity(quiz);
+	}
 
-    public List<Quiz> findAll() {
-        return quizRepository.findAll();
-    }
+	public Quiz findById(Long id) {
+		return quizRepository.findById(id).orElse(null);
+	}
+
+	public List<Quiz> findAll() {
+		return quizRepository.findAll();
+	}
 }

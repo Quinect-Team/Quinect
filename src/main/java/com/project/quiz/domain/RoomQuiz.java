@@ -1,12 +1,15 @@
 package com.project.quiz.domain;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "room_quiz")
 @Data
+@Builder  
+@NoArgsConstructor  
+@AllArgsConstructor 
 public class RoomQuiz {
 
 	@Id

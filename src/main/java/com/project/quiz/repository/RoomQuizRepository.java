@@ -14,4 +14,6 @@ public interface RoomQuizRepository extends JpaRepository<RoomQuiz, Long> {
 
 	// 특정 방의 가장 최근 퀴즈 조회
 	Optional<RoomQuiz> findFirstByRoomIdOrderByAssignedAtDesc(Long roomId);
+
+	void deleteByRoomId(Long roomId);
 }

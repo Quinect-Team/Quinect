@@ -18,6 +18,12 @@ var readyStatus = {};
 var myReadyStatus = false;
 var initialized = false;
 
+var quizCountdownInterval = null;
+var quizCountdownTimer = null;
+
+var initialParticipants = [];
+
+
 // ========== 모든 함수들 (DOMContentLoaded 밖에) ==========
 
 function initWebSocket() {
@@ -66,15 +72,34 @@ function initWebSocket() {
 
 		stompClient.subscribe('/topic/ready/' + roomCode, function(message) {
 			var readyData = JSON.parse(message.body);
-			handleReadyUpdate(readyData);
+
+			// QUIZ_START 신호 처리 (새로 추가!)
+			if (readyData.type === 'QUIZ_START') {
+				handleQuizStart(readyData);
+			} else {
+				// 기존 READY 메시지 처리
+				handleReadyUpdate(readyData);
+			}
 		});
 
+		// 참가자 업데이트 구독에서 시스템 메시지 완전 제거
 		stompClient.subscribe('/topic/participants/' + roomCode, function(message) {
 			var data = JSON.parse(message.body);
 			if (data.type === 'PARTICIPANT_UPDATE') {
+				console.log('참가자 업데이트:', data.participants.length, '명');
+
+				// 👇 입장 메시지 완전 삭제! (새로고침 시에도 X)
+				data.participants.forEach(function(participant) {
+					if (!initialParticipants.includes(participant.id) && participant.id !== userId) {
+						initialParticipants.push(participant.id);
+					}
+				});
+
 				updateParticipantUI(data.participants);
 			}
 		});
+
+
 
 		// ✅ 퀴즈 선택 WebSocket 구독 추가
 		stompClient.subscribe('/topic/room/' + roomCode, function(message) {
@@ -660,7 +685,7 @@ function toggleReady() {
 }
 
 function handleReadyUpdate(readyData) {
-	console.log('Ready update received:', readyData);
+	console.log('Ready update:', readyData);
 
 	var receivedUserId = readyData.userId;
 	var isReady = readyData.isReady;
@@ -668,16 +693,27 @@ function handleReadyUpdate(readyData) {
 	readyStatus[receivedUserId] = isReady;
 	localStorage.setItem('readyStatus_' + roomCode, JSON.stringify(readyStatus));
 
-	console.log('Updated readyStatus:', readyStatus);
+	// 👇 한 명이라도 false면 카운트다운 중지!
+	var allReady = true;
+	Object.values(readyStatus).forEach(function(status) {
+		if (!status) {
+			allReady = false;
+		}
+	});
 
+	if (!allReady) {
+		console.log('❌ READY 취소됨 → 카운트다운 중지');
+		stopQuizCountdown();
+	}
+
+	// 기존 UI 업데이트
 	if (receivedUserId === userId) {
-		console.log('Self update - syncing myReadyStatus to:', isReady);
 		myReadyStatus = isReady;
 		updateReadyButton();
 	}
-
 	updateParticipantCardStatus(readyData.userId, readyData.isReady);
 }
+
 
 function updateParticipantCardStatus(participantUserId, isReady) {
 	var card = document.querySelector('[data-user-id="' + participantUserId + '"]');
@@ -687,15 +723,6 @@ function updateParticipantCardStatus(participantUserId, isReady) {
 	var existingReadyBadge = card.querySelector('.ready-badge');
 	if (existingReadyBadge) {
 		existingReadyBadge.remove();
-	}
-
-	if (isReady) {
-		var readyBadge = document.createElement('div');
-		readyBadge.className = 'ready-badge';
-		readyBadge.style.cssText = 'position: absolute; bottom: 5px; right: 5px; background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px;';
-		readyBadge.innerHTML = '<i class="fas fa-check-circle"></i> READY';
-		card.style.position = 'relative';
-		card.appendChild(readyBadge);
 	}
 }
 
@@ -883,19 +910,6 @@ function selectQuiz(quizId) {
 			if (data.success) {
 				console.log('✅ 퀴즈 선택 성공:', data);
 
-				// 성공 메시지
-				var messagesDiv = document.getElementById('messages');
-				var msgDiv = document.createElement('div');
-				msgDiv.innerHTML = '<strong style="color: #28a745;">✓ 시스템:</strong> <em>' +
-					escapeHtml(data.quizTitle) + '이(가) 선택되었습니다.</em>';
-				msgDiv.style.padding = '8px';
-				msgDiv.style.marginBottom = '8px';
-				msgDiv.style.borderBottom = '1px solid #eee';
-				msgDiv.style.color = '#666';
-				msgDiv.style.fontStyle = 'italic';
-				messagesDiv.appendChild(msgDiv);
-				messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
 				// 로컬스토리지에 선택된 퀴즈 저장
 				localStorage.setItem('selectedQuiz_' + roomCode, JSON.stringify({
 					id: quizId,
@@ -942,6 +956,96 @@ function handleQuizSelection(quizData) {
 	messagesDiv.appendChild(msgDiv);
 	messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
+
+
+
+function handleQuizStart(quizData) {
+	console.log('🚀 QUIZ_START 신호 수신:', quizData);
+
+	// 기존 카운트다운 중지
+	stopQuizCountdown();
+
+	// 컨테이너 표시
+	var container = document.getElementById('quizStartContainer');
+	if (container) {
+		console.log('✅ quizStartContainer 찾음');
+		container.style.display = 'block';
+	} else {
+		console.error('❌ quizStartContainer를 찾을 수 없습니다');
+	}
+
+	// 카운트다운 시작
+	startQuizCountdown(5);
+}
+
+function startQuizCountdown(seconds) {
+	console.log('⏱️ 카운트다운 시작:', seconds);
+
+	let remaining = seconds;
+
+	var numberDiv = document.getElementById('countdownNumber');
+	var messageDiv = document.getElementById('countdownMessage');  // 👈 이걸 찾기
+
+	console.log('numberDiv:', numberDiv);
+	console.log('messageDiv:', messageDiv);
+
+	// 초기값 설정
+	if (numberDiv) {
+		numberDiv.textContent = remaining;
+	}
+	if (messageDiv) {
+		messageDiv.innerHTML = '<strong style="color: #FFD700;">' + remaining + '초</strong> 안에 퀴즈 페이지로 이동합니다';
+	}
+
+	// 1초마다 감소
+	quizCountdownInterval = setInterval(function() {
+		remaining--;
+
+		console.log('카운트다운:', remaining + '초');
+
+		// 숫자 업데이트
+		if (numberDiv) {
+			numberDiv.textContent = remaining;
+		}
+		if (messageDiv) {
+			messageDiv.innerHTML = '<strong style="color: #FFD700;">' + remaining + '초</strong> 안에 퀴즈 페이지로 이동합니다';
+		}
+
+		if (remaining <= 0) {
+			stopQuizCountdown();
+			window.location.href = '/quiz/' + roomCode;
+		}
+	}, 1000);
+
+	// 5초 후 강제 이동 (보안용)
+	quizCountdownTimer = setTimeout(function() {
+		stopQuizCountdown();
+		window.location.href = '/quiz/' + roomCode;
+	}, seconds * 1000);
+}
+
+
+function stopQuizCountdown() {
+	console.log('⏹️ 카운트다운 중지');
+
+	if (quizCountdownInterval) {
+		clearInterval(quizCountdownInterval);
+		quizCountdownInterval = null;
+	}
+	if (quizCountdownTimer) {
+		clearTimeout(quizCountdownTimer);
+		quizCountdownTimer = null;
+	}
+
+	// 컨테이너 숨기기
+	var container = document.getElementById('quizStartContainer');
+	if (container) {
+		container.style.display = 'none';
+	}
+}
+
+
+
 
 // ========== 친구 초대 기능 ==========
 
@@ -1266,6 +1370,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	if (initialized) {
 		return;
 	}
+	initialized = true;
 
 	var body = document.body;
 	roomCode = body.getAttribute('data-room-code');
@@ -1274,6 +1379,15 @@ document.addEventListener('DOMContentLoaded', function() {
 	userId = parseInt(body.getAttribute('data-user-id') || '0');
 
 	console.log('Initialized with:', { roomCode, username, isRoomMaster, userId });
+
+	initialParticipants = [];
+	document.querySelectorAll('[data-user-id]').forEach(function(card) {
+		var idStr = card.getAttribute('data-user-id');
+		var pid = parseInt(idStr, 10);
+		if (!isNaN(pid)) {
+			initialParticipants.push(pid);
+		}
+	});
 
 	initWebSocket();
 
