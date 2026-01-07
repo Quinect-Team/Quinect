@@ -1,0 +1,57 @@
+/* 1. 점선 테두리 (이미지 업로드, 보기 추가 버튼 등) */
+.border-dashed {
+	border-style: dashed !important;
+	border-width: 2px !important;
+}
+
+/* 2. 마우스 커서 포인터 (클릭 가능한 요소임을 명시) */
+.cursor-pointer {
+	cursor: pointer;
+}
+
+/* 3. 카드 호버 효과 (살짝 떠오르는 느낌) */
+.card {
+	transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* 카드에 마우스를 올렸을 때 방해가 되지 않도록 호버 효과는 뺐지만, 
+       원하시면 아래 주석을 해제하세요. */
+/* .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    } */
+
+/* 4. 입력창 포커스 디자인 (부트스트랩 기본 파란 테두리보다 깔끔하게) */
+.form-control:focus {
+	box-shadow: none;
+	background-color: #fff !important;
+	/* 포커스 시 배경 흰색 */
+	border-color: #4e73df !important;
+	/* 테두리만 진한 파랑 */
+}
+
+/* 5. 퀴즈 제목 입력창 (조금 더 크게 강조) */
+#quiz-title {
+	font-size: 1.2rem;
+	font-weight: 600;
+}
+
+/* 6. 문제 번호 뱃지 스타일 보정 */
+.badge-pill {
+	min-width: 60px;
+	/* 번호가 커져도 모양 유지 */
+}
+
+/* 7. 모바일 대응 (화면이 작을 때 패딩 조정) */
+@media (max-width: 768px) {
+	.submit-area {
+		flex-direction: column;
+		/* 버튼 세로로 쌓기 */
+		padding: 0 20px;
+	}
+
+	.submit-area button {
+		width: 100%;
+		/* 버튼 꽉 차게 */
+	}
+}

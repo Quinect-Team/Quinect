@@ -39,7 +39,7 @@ public class QuizViewController {
 	
 	@GetMapping("/setquestion")
     public String setquestion() {
-        return "/layout/setquestion";
+        return "/setquestion";  // src/main/resources/templates/layout/setquestion.html을 렌더링
     }
 	
 	 // 템플릿 반환 ONLY
