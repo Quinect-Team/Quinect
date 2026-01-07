@@ -50,7 +50,7 @@ public class QuizService {
 			quiz = new Quiz();
 			quiz.setTitle(quizDto.getTitle());
 			quiz.setDescription(quizDto.getDescription());
-			quiz.setUserId(quizDto.getUserId());
+			quiz.setUserId(getLoginUserId());
 			quiz.setCreatedAt(LocalDateTime.now());
 			quiz.setUpdatedAt(LocalDateTime.now());
 		}
