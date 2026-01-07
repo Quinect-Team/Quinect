@@ -17,7 +17,14 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequiredArgsConstructor
 public class QuizViewController {
+
+//    private final TestGeminiController testGeminiController;
     private final QuizService quizService;
+
+//    QuizViewController(TestGeminiController testGeminiController) {
+//        this.testGeminiController = testGeminiController;
+//		this.quizService = null;
+//    }
 	
 	@GetMapping("/list")
     public String list(Model model) {
@@ -32,7 +39,7 @@ public class QuizViewController {
 	
 	@GetMapping("/setquestion")
     public String setquestion() {
-        return "/layout/setquestion";  // src/main/resources/templates/layout/setquestion.html을 렌더링
+        return "/layout/setquestion";
     }
 	
 	 // 템플릿 반환 ONLY

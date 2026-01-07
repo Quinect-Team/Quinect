@@ -16,6 +16,8 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 	    List<Quiz> findAllByOrderByCreatedAtDesc();  // 최신순
 	    List<Quiz> findAllByOrderByQuizIdDesc();     // 인기순(예시)
 	    List<QuizQuestion> findByQuizId(Long quizId);
+	    List<Quiz> findByUserIdOrderByCreatedAtDesc(Long userId);
+
 	    
 	    @Query("""
 	    	    select distinct q

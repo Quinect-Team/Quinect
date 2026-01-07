@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko">
 <head>
     <meta charset="utf-8">
     <title>출제 목록</title>
@@ -19,11 +19,11 @@
         h1 {
             margin-bottom: 20px;
         }
-        .question {
+        .quiz {
             padding: 14px 0;
             border-bottom: 1px solid #e5e7eb;
         }
-        .question:last-child {
+        .quiz:last-child {
             border-bottom: none;
         }
         .title {
@@ -35,33 +35,63 @@
             color: #6b7280;
             margin-top: 4px;
         }
+        .empty {
+            color: #6b7280;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>내가 낸 문제</h1>
-
-    <!-- 문제 없을 때 -->
-    <p th:if="${#lists.isEmpty(questions)}">
-        아직 등록한 문제가 없습니다.
-    </p>
-
-    <!-- 문제 목록 -->
-    <div th:each="q, stat : ${questions}" class="question">
-        <div class="title">
-            <span th:text="${stat.count} + '.'"></span>
-            <span th:text="${q.questionText}"></span>
-        </div>
-        <div class="meta">
-            <span th:text="${q.quizTypeCode == 1 ? '서술형' : '객관식'}"></span>
-            |
-            <span th:text="'배점: ' + ${q.point} + '점'"></span>
-            |
-            <span th:text="'생성일: ' + ${#temporals.format(q.createdAt, 'yyyy-MM-dd')}"></span>
-        </div>
-    </div>
+    <h1>출제 목록</h1>
+    <div id="quiz-list"></div>
 </div>
+
+<script>
+const listEl = document.getElementById('quiz-list');
+
+fetch('/quiz/api/my')
+  .then(res => {
+    if (!res.ok) throw new Error('API 호출 실패');
+    return res.json();
+  })
+  .then(renderQuizzes)
+  .catch(err => {
+    console.error(err);
+    listEl.innerHTML = '<p class="empty">목록을 불러오지 못했습니다.</p>';
+  });
+
+function renderQuizzes(quizzes) {
+  if (!quizzes || quizzes.length === 0) {
+    listEl.innerHTML = '<p class="empty">아직 출제한 퀴즈가 없습니다.</p>';
+    return;
+  }
+
+  listEl.innerHTML = '';
+
+  quizzes.forEach((q, idx) => {
+    const div = document.createElement('div');
+    div.className = 'quiz';
+
+	const updatedAt = q.updatedAt
+	  ? new Date(q.updatedAt).toLocaleDateString('ko-KR')
+	  : '-';
+
+
+    div.innerHTML = `
+      <div class="title">
+        ${idx + 1}. ${q.title}
+      </div>
+      <div class="meta">
+        최종 수정일: ${updatedAt}
+      </div>
+    `;
+
+    listEl.appendChild(div);
+  });
+}
+</script>
 
 </body>
 </html>

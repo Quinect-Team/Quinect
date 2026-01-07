@@ -3,6 +3,7 @@ package com.project.quiz.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.project.quiz.domain.Quiz;
@@ -99,5 +100,16 @@ public class QuizDto {
     public static class ListResponse {
         private Long quizId;
         private String title;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+
+        public static ListResponse fromEntity(Quiz quiz) {
+            return new ListResponse(
+                    quiz.getQuizId(),
+                    quiz.getTitle(),
+                    quiz.getCreatedAt(),
+                    quiz.getUpdatedAt()
+            );
+        }
     }
 }

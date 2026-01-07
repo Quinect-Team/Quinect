@@ -9,7 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import com.project.quiz.config.SecurityConfig;
 import com.project.quiz.domain.Quiz;
 import com.project.quiz.dto.QuizDto;
 import com.project.quiz.repository.QuizRepository;
@@ -20,8 +20,11 @@ import com.project.quiz.service.QuizService;
 @RequiredArgsConstructor
 public class QuizApiController {
 
+
     private final QuizService quizService;
     private final QuizRepository quizRepository;
+
+
 
     
     @PostMapping("/save")
@@ -51,12 +54,17 @@ public class QuizApiController {
     @GetMapping("/list")
     public List<QuizDto.ListResponse> getQuizList() {
         return quizService.findAll().stream()
-                .map(q -> new QuizDto.ListResponse(
-                        q.getQuizId(),
-                        q.getTitle()
-                ))
+                .map(QuizDto.ListResponse::fromEntity)
                 .toList();
     }
+
+    @GetMapping("/api/my")
+    public List<QuizDto.ListResponse> myQuizzes() {
+        return quizService.findMyQuizzes().stream()
+                .map(QuizDto.ListResponse::fromEntity)
+                .toList();
+    }
+
 
     
 }

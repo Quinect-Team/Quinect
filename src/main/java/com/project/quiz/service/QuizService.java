@@ -15,9 +15,13 @@ import com.project.quiz.domain.QuizQuestion;
 import com.project.quiz.dto.QuizDto;
 import com.project.quiz.repository.QuizQuestionRepository;
 import com.project.quiz.repository.QuizRepository;
+import com.project.quiz.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,8 @@ import lombok.RequiredArgsConstructor;
 public class QuizService {
 
 	private final QuizRepository quizRepository;
+    private final UserRepository userRepository;
+
 
 	/* ================== 저장 ================== */
 	public Long saveQuiz(QuizDto quizDto) {
@@ -123,4 +129,54 @@ public class QuizService {
 	public List<Quiz> findAll() {
 		return quizRepository.findAll();
 	}
+	
+	private Long getLoginUserId() {
+
+	    Authentication authentication =
+	            SecurityContextHolder.getContext().getAuthentication();
+
+	    if (authentication == null ||
+	        !authentication.isAuthenticated() ||
+	        authentication.getPrincipal().equals("anonymousUser")) {
+	        throw new IllegalStateException("로그인 정보 없음");
+	    }
+
+	    Object principal = authentication.getPrincipal();
+
+	    System.out.println("principal class = " + principal.getClass());
+
+	    String email = null;
+
+	    // 1️⃣ 일반 로그인 (Form Login)
+	    if (principal instanceof UserDetails userDetails) {
+	        email = userDetails.getUsername();
+	    }
+
+	    // 2️⃣ OAuth2 로그인
+	    else if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User oauthUser) {
+	        email = oauthUser.getAttribute("email");
+	    }
+
+	    // 3️⃣ 진짜 최후의 보루
+	    else if (principal instanceof String str) {
+	        email = str;
+	    }
+
+	    if (email == null) {
+	        throw new IllegalStateException("email 추출 실패");
+	    }
+
+	    return userRepository.findByEmail(email)
+	            .orElseThrow(() -> new IllegalStateException("유저 없음"))
+	            .getId();
+	}
+
+
+
+	public List<Quiz> findMyQuizzes() {
+	    Long userId = getLoginUserId();
+	    return quizRepository.findByUserIdOrderByCreatedAtDesc(userId);
+	}
+
+	
 }
