@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>퀴즈 풀이</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
+    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
+    <link th:href="@{/css/sb-admin-2.css}" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    
+    <style>
+        * {
+            font-family: 'Fredoka', sans-serif;
+        }
+        
+        .quiz-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .progress-bar-quiz {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+        
+        .question-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .question-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 15px 0;
+            border-radius: 10px;
+        }
+        
+        .point-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .option-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .option-item:hover {
+            border-color: #28a745;
+            background: #f0f4ff;
+        }
+        
+        .option-item input[type="radio"] {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .option-item label {
+            margin: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .option-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #28a745;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 30px;
+        }
+        
+        .answer-textarea {
+            font-family: 'Fredoka', sans-serif;
+            min-height: 120px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        
+        .answer-textarea:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+            outline: none;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+            color: white;
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .ranking-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+        
+        .rank-position {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #28a745;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 12px;
+            min-width: 32px;
+        }
+        
+        .rank-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .rank-score {
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #28a745;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .autosave-indicator {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .autosave-indicator.saved {
+            color: #28a745;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-success" 
+th:attr="data-room-code=${roomCode},
+         data-total-questions=${totalQuestions}">
+
+    <div class="container-fluid py-4">
+        <!-- 헤더 -->
+        <div class="card shadow mb-4 quiz-header">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <span class="text-white-50">🔑 방 코드:</span>
+                        <span class="h4 font-weight-bold" th:text="${roomCode}">ABCD</span>
+                    </div>
+                    <div class="text-white font-weight-bold">
+                        문제 <span id="current-question">1</span> / <span th:text="${totalQuestions}"></span>
+                    </div>
+                </div>
+                <div class="progress-bar-quiz">
+                    <div class="progress-fill" id="progress-bar" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 콘텐츠 -->
+        <div class="row">
+            <!-- 문제 영역 (왼쪽) -->
+            <div class="col-lg-8">
+                <div class="card shadow mb-4">
+                    <!-- 에러 메시지 -->
+                    <div id="error-message" class="alert alert-danger m-3" role="alert" style="display: none;"></div>
+                    
+                    <!-- 로딩 상태 -->
+                    <div id="loading-state" class="card-body text-center py-5">
+                        <div class="spinner"></div>
+                        <p class="text-muted mt-3">문제를 불러오는 중...</p>
+                    </div>
+
+                    <!-- 문제 영역 -->
+                    <div id="question-area" class="card-body" style="display: none;">
+
+                        <!-- 문제 -->
+                        <div class="mb-4">
+                            <div class="question-text" id="question-text"></div>
+                            <img id="question-image" class="question-image" style="display: none;" src="" alt="문제 이미지">
+                            <span class="point-badge" id="point-badge"></span>
+                        </div>
+
+                        <!-- 객관식 선택지 -->
+                        <div id="options-container" style="display: none;">
+                            <!-- JavaScript에서 동적 생성 -->
+                        </div>
+
+                        <!-- 서술형 입력 -->
+                        <div id="textarea-container" style="display: none;" class="mb-4">
+                            <textarea id="answer-textarea" class="form-control answer-textarea" placeholder="답을 입력하세요..."></textarea>
+                            <div class="autosave-indicator" id="autosave-status">임시 저장 중...</div>
+                        </div>
+
+                        <!-- 액션 버튼 -->
+                        <div class="text-right mt-4">
+                            <button class="btn btn-submit" id="submit-btn" onclick="submitAnswer()">
+                                <i class="fas fa-paper-plane"></i> 제출
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 실시간 순위 (오른쪽) -->
+            <div class="col-lg-4">
+                <div class="card shadow mb-4" id="ranking-container" style="display: none;">
+                    <div class="card-header bg-info py-3">
+                        <h6 class="m-0 font-weight-bold text-white">
+                            <i class="fas fa-chart-bar mr-2"></i>실시간 순위
+                        </h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div id="ranking-list">
+                            <!-- JavaScript에서 동적 생성 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS & jQuery -->
+    <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+    <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+
+    <script th:inline="javascript">
+        var roomCode = document.body.getAttribute('data-room-code');
+        var totalQuestions = parseInt(document.body.getAttribute('data-total-questions'));
+        var currentQuestionData = null;
+        var userId = 1; // 추후 서버에서 받기
+        var stompClient = null;
+
+        // ========== 자동 저장 관련 ==========
+        let autosaveTimer = null;
+
+        function getAnswerValue() {
+            if (!currentQuestionData) return null;
+            
+            if (currentQuestionData.quizTypeCode === 2) {
+                // 객관식
+                const selected = document.querySelector('input[name="answer"]:checked');
+                return selected ? selected.value : null;
+            } else {
+                // 서술형
+                return document.getElementById('answer-textarea').value;
+            }
+        }
+
+        function debounceAutoSave() {
+            if (autosaveTimer) clearTimeout(autosaveTimer);
+            
+            // 상태 표시
+            const indicator = document.getElementById('autosave-status');
+            if (indicator) indicator.textContent = '임시 저장 중...';
+            
+            autosaveTimer = setTimeout(() => {
+                const answer = getAnswerValue();
+                if (answer) {
+                    const key = `quiz_temp_${roomCode}_q${currentQuestionData.questionId}`;
+                    const data = {
+                        roomCode,
+                        questionId: currentQuestionData.questionId,
+                        answer: answer,
+                        timestamp: new Date().toISOString()
+                    };
+                    localStorage.setItem(key, JSON.stringify(data));
+                    
+                    // 저장 완료 표시
+                    if (indicator) {
+                        indicator.textContent = '✓ 자동 저장됨';
+                        indicator.classList.add('saved');
+                        setTimeout(() => {
+                            indicator.classList.remove('saved');
+                        }, 2000);
+                    }
+                    
+                    console.log('[autosave] 임시 저장:', data);
+                }
+            }, 500);
+        }
+
+        function attachAutoSaveEvents() {
+            // 기존 이벤트 제거 (중복 방지)
+            const textareas = document.querySelectorAll('textarea');
+            const radios = document.querySelectorAll('input[type="radio"][name="answer"]');
+            
+            textareas.forEach(el => {
+                el.removeEventListener('input', debounceAutoSave);
+                el.removeEventListener('change', debounceAutoSave);
+                el.addEventListener('input', debounceAutoSave);
+                el.addEventListener('change', debounceAutoSave);
+            });
+            
+            radios.forEach(el => {
+                el.removeEventListener('change', debounceAutoSave);
+                el.addEventListener('change', debounceAutoSave);
+            });
+            
+            console.log('[autosave] 이벤트 연결 완료');
+        }
+
+        function autoRestoreIfExists() {
+            if (!currentQuestionData) return;
+            
+            const key = `quiz_temp_${roomCode}_q${currentQuestionData.questionId}`;
+            const saved = localStorage.getItem(key);
+            
+            if (!saved) return;
+            
+            try {
+                const data = JSON.parse(saved);
+                
+                if (currentQuestionData.quizTypeCode === 2) {
+                    // 객관식
+                    const radio = document.querySelector(`input[name="answer"][value="${data.answer}"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        console.log('[autosave] 객관식 임시본 복구:', data.answer);
+                    }
+                } else {
+                    // 서술형
+                    document.getElementById('answer-textarea').value = data.answer || '';
+                    console.log('[autosave] 서술형 임시본 복구');
+                }
+            } catch (e) {
+                console.warn('[autosave] 임시본 파싱 실패', e);
+            }
+        }
+
+        // ========== WebSocket 연결 ==========
+        function connectWebSocket() {
+            var socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('✅ WebSocket 연결됨');
+
+                stompClient.subscribe('/topic/quiz/' + roomCode, function(message) {
+                    var data = JSON.parse(message.body);
+                    console.log('📨 메시지 수신:', data.type);
+
+                    if (data.type === 'QUESTION') {
+                        displayQuestion(data);
+                    } else if (data.type === 'RANKING') {
+                        displayRanking(data.ranking);
+                    } else if (data.type === 'FINISH') {
+                        finishQuiz();
+                    }
+                });
+
+                // 첫 문제 요청
+                stompClient.send('/app/quiz/next-question/' + roomCode, {}, {});
+            });
+        }
+
+        // ========== 문제 표시 ==========
+        function displayQuestion(question) {
+            console.log('📌 문제 표시:', question);
+
+            currentQuestionData = question;
+
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('question-area').style.display = 'block';
+            document.getElementById('ranking-container').style.display = 'block';
+
+            // 문제 번호 & 진행바
+            document.getElementById('current-question').textContent = question.questionNumber;
+            document.getElementById('progress-bar').style.width =
+                (question.questionNumber / totalQuestions * 100) + '%';
+
+            // 문제 텍스트
+            document.getElementById('question-text').textContent = question.questionText;
+
+            // 점수
+            document.getElementById('point-badge').textContent = question.point + '점';
+
+            // 이미지
+            if (question.imageUrl) {
+                var img = document.getElementById('question-image');
+                img.src = question.imageUrl;
+                img.style.display = 'block';
+            } else {
+                document.getElementById('question-image').style.display = 'none';
+            }
+
+            // ⭐ 수정: quizTypeCode 값 확인 (1=서술형, 2=객관식)
+            if (question.quizTypeCode === 2) {
+                // 객관식
+                document.getElementById('options-container').style.display = 'block';
+                document.getElementById('textarea-container').style.display = 'none';
+                displayMultipleChoice(question.options);
+            } else if (question.quizTypeCode === 1) {
+                // 서술형
+                document.getElementById('options-container').style.display = 'none';
+                document.getElementById('textarea-container').style.display = 'block';
+                document.getElementById('answer-textarea').value = '';
+            }
+
+            // 에러 메시지 초기화
+            document.getElementById('error-message').style.display = 'none';
+
+            // ⭐ 자동 저장 관련
+            autoRestoreIfExists();   // 임시 저장본 복구
+            attachAutoSaveEvents();   // 이벤트 연결
+        }
+
+        // ========== 객관식 선택지 표시 ==========
+        function displayMultipleChoice(options) {
+            var container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            if (!Array.isArray(options) || options.length === 0) {
+                container.innerHTML = '<p style="color: red;">객관식 보기가 없습니다.</p>';
+                return;
+            }
+            
+            options.forEach(function(option) {
+                var optionHtml = `
+                    <div class="option-item">
+                        <label>
+                            <input type="radio" name="answer" value="${option.optionNumber}">
+                            <span class="option-number">${option.optionNumber}</span>
+                            <span>${option.optionText}</span>
+                        </label>
+                    </div>
+                `;
+                container.innerHTML += optionHtml;
+            });
+
+            // 자동 저장 이벤트 재연결
+            attachAutoSaveEvents();
+        }
+
+        // ========== 답 제출 ==========
+        function submitAnswer() {
+            if (!currentQuestionData) return;
+            
+            var answer = getAnswerValue();
+            
+            if (!answer) {
+                showError('답을 선택/입력해주세요');
+                return;
+            }
+            
+            // 제출 버튼 비활성화
+            document.getElementById('submit-btn').disabled = true;
+            
+            // WebSocket으로 제출
+            stompClient.send('/app/quiz/answer/' + roomCode, {}, JSON.stringify({
+                userId: userId,
+                questionId: currentQuestionData.questionId,
+                answer: answer
+            }));
+            
+            // ⭐ 임시 저장본 삭제
+            const key = `quiz_temp_${roomCode}_q${currentQuestionData.questionId}`;
+            localStorage.removeItem(key);
+            
+            console.log('✅ 답 제출:', answer);
+            
+            // 1초 후 버튼 다시 활성화
+            setTimeout(function() {
+                document.getElementById('submit-btn').disabled = false;
+            }, 1000);
+        }
+
+        // ========== 실시간 순위 표시 ==========
+        function displayRanking(ranking) {
+            if (!ranking || ranking.length === 0) return;
+            
+            var rankingHtml = '';
+            ranking.forEach(function(player, index) {
+                rankingHtml += `
+                    <div class="ranking-item">
+                        <span class="rank-position">${index + 1}</span>
+                        <span class="rank-name">${player.name || '사용자'}</span>
+                        <span class="rank-score">${player.score || 0}점</span>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('ranking-list').innerHTML = rankingHtml;
+        }
+
+        // ========== 퀴즈 완료 ==========
+        function finishQuiz() {
+            console.log('🎉 퀴즈 완료!');
+            alert('퀴즈가 완료되었습니다!');
+            window.location.href = '/quiz-result/' + roomCode;
+        }
+
+        // ========== 에러 메시지 표시 ==========
+        function showError(message) {
+            var errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // 3초 후 자동 숨김
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // ========== 페이지 로드 & 언로드 ==========
+        window.addEventListener('load', function() {
+            connectWebSocket();
+        });
+
+        window.addEventListener('beforeunload', function() {
+            if (stompClient && stompClient.connected) {
+                stompClient.disconnect(function() {
+                    console.log('✅ WebSocket 연결 종료');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
