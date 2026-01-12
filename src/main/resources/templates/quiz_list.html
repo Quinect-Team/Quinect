@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+	<title>Quinect - 퀴즈 목록</title>
+
+	<!-- CSS -->
+	<link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
+	<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
+	<link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet" />
+	<link th:href="@{/css/index.css}" rel="stylesheet" />
+	<link th:href="@{/css/quiz_list.css}" rel="stylesheet" />
+</head>
+
+<body id="page-top">
+	<div id="sidebarModalBackdrop"></div>
+	<div id="wrapper">
+
+		<div id="content-wrapper" class="d-flex flex-column">
+			<div id="content">
+
+				<!-- Topbar -->
+				<div th:replace="~{fragments/topbar2 :: topbar2}"></div>
+
+				<!-- Main Content -->
+				<div th:replace="~{layout/quiz_list :: quiz_list}"></div>
+
+			</div>
+
+			<!-- Footer -->
+			<div th:replace="~{fragments/footer :: footer}"></div>
+		</div>
+
+		<!-- Sidebar -->
+		<div id="sidebarModal" class="sidebar-modal" style="display:none;">
+			<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+		</div>
+	</div>
+
+	<!-- Scroll to Top Button-->
+	<a class="scroll-to-top rounded" href="#page-top">
+		<i class="fas fa-angle-up"></i>
+	</a>
+
+	<!-- JS -->
+	<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+	<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+	<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
+	<script th:src="@{/js/sb-admin-2.js}"></script>
+	<script th:src="@{/js/quiz_list.js}"></script>
+	<!-- 알림 JS-->
+	<script src="/js/notification.js"></script>
+
+</body>
+
+</html>

@@ -34,7 +34,7 @@ public class QuizViewController {
         System.out.println("===== quiz count: " + quizzes.size());
 
         model.addAttribute("quizzes", quizzes);
-        return "layout/quiz_list";
+        return "/quiz_list";
     }
 	
 	@GetMapping("/setquestion")
