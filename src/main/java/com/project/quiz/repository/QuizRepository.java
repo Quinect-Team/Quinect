@@ -1,8 +1,5 @@
 package com.project.quiz.repository;
 
-import com.project.quiz.domain.Quiz;
-import com.project.quiz.domain.QuizQuestion;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -11,14 +8,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.project.quiz.domain.Quiz;
+import com.project.quiz.domain.QuizQuestion;
+import com.project.quiz.domain.User;
+
 @Repository
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
 	    List<Quiz> findAllByOrderByCreatedAtDesc();  // 최신순
 	    List<Quiz> findAllByOrderByQuizIdDesc();     // 인기순(예시)
 	    List<QuizQuestion> findByQuizId(Long quizId);
 	    List<Quiz> findByUserIdOrderByCreatedAtDesc(Long userId);
+	    long countByUserId(Long UserId);
 
-	    
 	    @Query("""
 	    	    select distinct q
 	    	    from Quiz q

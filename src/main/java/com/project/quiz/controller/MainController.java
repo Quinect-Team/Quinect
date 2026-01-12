@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.project.quiz.domain.User;
+import com.project.quiz.repository.QuizRepository;
 import com.project.quiz.repository.UserAchievementRepository;
 import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.AttendanceService;
@@ -24,6 +25,7 @@ public class MainController {
 	private final AttendanceService attendanceService;
 	private final UserAchievementRepository userAchievementRepository;
 	private final UserRepository userRepository;
+	private final QuizRepository quizRepository;
 
 	// 1. 루트 접속 시 /index로 리다이렉트 (또는 바로 index 보여주기)
 	@GetMapping("/")
@@ -51,8 +53,11 @@ public class MainController {
 	public String mainPage(Model model, Principal principal) {
 	    if (principal != null) {
 	        User user = userRepository.findByEmail(principal.getName()).orElse(null);
+	        
 	        if (user != null) {
 	            
+	        	Long userId = user.getId();
+	        	
 	            // ▼▼▼ [수정됨] 리다이렉트 대신 모델에 플래그 추가 ▼▼▼
 	            if ("pending".equals(user.getStatus())) {
 	                model.addAttribute("isAccountPending", true);
@@ -71,6 +76,9 @@ public class MainController {
 
 	            long achievedCount = userAchievementRepository.countByUserAndIsAchievedTrue(user);
 	            model.addAttribute("achievedCount", achievedCount);
+	            
+	            long createdCount = quizRepository.countByUserId(userId);
+	            model.addAttribute("createdCount", createdCount);
 	        }
 	    }
 	    return "main";
