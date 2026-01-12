@@ -217,9 +217,10 @@
     </style>
 </head>
 
-<body class="bg-gradient-success" 
+<<body class="bg-gradient-success" 
 th:attr="data-room-code=${roomCode},
-         data-total-questions=${totalQuestions}">
+         data-total-questions=${totalQuestions},
+         data-user-id=${currentUser != null ? currentUser.id : 0}">
 
     <div class="container-fluid py-4">
         <!-- 헤더 -->
@@ -311,7 +312,8 @@ th:attr="data-room-code=${roomCode},
         var roomCode = document.body.getAttribute('data-room-code');
         var totalQuestions = parseInt(document.body.getAttribute('data-total-questions'));
         var currentQuestionData = null;
-        var userId = 1; // 추후 서버에서 받기
+		var userId = parseInt(document.body.getAttribute('data-user-id'));
+		console.log("✅ 현재 퀴즈 참여 유저 ID:", userId);
         var stompClient = null;
 
         // ========== 자동 저장 관련 ==========
@@ -516,55 +518,72 @@ th:attr="data-room-code=${roomCode},
         }
 
         // ========== 답 제출 ==========
-        function submitAnswer() {
-            if (!currentQuestionData) return;
-            
-            var answer = getAnswerValue();
-            
-            if (!answer) {
-                showError('답을 선택/입력해주세요');
-                return;
-            }
-            
-            // 제출 버튼 비활성화
-            document.getElementById('submit-btn').disabled = true;
-            
-            // WebSocket으로 제출
-            stompClient.send('/app/quiz/answer/' + roomCode, {}, JSON.stringify({
-                userId: userId,
-                questionId: currentQuestionData.questionId,
-                answer: answer
-            }));
-            
-            // ⭐ 임시 저장본 삭제
-            const key = `quiz_temp_${roomCode}_q${currentQuestionData.questionId}`;
-            localStorage.removeItem(key);
-            
-            console.log('✅ 답 제출:', answer);
-            
-            // 1초 후 버튼 다시 활성화
-            setTimeout(function() {
-                document.getElementById('submit-btn').disabled = false;
-            }, 1000);
-        }
+		function submitAnswer() {
+		    if (!currentQuestionData) return;
+		    
+		    var answer = getAnswerValue();
+		    
+		    if (!answer) {
+		        showError('답을 선택/입력해주세요');
+		        return;
+		    }
+		    
+		    // 제출 버튼 비활성화
+		    document.getElementById('submit-btn').disabled = true;
+		    
+		    // ⭐ 수정: 필드 이름 변경!
+		    var payload = {
+		        userId: userId,
+		        questionId: currentQuestionData.questionId,
+		        selectedOption: currentQuestionData.quizTypeCode === 2 ? parseInt(answer) : null,
+		        textAnswer: currentQuestionData.quizTypeCode === 1 ? answer : null
+		    };
+		    
+		    console.log('📤 전송할 데이터:', payload);
+		    
+		    // WebSocket으로 제출
+		    stompClient.send('/app/quiz/answer/' + roomCode, {}, JSON.stringify(payload));
+		    
+		    // ⭐ 임시 저장본 삭제
+		    const key = `quiz_temp_${roomCode}_q${currentQuestionData.questionId}`;
+		    localStorage.removeItem(key);
+		    
+		    console.log('✅ 답 제출:', answer);
+		    
+		    // 1초 후 버튼 다시 활성화
+		    setTimeout(function() {
+		        document.getElementById('submit-btn').disabled = false;
+		    }, 1000);
+		}
 
-        // ========== 실시간 순위 표시 ==========
-        function displayRanking(ranking) {
-            if (!ranking || ranking.length === 0) return;
-            
-            var rankingHtml = '';
-            ranking.forEach(function(player, index) {
-                rankingHtml += `
-                    <div class="ranking-item">
-                        <span class="rank-position">${index + 1}</span>
-                        <span class="rank-name">${player.name || '사용자'}</span>
-                        <span class="rank-score">${player.score || 0}점</span>
-                    </div>
-                `;
-            });
-            
-            document.getElementById('ranking-list').innerHTML = rankingHtml;
-        }
+
+		// ========== 실시간 순위 표시 ==========
+		function displayRanking(ranking) {
+		    if (!ranking || ranking.length === 0) {
+		        console.log('📊 순위 데이터 없음');
+		        return;
+		    }
+		    
+		    console.log('🏆 순위 표시:', ranking);
+		    
+		    var rankingHtml = '';
+		    ranking.forEach(function(player) {
+		        rankingHtml += `
+		            <div class="ranking-item">
+		                <span class="rank-position">${player.rank}</span>
+		                <span class="rank-name">${player.nickname}</span>
+		                <span class="rank-score">${player.score || 0}점</span>
+		            </div>
+		        `;
+		        
+		        // 콘솔 로그도 실제 닉네임이 나오도록 수정하면 디버깅이 편해요!
+		        console.log(`  ${player.rank}등 - ${player.nickname}: ${player.score || 0}점`);
+		    });
+		    
+		    document.getElementById('ranking-list').innerHTML = rankingHtml;
+		    console.log('✅ 순위 UI 업데이트 완료');
+		}
+
 
         // ========== 퀴즈 완료 ==========
         function finishQuiz() {

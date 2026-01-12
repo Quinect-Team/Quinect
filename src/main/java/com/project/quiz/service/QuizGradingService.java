@@ -1,6 +1,7 @@
 package com.project.quiz.service;
 
 import com.project.quiz.domain.*;
+import com.project.quiz.dto.AnswerResult;
 import com.project.quiz.repository.*;
 import lombok.RequiredArgsConstructor;
 
@@ -15,76 +16,71 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QuizGradingService {
 
-    private final QuizSubmissionRepository submissionRepository;
-    private final QuizGradingRepository gradingRepository;
+	private final QuizSubmissionRepository submissionRepository;
+	private final QuizGradingRepository gradingRepository;
+	private final QuizQuestionRepository questionRepository;
+	private final ParticipantRepository participantRepository;
 
-    @Transactional
-    public void grade(Long submissionId) {
+	@Transactional
+	public void grade(Long submissionId) {
 
-        QuizSubmission submission = submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new RuntimeException("제출 없음"));
+		QuizSubmission submission = submissionRepository.findById(submissionId)
+				.orElseThrow(() -> new RuntimeException("제출 없음"));
 
-        int totalScore = 0;
+		int totalScore = 0;
 
-        List<QuizAnswer> answers =
-                new ArrayList<>(submission.getAnswers());
+		List<QuizAnswer> answers = new ArrayList<>(submission.getAnswers());
 
-        for (QuizAnswer answer : answers) {
+		for (QuizAnswer answer : answers) {
 
-            QuizQuestion question = answer.getQuestion();
-            boolean correct = false;
-            int score = 0;
+			QuizQuestion question = answer.getQuestion();
+			boolean correct = false;
+			int score = 0;
 
-            /* 1️⃣ 객관식 */
-            if (question.getQuizTypeCode().equals(2)) {
-                if (answer.getSelectedOption() != null &&
-                    question.getAnswerOption() != null) {
+			/* 1️⃣ 객관식 */
+			if (question.getQuizTypeCode().equals(2)) {
+				if (answer.getSelectedOption() != null && question.getAnswerOption() != null) {
 
-                    String correctOption = question.getAnswerOption().trim();
-                    String selected = answer.getSelectedOption().toString().trim();
+					String correctOption = question.getAnswerOption().trim();
+					String selected = answer.getSelectedOption().toString().trim();
 
-                    if (correctOption.equals(selected)) {
-                        correct = true;
-                        score = question.getPoint();
-                    }
-                }
-            }
+					if (correctOption.equals(selected)) {
+						correct = true;
+						score = question.getPoint();
+					}
+				}
+			}
 
-            /* 2️⃣ 서술형 */
-            if (question.getQuizTypeCode().equals(1)) {
-                if (answer.getAnswerText() != null &&
-                    question.getSubjectiveAnswer() != null) {
+			/* 2️⃣ 서술형 */
+			if (question.getQuizTypeCode().equals(1)) {
+				if (answer.getAnswerText() != null && question.getSubjectiveAnswer() != null) {
 
-                    String user = answer.getAnswerText()
-                            .trim()
-                            .replaceAll("\\s+", " ");
+					String user = answer.getAnswerText().trim().replaceAll("\\s+", " ");
 
-                    String correctText = question.getSubjectiveAnswer()
-                            .trim()
-                            .replaceAll("\\s+", " ");
+					String correctText = question.getSubjectiveAnswer().trim().replaceAll("\\s+", " ");
 
-                    if (user.equalsIgnoreCase(correctText)) {
-                        correct = true;
-                        score = question.getPoint();
-                    }
-                }
-            }
+					if (user.equalsIgnoreCase(correctText)) {
+						correct = true;
+						score = question.getPoint();
+					}
+				}
+			}
 
-            QuizGrading grading = new QuizGrading();
-            grading.setAnswer(answer);
-            grading.setCorrect(correct);
-            grading.setScore(score);
-            grading.setGrader("AUTO");
-            grading.setGradedAt(LocalDateTime.now());
+			QuizGrading grading = new QuizGrading();
+			grading.setAnswer(answer);
+			grading.setCorrect(correct);
+			grading.setScore(score);
+			grading.setGrader("AUTO");
+			grading.setGradedAt(LocalDateTime.now());
 
-            answer.setGrading(grading);
-            gradingRepository.save(grading);
+			answer.setGrading(grading);
+			gradingRepository.save(grading);
 
-            totalScore += score;
-        }
+			totalScore += score;
+		}
 
-        submission.setTotalScore(totalScore);
-        submission.setGraded(true);
-        submissionRepository.save(submission);
-    }
+		submission.setTotalScore(totalScore);
+		submission.setGraded(true);
+		submissionRepository.save(submission);
+	}
 }

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>퀴즈 결과</title>
+    <link th:href="@{/css/sb-admin-2.css}" rel="stylesheet"/>
+    <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet">
+    <style>
+        .result-card { border-radius: 15px; overflow: hidden; }
+        .winner-section { background: #f8f9fc; padding: 30px; border-radius: 15px; margin-bottom: 30px; }
+        .rank-1 { color: #f6c23e; font-size: 2.5rem; } /* 금색 */
+        .rank-2 { color: #858796; font-size: 2rem; }   /* 은색 */
+        .rank-3 { color: #e74a3b; font-size: 1.5rem; } /* 동색 */
+    </style>
+</head>
+<body class="bg-gradient-success">
+    <div class="container py-5">
+        <div class="card shadow result-card">
+            <div class="card-header bg-white py-4 text-center">
+                <h1 class="h3 mb-0 text-gray-800 font-weight-bold">🏆 최종 결과 발표 🏆</h1>
+                <p class="mb-0 text-muted mt-2">방 코드: <span th:text="${roomCode}"></span></p>
+            </div>
+            <div class="card-body p-5">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>순위</th>
+                                <th>닉네임</th>
+                                <th>최종 점수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="player, iter : ${ranking}">
+                                <td class="align-middle">
+                                    <span th:if="${iter.index == 0}" class="rank-1"><i class="fas fa-crown"></i> 1등</span>
+                                    <span th:if="${iter.index == 1}" class="rank-2">2등</span>
+                                    <span th:if="${iter.index == 2}" class="rank-3">3등</span>
+                                    <span th:if="${iter.index > 2}" th:text="${iter.count} + '등'"></span>
+                                </td>
+                                <td class="align-middle font-weight-bold" th:text="${player.nickname}">닉네임</td>
+                                <td class="align-middle text-primary font-weight-bold h5">
+                                    <span th:text="${player.score}">0</span>점
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-center mt-5">
+                    <a href="/" class="btn btn-success btn-lg px-5 shadow-sm">
+                        <i class="fas fa-home"></i> 홈으로 돌아가기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
