@@ -1,4 +1,12 @@
 // Set new default font family and font color to mimic Bootstrap's default styling
+(function () {
+
+  // canvas가 없으면 이 파일은 아무 것도 하지 않고 종료
+  const canvas = document.getElementById("myAreaChart");
+  if (!canvas) {
+    console.warn("Chart skipped: myAreaChart not found");
+    return;
+  }
 Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
 Chart.defaults.global.defaultFontColor = '#858796';
 
@@ -116,3 +124,4 @@ var myLineChart = new Chart(ctx, {
     }
   }
 });
+})();

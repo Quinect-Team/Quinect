@@ -1,4 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
+	
+	console.log("현재 URL:", location.href);
+
+	const quizId = new URLSearchParams(location.search).get("quizId");
+	console.log("quizId param:", quizId);
+
+	    if (!quizId) {
+	        console.log("▶ 새 퀴즈 생성 모드");
+	        return;
+	    }
+
+	    console.log("▶ 수정 모드 진입, quizId =", quizId);
+	    loadQuiz(quizId);
+
+	});
+	
+
 	// 참조
 	const container = document.getElementById("question-container");
 	const addBtn = document.getElementById("add-question");
@@ -92,6 +109,20 @@ document.addEventListener("DOMContentLoaded", () => {
 			console.error(e);
 		}
 	});
+	
+	
+	document.addEventListener("DOMContentLoaded", () => {
+
+	  console.log("quizId from server:", quizIdFromServer);
+
+	  if (quizIdFromServer) {
+	    loadQuiz(quizIdFromServer);
+	  }
+
+	});
+
+
+
 
 
 	// --- [AI 생성] 버튼 이벤트 ---
@@ -154,7 +185,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				debounceAutoSave();
 
 			} catch (e) {
-				console.error(e);
 				alert("문제 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
 			} finally {
 				// UI 복구
@@ -807,8 +837,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!str) return "";
 		return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 	}
-
-}); // DOMContentLoaded
 
 // [추가] 현재 에디터에 작성된 내용이 있는지 확인하는 함수
 function isEditorDirty() {

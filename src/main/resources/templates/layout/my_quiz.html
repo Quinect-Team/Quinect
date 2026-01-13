@@ -40,6 +40,8 @@
             font-size: 14px;
         }
     </style>
+	<meta name="_csrf" th:content="${_csrf.token}">
+	    <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
 <body>
 
@@ -87,6 +89,11 @@ function renderQuizzes(quizzes) {
         최종 수정일: ${updatedAt}
       </div>
     `;
+	
+	div.addEventListener('click', () => {
+	  location.href = `/setquestion?quizId=${q.quizId}`;
+	});
+	
 
     listEl.appendChild(div);
   });

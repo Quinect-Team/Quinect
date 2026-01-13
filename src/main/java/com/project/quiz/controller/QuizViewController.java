@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.project.quiz.domain.Quiz;
@@ -38,9 +39,14 @@ public class QuizViewController {
     }
 	
 	@GetMapping("/setquestion")
-    public String setquestion() {
-        return "/setquestion";  // src/main/resources/templates/layout/setquestion.html을 렌더링
-    }
+	public String setquestion(
+	        @RequestParam(value = "quizId", required = false) Long quizId,
+	        Model model
+	) {
+	    model.addAttribute("quizId", quizId);
+	    return "setquestion";
+	}
+
 	
 	 // 템플릿 반환 ONLY
     @GetMapping("/view/{id}")
