@@ -60,6 +60,14 @@
 	<script th:src="@{/js/demo/chart-pie-demo.js}"></script>
 	<script th:src="@{/js/main.js}"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	
+	<!-- ⭐ WebSocket 라이브러리 (먼저) -->
+	<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+	<!-- ⭐ global-websocket.js (반드시 friends-modal.js 전에!) -->
+	<script th:src="@{/js/global-websocket.js}"></script>
+	
 	<!-- 친구창 모달 -->
 	<script th:src="@{/js/friends-modal.js}"></script>
 	<!-- 알림 JS-->

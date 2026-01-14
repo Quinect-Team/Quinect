@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 
 <head>
 	<meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-	<title>Quinect - 설정</title>
-
-	<meta name="_csrf" th:content="${_csrf.token}" />
-	<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+	<meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+	<title>Quinect - 퀴즈 목록</title>
 
 	<!-- CSS -->
 	<link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
 	<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
-	<link th:href="@{/css/sb-admin-2.min.css}" rel="stylesheet" />
-	<link th:href="@{/css/profilesettings.css}" rel="stylesheet" />
+	<link th:href="@{/css/sb-admin-2.css}" rel="stylesheet" />
 	<link th:href="@{/css/index.css}" rel="stylesheet" />
+	<link th:href="@{/css/my_quiz.css}" rel="stylesheet" />
+
 </head>
 
 <body id="page-top">
@@ -29,33 +29,38 @@
 				<div th:replace="~{fragments/topbar2 :: topbar2}"></div>
 
 				<!-- Main Content -->
-				<div th:replace="~{layout/profilesettings :: profilesettings}"></div>
+				<div th:replace="~{layout/my_quiz :: my_quiz}"></div>
 
 			</div>
 
 			<!-- Footer -->
 			<div th:replace="~{fragments/footer :: footer}"></div>
 		</div>
-
+		
+		<!-- Popup -->
+		<div th:replace="~{layout/friends :: friends}"></div>
+		
 		<!-- Sidebar -->
 		<div id="sidebarModal" class="sidebar-modal" style="display:none;">
 			<div th:replace="~{fragments/sidebar :: sidebar}"></div>
 		</div>
 	</div>
-	
-	<div th:replace="~{layout/friends :: friends}"></div>
 
 	<!-- Scroll to Top Button-->
 	<a class="scroll-to-top rounded" href="#page-top">
 		<i class="fas fa-angle-up"></i>
 	</a>
 
-	<!-- JS -->
+	<!--JS-->
 	<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
 	<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 	<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
 	<script th:src="@{/js/sb-admin-2.js}"></script>
-	<script th:src="@{/js/profilesettings.js}"></script>
+	<script th:src="@{/vendor/chart.js/Chart.min.js}"></script>
+	<script th:src="@{/js/demo/chart-area-demo.js}"></script>
+	<script th:src="@{/js/demo/chart-pie-demo.js}"></script>
+	<script th:src="@{/js/main.js}"></script>
+	<script th:src="@{/js/my_quiz.js}"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 	<!-- ⭐ WebSocket 라이브러리 (먼저) -->
@@ -67,26 +72,25 @@
 
 	<!-- 알림 JS-->
 	<script src="/js/notification.js"></script>
-
+	
 	<!-- ⭐ friends-modal.js (마지막) -->
 	<script th:src="@{/js/friends-modal.js}"></script>
 
 	<script>
-		$(document).ready(function () {
-			// ⭐ WebSocket 연결 초기화
-			initGlobalWebSocket().then(function () {
-				console.log('✅ WebSocket 연결 완료');
-
-				// ⭐ 이 시점에 friends-modal 함수들이 준비됨
-				subscribeToPrivateMessages();
-				subscribeToInvitations();
+	    $(document).ready(function() {
+	        // ⭐ WebSocket 연결 초기화
+	        initGlobalWebSocket().then(function() {
+	            console.log('✅ WebSocket 연결 완료');
+	            
+	            // ⭐ 이 시점에 friends-modal 함수들이 준비됨
+	            subscribeToPrivateMessages();
+	            subscribeToInvitations();
 				loadUnreadMessages();
-			}).catch(function (error) {
-				console.error('❌ WebSocket 연결 실패:', error);
-			});
-		});
+	        }).catch(function(error) {
+	            console.error('❌ WebSocket 연결 실패:', error);
+	        });
+	    });
 	</script>
 
 </body>
-
 </html>

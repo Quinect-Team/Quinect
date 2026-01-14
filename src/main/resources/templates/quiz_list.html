@@ -33,6 +33,9 @@
 			<!-- Footer -->
 			<div th:replace="~{fragments/footer :: footer}"></div>
 		</div>
+		
+		<!-- Popup -->
+		<div th:replace="~{layout/friends :: friends}"></div>
 
 		<!-- Sidebar -->
 		<div id="sidebarModal" class="sidebar-modal" style="display:none;">
@@ -51,8 +54,34 @@
 	<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
 	<script th:src="@{/js/sb-admin-2.js}"></script>
 	<script th:src="@{/js/quiz_list.js}"></script>
+	<!-- ⭐ WebSocket 라이브러리 (먼저) -->
+	<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+	<!-- ⭐ global-websocket.js (반드시 friends-modal.js 전에!) -->
+	<script th:src="@{/js/global-websocket.js}"></script>
+
 	<!-- 알림 JS-->
 	<script src="/js/notification.js"></script>
+
+	<!-- ⭐ friends-modal.js (마지막) -->
+	<script th:src="@{/js/friends-modal.js}"></script>
+
+	<script>
+		$(document).ready(function () {
+			// ⭐ WebSocket 연결 초기화
+			initGlobalWebSocket().then(function () {
+				console.log('✅ WebSocket 연결 완료');
+
+				// ⭐ 이 시점에 friends-modal 함수들이 준비됨
+				subscribeToPrivateMessages();
+				subscribeToInvitations();
+				loadUnreadMessages();
+			}).catch(function (error) {
+				console.error('❌ WebSocket 연결 실패:', error);
+			});
+		});
+	</script>
 
 </body>
 

@@ -57,6 +57,6 @@ public class QuizViewController {
     
     @GetMapping("/my")
     public String myQuizPage() {
-        return "layout/my_quiz";
+        return "/my_quiz";
     }
 }
