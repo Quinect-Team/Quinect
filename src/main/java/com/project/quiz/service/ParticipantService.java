@@ -6,14 +6,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import com.project.quiz.domain.Participant;
 import com.project.quiz.domain.Room;
 import com.project.quiz.domain.User;
+import com.project.quiz.dto.UserRank;
 import com.project.quiz.repository.ParticipantRepository;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ParticipantService {
 	private final ParticipantRepository participantRepository;
 
@@ -68,6 +71,39 @@ public class ParticipantService {
 				participant.setJoinAt(LocalDateTime.now());
 				participantRepository.save(participant);
 			}
+		}
+	}
+
+	public void saveQuizResults(Room room, List<UserRank> finalRanking) {
+		try {
+			if (room == null) {
+				log.error("방이 null입니다");
+				return;
+			}
+
+			// 이 방의 모든 참가자 조회
+			List<Participant> participants = participantRepository.findByRoom(room);
+
+			// 최종 순위 정보로 각 참가자 업데이트
+			for (Participant participant : participants) {
+				// 이 참가자가 finalRanking에 있는지 확인 (닉네임으로 매칭)
+				UserRank userRank = finalRanking.stream()
+						.filter(ur -> ur.getNickname().equals(participant.getNickname())).findFirst().orElse(null);
+
+				if (userRank != null) {
+					participant.setScore(userRank.getScore().longValue());
+					participant.setRanking(userRank.getRank().longValue());
+					log.info("✅ 참가자 결과 저장 - {}: 순위={}, 점수={}", participant.getNickname(), userRank.getRank(),
+							userRank.getScore());
+				}
+			}
+
+			// DB에 저장
+			participantRepository.saveAll(participants);
+			log.info("🎯 방 {} 의 모든 참가자 결과 저장 완료", room.getRoomCode());
+
+		} catch (Exception e) {
+			log.error("❌ 퀴즈 결과 저장 중 오류 발생", e);
 		}
 	}
 }

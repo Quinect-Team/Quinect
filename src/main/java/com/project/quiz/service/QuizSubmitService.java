@@ -15,10 +15,8 @@ public class QuizSubmitService {
     private final QuizRepository quizRepository;
     private final QuizQuestionRepository quizQuestionRepository;
     private final QuizSubmissionRepository submissionRepository;
-    private final QuizAnswerRepository answerRepository;
     private final QuizGradingService gradingService;
     
-
     @Transactional
     public Long submit(Long quizId, QuizSubmitRequest request) {
 

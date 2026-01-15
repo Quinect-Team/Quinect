@@ -16,7 +16,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserActivityLog;
 import com.project.quiz.domain.UserProfile;
+import com.project.quiz.repository.QuizGradingRepository;
 import com.project.quiz.repository.UserActivityLogRepository;
+import com.project.quiz.repository.UserProfileRepository;
 import com.project.quiz.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
 
 	private final UserRepository userRepository;
+	private final UserProfileRepository userProfileRepository;
+	private final QuizGradingRepository quizGradingRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final EmailService emailService;
 	private final FileStorageService fileStorageService;
@@ -249,6 +253,22 @@ public class UserService {
 			user.setStatus("deleted");
 			user.setStatusChangedAt(LocalDateTime.now());
 		}
+	}
+
+	@Transactional
+	public List<UserProfile> getTopUsersByPointBalance() {
+		return userProfileRepository.findTopByPointBalance();
+	}
+
+	/**
+	 * 현재 로그인 사용자의 정답/오답 개수
+	 */
+	@Transactional(readOnly = true)
+	public Map<String, Long> getUserAnswerStats(Long userId) {
+		long correctCount = quizGradingRepository.countByUserIdAndIsCorrectTrue(userId);
+		long wrongCount = quizGradingRepository.countByUserIdAndIsCorrectFalse(userId);
+
+		return Map.of("correct", correctCount, "wrong", wrongCount);
 	}
 
 }

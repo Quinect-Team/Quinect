@@ -55,9 +55,10 @@
 	<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
 	<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
 	<script th:src="@{/js/sb-admin-2.js}"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <!-- ⭐ 먼저 로드 -->
 	<script th:src="@{/vendor/chart.js/Chart.min.js}"></script>
-	<script th:src="@{/js/demo/chart-area-demo.js}"></script>
-	<script th:src="@{/js/demo/chart-pie-demo.js}"></script>
+	<!--<script th:src="@{/js/demo/chart-area-demo.js}"></script>
+	<script th:src="@{/js/demo/chart-pie-demo.js}"></script>-->
 	<script th:src="@{/js/main.js}"></script>
 	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -74,6 +75,49 @@
 	<!-- ⭐ friends-modal.js (마지막) -->
 	<script th:src="@{/js/friends-modal.js}"></script>
 
+	<script>
+	    document.addEventListener('DOMContentLoaded', function() {
+	        var correctCount = parseInt('[[${correctCount != null ? correctCount : 0}]]') || 0;
+	        var wrongCount = parseInt('[[${wrongCount != null ? wrongCount : 0}]]') || 0;
+	        
+	        console.log('correctCount:', correctCount);
+	        console.log('wrongCount:', wrongCount);
+	        
+	        var ctx = document.getElementById('myPieChart');
+	        
+	        if (ctx) {
+	            new Chart(ctx.getContext('2d'), {
+	                type: 'doughnut',
+	                data: {
+	                    labels: ['정답', '오답'],
+	                    datasets: [{
+	                        data: [correctCount, wrongCount],
+	                        backgroundColor: ['#28a745', '#dc3545'],
+	                        borderColor: '#fff',
+	                        borderWidth: 2
+	                    }]
+	                },
+	                options: {
+	                    responsive: true,
+	                    maintainAspectRatio: true,
+	                    plugins: {
+	                        legend: {
+	                            position: 'bottom'
+	                        },
+	                        tooltip: {
+	                            callbacks: {
+	                                label: function(context) {
+	                                    return context.label + ': ' + context.parsed + '개';
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	            });
+	        }
+	    });
+	</script>
+	
 	<script>
 	    $(document).ready(function() {
 	        // ⭐ WebSocket 연결 초기화

@@ -5,53 +5,167 @@
     <title>퀴즈 결과</title>
     <link th:href="@{/css/sb-admin-2.css}" rel="stylesheet"/>
     <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
     <style>
-        .result-card { border-radius: 15px; overflow: hidden; }
-        .winner-section { background: #f8f9fc; padding: 30px; border-radius: 15px; margin-bottom: 30px; }
-        .rank-1 { color: #f6c23e; font-size: 2.5rem; } /* 금색 */
-        .rank-2 { color: #858796; font-size: 2rem; }   /* 은색 */
-        .rank-3 { color: #e74a3b; font-size: 1.5rem; } /* 동색 */
+        body { font-family: 'Fredoka', sans-serif; }
+        .result-card { border-radius: 15px; overflow: hidden; background: white; }
+        
+        /* 메인 레이아웃: 왼쪽(TOP3) / 오른쪽(전체순위) */
+        .flex-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .winners-section { flex: 1.2; min-width: 350px; }
+        .ranking-table-section { flex: 1; min-width: 350px; }
+
+        /* 왼쪽 TOP 3 비주얼 (2등-1등-3등 순서) */
+        .podium-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-end; 
+            gap: 10px; 
+            padding: 40px 10px;
+            background: #f8f9fc;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .podium-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            flex: 1;
+        }
+        .podium-card.rank-1 { height: 220px; border-top: 5px solid #f6c23e; }
+        .podium-card.rank-2 { height: 180px; border-top: 5px solid #858796; }
+        .podium-card.rank-3 { height: 150px; border-top: 5px solid #e74a3b; }
+        
+        .crown-icon { font-size: 2rem; color: #f6c23e; margin-bottom: 5px; }
+        .avatar-circle {
+            width: 50px; height: 50px;
+            background: #e9ecef;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #adb5bd;
+        }
+        .rank-1 .avatar-circle { width: 70px; height: 70px; background: #fff3cd; color: #f6c23e; }
+
+        /* 오른쪽 테이블 스타일 */
+        .table thead th { border: none; background: #f8f9fc; color: #4e73df; }
+        .rank-badge {
+            width: 28px; height: 28px;
+            background: #4e73df; color: white;
+            border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.8rem;
+        }
+
+        /* 하단 버튼 */
+        .footer-action {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="bg-gradient-success">
     <div class="container py-5">
-        <div class="card shadow result-card">
-            <div class="card-header bg-white py-4 text-center">
-                <h1 class="h3 mb-0 text-gray-800 font-weight-bold">🏆 최종 결과 발표 🏆</h1>
-                <p class="mb-0 text-muted mt-2">방 코드: <span th:text="${roomCode}"></span></p>
+        <div class="card shadow result-card p-4">
+            <div class="text-center mb-4">
+                <h1 class="h3 font-weight-bold text-gray-800">🏆 최종 결과 발표</h1>
+                
+                <!-- ✅ 방 코드 & 퀴즈 제목 표시 -->
+                <div class="mt-3">
+                    <p class="text-muted mb-2">
+                        방 코드: <span class="badge badge-info" th:text="${roomCode}"></span>
+                    </p>
+                    <p class="text-muted">
+                        퀴즈: <span class="badge badge-success" th:text="${quizTitle}"></span>
+                    </p>
+                </div>
             </div>
-            <div class="card-body p-5">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>순위</th>
-                                <th>닉네임</th>
-                                <th>최종 점수</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="player, iter : ${ranking}">
-                                <td class="align-middle">
-                                    <span th:if="${iter.index == 0}" class="rank-1"><i class="fas fa-crown"></i> 1등</span>
-                                    <span th:if="${iter.index == 1}" class="rank-2">2등</span>
-                                    <span th:if="${iter.index == 2}" class="rank-3">3등</span>
-                                    <span th:if="${iter.index > 2}" th:text="${iter.count} + '등'"></span>
-                                </td>
-                                <td class="align-middle font-weight-bold" th:text="${player.nickname}">닉네임</td>
-                                <td class="align-middle text-primary font-weight-bold h5">
-                                    <span th:text="${player.score}">0</span>점
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+            <div class="flex-container">
+                
+                <div class="winners-section">
+                    <div class="card h-100 border-0 shadow-sm" style="background: #fdfdfd; border-radius: 15px;">
+                        <div class="card-body">
+                            <h5 class="font-weight-bold text-center mb-4">WINNERS CIRCLE</h5>
+                            <div class="podium-container">
+                                <div class="podium-card rank-2" th:if="${ranking.size() > 1}">
+                                    <div class="avatar-circle"><i class="fas fa-medal"></i></div>
+                                    <div class="small text-muted font-weight-bold">NO.2</div>
+                                    <div class="font-weight-bold text-truncate" th:text="${ranking[1].nickname}"></div>
+                                    <div class="text-primary font-weight-bold mt-2" th:text="${ranking[1].score + '점'}"></div>
+                                </div>
+
+                                <div class="podium-card rank-1" th:if="${ranking.size() > 0}">
+                                    <i class="fas fa-crown crown-icon"></i>
+                                    <div class="avatar-circle"><i class="fas fa-trophy"></i></div>
+                                    <div class="small text-muted font-weight-bold">NO.1</div>
+                                    <div class="h6 font-weight-bold text-truncate" th:text="${ranking[0].nickname}"></div>
+                                    <div class="h5 text-warning font-weight-bold mt-1" th:text="${ranking[0].score + '점'}"></div>
+                                </div>
+
+                                <div class="podium-card rank-3" th:if="${ranking.size() > 2}">
+                                    <div class="avatar-circle"><i class="fas fa-award"></i></div>
+                                    <div class="small text-muted font-weight-bold">NO.3</div>
+                                    <div class="font-weight-bold text-truncate" th:text="${ranking[2].nickname}"></div>
+                                    <div class="text-danger font-weight-bold mt-2" th:text="${ranking[2].score + '점'}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="text-center mt-5">
-                    <a href="/" class="btn btn-success btn-lg px-5 shadow-sm">
-                        <i class="fas fa-home"></i> 홈으로 돌아가기
-                    </a>
+                <div class="ranking-table-section">
+                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 15px;">
+                        <div class="card-body">
+                            <h5 class="font-weight-bold mb-4">전체 순위 리스트</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>닉네임</th>
+                                            <th class="text-right">점수</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="player, iter : ${ranking}">
+                                            <td class="align-middle">
+                                                <span class="rank-badge" th:text="${iter.count}"></span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <i class="fas fa-user-circle text-gray-400 mr-2"></i>
+                                                <span class="font-weight-bold text-gray-800" th:text="${player.nickname}"></span>
+                                            </td>
+                                            <td class="align-middle text-right">
+                                                <span class="text-primary font-weight-bold" th:text="${player.score}"></span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+            </div>
+
+            <!-- ✅ 버튼 2개로 변경 -->
+            <div class="footer-action text-center shadow-sm">
+                <a th:href="@{/waitroom/{roomCode}(roomCode=${roomCode})}" 
+                   class="btn btn-primary btn-lg px-5 font-weight-bold shadow-sm">
+                    <i class="fas fa-door-open mr-2"></i> 방으로 돌아가기
+                </a>
+                <a href="/" 
+                   class="btn btn-secondary btn-lg px-5 font-weight-bold shadow-sm">
+                    <i class="fas fa-home mr-2"></i> 홈으로 이동
+                </a>
             </div>
         </div>
     </div>

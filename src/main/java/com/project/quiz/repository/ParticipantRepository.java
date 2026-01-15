@@ -18,4 +18,7 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 	Participant findByRoomAndUser(Room room, User user);
 
 	Participant findByRoomAndGuestId(Room room, String guestId);
+
+	List<Participant> findByUserIsNotNullOrderByScoreDescIdAsc();
+
 }
