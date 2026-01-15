@@ -1,8 +1,18 @@
 package com.project.quiz.domain;
 
-import jakarta.persistence.*;
-import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter @Setter
@@ -33,4 +43,19 @@ public class UserProfile {
 
     @Column(length = 100)
     private String organization;  // 소속 (새로 추가됨)
+    
+    public int getDisplayLength() {
+        if (username == null) return 0;
+
+        int length = 0;
+        for (char c : username.toCharArray()) {
+            // 한글 범위 (Hangul Syllables) 체크
+            if (c >= '가' && c <= '힣') {
+                length += 2; // 한글은 2로 계산 (EUC-KR 처럼)
+            } else {
+                length += 1; // 영어, 숫자, 특수문자는 1로 계산
+            }
+        }
+        return length;
+    }
 }

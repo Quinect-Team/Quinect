@@ -36,13 +36,13 @@ function renderQuizzes(quizzes) {
         // col-xl-4 col-md-6: 화면 크기에 따라 한 줄에 3개 또는 2개씩 배치
         const cardHtml = `
             <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2 quiz-card" 
+                <div class="card border-left-success shadow h-100 py-2 quiz-card" 
                      onclick="location.href='/setquestion?quizId=${q.quizId}'"
                      style="cursor: pointer; transition: transform 0.2s;">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                     Quiz #${idx + 1}
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800 text-truncate" title="${q.title}">

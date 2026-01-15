@@ -13,8 +13,9 @@
 
 			<div class="position-relative d-flex align-items-center">
 
-				<a class="font-weight-bold text-white" style="font-size: 1.5rem;" th:text="${user.userProfile.username}"
-					th:href="@{/profile}">
+				<a class="font-weight-bold text-white"
+					th:style="${user.userProfile.displayLength > 11} ? 'font-size: 1.15rem;' : (${user.userProfile.displayLength > 7} ? 'font-size: 1.3rem;' : 'font-size: 1.5rem;')"
+					th:text="${user.userProfile.username}" th:href="@{/profile}">
 					사용자명
 				</a>
 
@@ -25,8 +26,10 @@
 						<i class="fas fa-cog fa-sm"></i>
 					</a>
 
-					<a th:href="@{/logout}" class="text-white-50 ml-2" title="로그아웃">
-						<i class="fas fa-fw fa-sign-out-alt mr-2"></i>
+					<a th:href="@{/logout}" 
+					   class="text-white-50 ml-2" 
+					   title="로그아웃"
+					   onclick="return confirm('정말 로그아웃 하시겠습니까?');"> <i class="fas fa-fw fa-sign-out-alt mr-2"></i>
 					</a>
 
 				</div>
@@ -94,11 +97,17 @@
 			<span style="font-size: 1.15rem;">나의 출제 목록</span>
 		</a>
 	</li>
-
-	<li class="nav-item">
-		<a th:href="@{/leaderboard}" class="nav-link modal_btn px-4">
-			<i class="fas fa-fw fa-bookmark" style="font-size: 1.15rem;"></i>
-			<span style="font-size: 1.15rem;">리더보드</span>
-		</a>
-	</li>
 </div>
+
+<style>
+	.text-normal {
+		font-size: 1.5rem;
+	}
+
+	.text-small {
+		font-size: 1.3rem;
+		/* 글자가 길 때 적용될 크기 */
+		letter-spacing: -0.25px;
+		/* 자간도 살짝 줄여주면 효과적입니다 */
+	}
+</style>
