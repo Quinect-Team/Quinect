@@ -28,6 +28,32 @@ $(document).ready(function() {
 	$('input[name="username"], input[name="organization"], input[name="bio"]').on('keyup change', function() {
 		checkProfileChanges();
 	});
+
+	$('#saveProfileBtn').on('click', function(e) {
+		e.preventDefault(); // 일단 버튼 기본 동작 차단
+
+		const currentUsername = $("#nickname").val();
+		const initialUsername = initialProfileValues.username;
+
+		// 1. 닉네임이 변경되었는지 확인
+		if (currentUsername !== initialUsername) {
+			const msg = "닉네임을 바꾸시겠습니까?\n변경 후 7일 동안 다시 바꿀 수 없습니다.";
+
+			// 2. confirm 창 띄우기
+			if (confirm(msg)) {
+				// [확인] 누르면 -> 저장 함수 실행 (HTML에서 뺀 거 여기서 호출)
+				saveViaAjax('settingsForm', '/profile/settings/profilesave');
+			} else {
+				// [취소] 누르면 -> 아무 일도 안 일어남 (함수 호출 안 함)
+				return false;
+			}
+		}
+		// 3. 닉네임은 그대로고, 다른 정보만 바뀐 경우
+		else {
+			// 묻지 않고 바로 저장
+			saveViaAjax('settingsForm', '/profile/settings/profilesave');
+		}
+	});
 });
 
 // ==========================================
@@ -35,24 +61,30 @@ $(document).ready(function() {
 // ==========================================
 
 function checkProfileChanges() {
-	// --- [1] 닉네임 유효성 검사 (길이 체크) ---
-	const nicknameInput = $('input[name="username"]');
+	// 1. Selector 수정: name 대신 ID 사용 (hidden input과의 충돌 방지)
+	const nicknameInput = $("#nickname");
 	const nickname = nicknameInput.val();
-	const msgBox = $("#nicknameCheckMsg"); // 메시지 띄울 span ID 확인 필요
+	const msgBox = $("#nicknameCheckMsg");
 
+	// ⭐ [핵심 수정] 변수 선언을 가장 위로 올리고 기본값 true 설정
+	let isNicknameValid = true;
 	let length = 0;
-	if (nicknameInput.is(':disabled')) {
-		var isNicknameValid = true;
-	} else {
 
-		// 1-1. 길이 계산 (한글 2, 영문 1)
+	// 2. 닉네임 입력창이 '비활성화(disabled)' 상태인지 체크
+	// (7일 제한 등으로 잠겨있으면 유효성 검사 패스)
+	if (nicknameInput.is(':disabled')) {
+		isNicknameValid = true;
+	} else {
+		// --- 활성화 상태일 때만 유효성 검사 수행 ---
+
+		// 2-1. 길이 계산 (한글 2, 영문 1)
 		for (let i = 0; i < nickname.length; i++) {
 			const c = nickname.charCodeAt(i);
 			if (c >= 0xAC00 && c <= 0xD7A3) length += 2;
 			else length += 1;
 		}
 
-		// 1-2. 유효성 판단 및 UI 업데이트
+		// 2-2. 유효성 판단
 		if (!nickname || nickname.trim() === "") {
 			isNicknameValid = false;
 			nicknameInput.addClass("is-invalid");
@@ -60,23 +92,27 @@ function checkProfileChanges() {
 		} else if (length > 16.5) {
 			isNicknameValid = false;
 			nicknameInput.addClass("is-invalid");
-			msgBox.text("닉네임이 너무 깁니다!").css("color", "red");
+			msgBox.text("닉네임이 너무 깁니다! (" + length + "/16.5)").css("color", "red");
 		} else {
-			// 통과
+			// ⭐ [핵심] 통과했을 때 명시적으로 true 설정 및 UI 초기화
+			isNicknameValid = true;
 			nicknameInput.removeClass("is-invalid");
-			msgBox.text(""); // 유효하면 메시지 지우기 (원하면 "사용 가능" 표시)
+			msgBox.text("");
 		}
 	}
-	// --- [2] 변경 사항 확인 (기존 로직) ---
+
+	// --- [3] 변경 사항 확인 ---
+	// Selector 수정: name 대신 ID 사용 권장 (HTML에 id="organization", id="bio"가 있다고 가정)
+	// 만약 ID가 없다면 기존처럼 $('input[name="organization"]') 사용하되, hidden input이 없는지 주의하세요.
 	const currentOrg = $('input[name="organization"]').val();
 	const currentBio = $('input[name="bio"]').val();
 
-	// 텍스트 변경 여부 비교 (초기값 vs 현재값)
+	// 텍스트 변경 여부
 	const isTextChanged = (nickname !== initialProfileValues.username) ||
 		(currentOrg !== initialProfileValues.organization) ||
 		(currentBio !== initialProfileValues.bio);
 
-	// 이미지 변경 여부 확인
+	// 이미지 변경 여부
 	let isImageChanged = false;
 	const fileInput = $('#profileImageFile')[0];
 	const isFileUploaded = fileInput && fileInput.files.length > 0;
@@ -85,6 +121,7 @@ function checkProfileChanges() {
 	if (isFileUploaded) {
 		isImageChanged = true;
 	} else if (selectedDefault !== '') {
+		// 초기값과 다르면 변경된 것
 		if (selectedDefault !== initialProfileValues.image) {
 			isImageChanged = true;
 		}
@@ -92,8 +129,8 @@ function checkProfileChanges() {
 
 	const isChanged = isTextChanged || isImageChanged;
 
-	// --- [3] 최종 버튼 상태 제어 ---
-	// 조건: (변경사항이 있음) AND (닉네임이 유효함)
+	// --- [4] 최종 버튼 상태 제어 ---
+	// 변경사항이 있고(AND) 닉네임도 유효해야 저장 버튼 활성화
 	toggleButton('#saveProfileBtn', isChanged && isNicknameValid);
 }
 
