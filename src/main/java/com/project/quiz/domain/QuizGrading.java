@@ -17,8 +17,9 @@ public class QuizGrading {
 
     /** 채점 대상 답안 */
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "answer_id", nullable = false)
+    @JoinColumn(name = "answer_id", nullable = false, unique = true)
     private QuizAnswer answer;
+
 
     /** 정답 여부 */
     @Column(nullable = false)

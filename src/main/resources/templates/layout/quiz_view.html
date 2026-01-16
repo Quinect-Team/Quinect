@@ -421,9 +421,10 @@ function showResultModal(score, maxScore) {
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  document
-    .getElementById('closeModalBtn')
-    .onclick = () => overlay.remove();
+  document.getElementById('closeModalBtn').onclick = () => {
+      overlay.remove();
+      window.location.href = '/list';
+    };
 }
 
 

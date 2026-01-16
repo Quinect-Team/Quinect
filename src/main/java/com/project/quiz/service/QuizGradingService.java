@@ -20,6 +20,7 @@ public class QuizGradingService {
 	private final QuizGradingRepository gradingRepository;
 	private final QuizQuestionRepository questionRepository;
 	private final ParticipantRepository participantRepository;
+	private final QuizAnswerRepository quizAnswerRepository;
 
 	@Transactional
 	public void grade(Long submissionId) {
@@ -64,16 +65,43 @@ public class QuizGradingService {
 						score = question.getPoint();
 					}
 				}
+				
+				QuizGrading grading = gradingRepository
+	                    .findByAnswer_AnswerId(answer.getAnswerId())
+	                    .orElseGet(() -> {
+	                        QuizGrading g = new QuizGrading();
+	                        g.setAnswer(answer);
+	                        return g;
+	                    });
+
+	            grading.setCorrect(correct);
+	            grading.setScore(score);
+	            grading.setGrader("AUTO");
+	            grading.setGradedAt(LocalDateTime.now());
+
+	            answer.setGrading(grading);
+	            gradingRepository.save(grading);
+
+	            totalScore += score;
 			}
 
-			QuizGrading grading = new QuizGrading();
-			grading.setAnswer(answer);
+			QuizGrading grading = gradingRepository
+			        .findByAnswer_AnswerId(answer.getAnswerId())
+			        .orElseGet(() -> {
+			            QuizGrading g = new QuizGrading();
+			            g.setAnswer(answer);
+			            return g;
+			        });
+
 			grading.setCorrect(correct);
 			grading.setScore(score);
 			grading.setGrader("AUTO");
 			grading.setGradedAt(LocalDateTime.now());
 
-			answer.setGrading(grading);
+			if (grading.getGradingId() == null) {
+			    answer.setGrading(grading);
+			}
+
 			gradingRepository.save(grading);
 
 			totalScore += score;
@@ -83,4 +111,28 @@ public class QuizGradingService {
 		submission.setGraded(true);
 		submissionRepository.save(submission);
 	}
+	
+	@Transactional
+	public void grade(Long answerId, int score, boolean correct) {
+
+	    QuizGrading grading = gradingRepository
+	        .findByAnswer_AnswerId(answerId)
+	        .orElseGet(() -> {
+	            QuizGrading g = new QuizGrading();
+	            g.setAnswer(
+	                quizAnswerRepository.getReferenceById(answerId)
+	            );
+	            return g;
+	        });
+
+	    grading.setScore(score);
+	    grading.setCorrect(correct);
+	    grading.setGrader("AUTO");
+	    grading.setGradedAt(LocalDateTime.now());
+
+	    gradingRepository.save(grading);
+	}
+
+
+
 }
