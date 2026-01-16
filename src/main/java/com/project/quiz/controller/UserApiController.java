@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
+// signup.html에서 사용함 및 사용자 조회용
 public class UserApiController {
 
 	private final UserRepository userRepository;
@@ -55,13 +56,9 @@ public class UserApiController {
 			response.put("id", user.getId());
 			response.put("email", user.getEmail());
 			response.put("username", username);
-
-			System.out.println(
-					"✅ 현재 사용자 조회 - ID: " + user.getId() + ", Email: " + user.getEmail() + ", Username: " + username);
-
 			return ResponseEntity.ok(response);
+			
 		} catch (Exception e) {
-			System.err.println("❌ 사용자 조회 실패: " + e.getMessage());
 			e.printStackTrace();
 			return ResponseEntity.status(500).body("사용자 정보를 조회할 수 없습니다");
 		}

@@ -39,6 +39,10 @@ public class TimelineDto {
             this.iconClass = "fa-user-edit";
             this.colorClass = "bg-info"; // 하늘색
         }
+        else if ("ACHIEVEMENT".equals(type)) {
+            this.iconClass = "fa-trophy"; // 트로피 아이콘
+            this.colorClass = "bg-warning"; // 노란색/주황색 계열
+        }
         else {
             // 그 외 (단순 포인트 획득 등)
             this.iconClass = "fa-star";

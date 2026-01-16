@@ -12,12 +12,14 @@ import com.project.quiz.domain.Achievement;
 import com.project.quiz.domain.AchievementType;
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserAchievement;
+import com.project.quiz.domain.UserActivityLog;
 import com.project.quiz.domain.UserInventory;
 import com.project.quiz.dto.AttendanceEvent;
 import com.project.quiz.dto.ItemPurchasedEvent;
 import com.project.quiz.dto.QuizSolvedEvent;
 import com.project.quiz.repository.AchievementRepository;
 import com.project.quiz.repository.UserAchievementRepository;
+import com.project.quiz.repository.UserActivityLogRepository;
 import com.project.quiz.repository.UserInventoryRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class AchievementService {
     private final UserAchievementRepository userAchievementRepository;
     private final UserInventoryRepository userInventoryRepository; // 보상 지급용
     private final NotificationService notificationService; // 메시지 전달
+    private final UserActivityLogRepository userActivityLogRepository;
 
     /**
      * ✅ 출석 이벤트 리스너
@@ -112,6 +115,17 @@ public class AchievementService {
         Achievement goal = progress.getAchievement();
         log.info("🎉 업적 달성! 유저: {}, 업적: {}", progress.getUser().getEmail(), goal.getTitle());
 
+        // ▼▼▼ [2. 추가] 활동 로그("ACHIEVEMENT") 저장 로직 시작 ▼▼▼
+        UserActivityLog activityLog = UserActivityLog.builder()
+                .user(progress.getUser())
+                .activityType("ACHIEVEMENT") // 요청하신 타입
+                .description("업적 [" + goal.getTitle() + "] 달성") // 예: 업적 [성실한 출석러] 달성
+                .createdAt(LocalDateTime.now())
+                .build();
+        
+        userActivityLogRepository.save(activityLog);
+        // ▲▲▲ [2. 추가] 활동 로그 저장 로직 끝 ▲▲▲
+
         // 🎁 보상 아이템 지급 (UserInventory에 추가)
         if (goal.getRewardItem() != null) {
             UserInventory reward = UserInventory.builder()
@@ -128,7 +142,7 @@ public class AchievementService {
         notificationService.send(
                 progress.getUser(),
                 "업적 달성! 🎉", 
-                "[" + progress.getAchievement().getTitle() + "] 메달을 확인하세요.",
+                "[" + progress.getAchievement().getTitle() + "] 메달을 획득했습니다.",
                 "ACHIEVEMENT"
         );
     }

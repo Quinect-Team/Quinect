@@ -24,7 +24,7 @@ public class TimelineService {
     private final UserActivityLogRepository logRepository;
     private final UserRepository userRepository;
     // 타임라인에 필터링할 내용들, 다른 기능 추가되면 필터링 추가필요!
-    private static final List<String> TARGET_ACTIVITIES = List.of("ATTENDANCE", "POINT_USE", "QUIZ", "UPDATE_NICKNAME");
+    private static final List<String> TARGET_ACTIVITIES = List.of("ATTENDANCE", "POINT_USE", "QUIZ", "UPDATE_NICKNAME", "ACHIEVEMENT");
 
     // 1. [프로필용] 최신순으로 딱 2개만 가져오기
     @Transactional(readOnly = true)
