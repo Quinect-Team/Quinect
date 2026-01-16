@@ -59,8 +59,8 @@ function checkNickname() {
     }
 
     // 결과 처리
-    if (length > 12) {
-        setFieldStatus(inputId, msgId, false, "닉네임이 너무 깁니다. (한글 6자, 영문·숫자 12자 최대)");
+    if (length > 16.5) {
+        setFieldStatus(inputId, msgId, false, "닉네임이 너무 깁니다!");
     } else {
         setFieldStatus(inputId, msgId, true, "사용 가능한 닉네임입니다.");
     }

@@ -35,16 +35,48 @@ $(document).ready(function() {
 // ==========================================
 
 function checkProfileChanges() {
-	// 1. 텍스트 변경 확인
-	const currentUsername = $('input[name="username"]').val();
+	// --- [1] 닉네임 유효성 검사 (길이 체크) ---
+	const nicknameInput = $('input[name="username"]');
+	const nickname = nicknameInput.val();
+	const msgBox = $("#nicknameCheckMsg"); // 메시지 띄울 span ID 확인 필요
+
+	let length = 0;
+	if (nicknameInput.is(':disabled')) {
+		var isNicknameValid = true;
+	} else {
+
+		// 1-1. 길이 계산 (한글 2, 영문 1)
+		for (let i = 0; i < nickname.length; i++) {
+			const c = nickname.charCodeAt(i);
+			if (c >= 0xAC00 && c <= 0xD7A3) length += 2;
+			else length += 1;
+		}
+
+		// 1-2. 유효성 판단 및 UI 업데이트
+		if (!nickname || nickname.trim() === "") {
+			isNicknameValid = false;
+			nicknameInput.addClass("is-invalid");
+			msgBox.text("닉네임을 입력해주세요.").css("color", "red");
+		} else if (length > 16.5) {
+			isNicknameValid = false;
+			nicknameInput.addClass("is-invalid");
+			msgBox.text("닉네임이 너무 깁니다!").css("color", "red");
+		} else {
+			// 통과
+			nicknameInput.removeClass("is-invalid");
+			msgBox.text(""); // 유효하면 메시지 지우기 (원하면 "사용 가능" 표시)
+		}
+	}
+	// --- [2] 변경 사항 확인 (기존 로직) ---
 	const currentOrg = $('input[name="organization"]').val();
 	const currentBio = $('input[name="bio"]').val();
 
-	const isTextChanged = (currentUsername !== initialProfileValues.username) ||
+	// 텍스트 변경 여부 비교 (초기값 vs 현재값)
+	const isTextChanged = (nickname !== initialProfileValues.username) ||
 		(currentOrg !== initialProfileValues.organization) ||
 		(currentBio !== initialProfileValues.bio);
 
-	// 2. 이미지 변경 확인
+	// 이미지 변경 여부 확인
 	let isImageChanged = false;
 	const fileInput = $('#profileImageFile')[0];
 	const isFileUploaded = fileInput && fileInput.files.length > 0;
@@ -58,8 +90,11 @@ function checkProfileChanges() {
 		}
 	}
 
-	// 3. 버튼 상태 제어 (saveProfileBtn)
-	toggleButton('#saveProfileBtn', isTextChanged || isImageChanged);
+	const isChanged = isTextChanged || isImageChanged;
+
+	// --- [3] 최종 버튼 상태 제어 ---
+	// 조건: (변경사항이 있음) AND (닉네임이 유효함)
+	toggleButton('#saveProfileBtn', isChanged && isNicknameValid);
 }
 
 // 기본 프로필 선택

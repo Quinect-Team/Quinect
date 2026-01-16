@@ -2,6 +2,7 @@ package com.project.quiz.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,4 +23,5 @@ public interface UserActivityLogRepository extends JpaRepository<UserActivityLog
     );
     
     Page<UserActivityLog> findAllByUserAndActivityTypeIn(User user, List<String> activityTypes, Pageable pageable);
+    Optional<UserActivityLog> findTopByUserAndActivityTypeOrderByCreatedAtDesc(User user, String activityType);
 }

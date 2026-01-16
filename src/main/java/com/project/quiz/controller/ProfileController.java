@@ -1,8 +1,7 @@
 package com.project.quiz.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Controller;
@@ -15,17 +14,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.project.quiz.domain.User;
 import com.project.quiz.domain.UserAchievement;
+import com.project.quiz.domain.UserActivityLog;
 import com.project.quiz.domain.UserInventory;
 import com.project.quiz.domain.UserProfile;
 import com.project.quiz.dto.TimelineDto;
 import com.project.quiz.repository.UserAchievementRepository;
+import com.project.quiz.repository.UserActivityLogRepository;
 import com.project.quiz.repository.UserProfileRepository;
 import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.InventoryService;
 import com.project.quiz.service.TimelineService;
 import com.project.quiz.service.UserService;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -38,6 +38,7 @@ public class ProfileController {
 	private final TimelineService timelineService;
 	private final UserAchievementRepository userAchievementRepository;
 	private final UserProfileRepository userProfileRepository;
+	private final UserActivityLogRepository userActivityLogRepository;
 
 	// 프로필 페이지 이동
 	@GetMapping({ "/profile", "/profile/{profileId}" })
@@ -113,12 +114,34 @@ public class ProfileController {
 
 		if (principal != null) {
 			User user = userRepository.findByEmail(principal.getName()).orElseThrow();
+			
+			boolean canChangeNickname = true;
+            String nicknameMessage = null;
+
+            UserActivityLog lastUpdate = userActivityLogRepository
+                    .findTopByUserAndActivityTypeOrderByCreatedAtDesc(user, "UPDATE_NICKNAME")
+                    .orElse(null);
+
+            if (lastUpdate != null) {
+                // 마지막 변경 시간 + 7일
+                LocalDateTime availableDate = lastUpdate.getCreatedAt().plusDays(7);
+                
+                // 현재 시간이 제한 시간보다 이전이면 -> 변경 불가
+                if (LocalDateTime.now().isBefore(availableDate)) {
+                    canChangeNickname = false;
+                    // 예: "2025-01-23 15:30 이후 변경 가능"
+                    nicknameMessage = availableDate.toString().replace("T", " ").substring(0, 16) + " 이후 변경 가능";
+                }
+            }
 
 			List<UserInventory> myBorders = inventoryService.getMyInventoryByCategory(user, "BORDER");
 			List<UserInventory> myThemes = inventoryService.getMyInventoryByCategory(user, "THEME");
 
 			model.addAttribute("myBorders", myBorders);
 			model.addAttribute("myThemes", myThemes);
+			
+			model.addAttribute("canChangeNickname", canChangeNickname);
+            model.addAttribute("nicknameMessage", nicknameMessage);
 
 			// 화면에 source 정보 전달 (뒤로가기 버튼용)
 			model.addAttribute("source", source);
