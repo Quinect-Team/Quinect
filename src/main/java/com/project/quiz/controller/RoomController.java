@@ -121,6 +121,14 @@ public class RoomController {
 			}
 		}
 
+		Long effectiveUserId = null;
+		if (principal != null && user != null) {
+			effectiveUserId = user.getId(); // 회원: DB ID (예: 2)
+		} else if (guestUser != null) {
+			effectiveUserId = (long) guestUser.getGuestId().hashCode(); // 게스트: 해시 (511719744)
+			System.out.println("🆔 게스트 effectiveUserId: " + effectiveUserId);
+		}
+
 		participantService.joinRoomIfNotExists(room, user, guestId, nickname, avatarUrl);
 
 		List<?> participants = participantService.findByRoom(room);
@@ -135,6 +143,7 @@ public class RoomController {
 		model.addAttribute("guestAvatarUrl", avatarUrl);
 		model.addAttribute("currentUser", user);
 		model.addAttribute("guestId", guestId);
+		model.addAttribute("effectiveUserId", effectiveUserId); // ✅ 이 줄 추가!
 
 		boolean isRoomMaster = (user != null && room.getHostUserId().equals(user.getId()));
 		model.addAttribute("isRoomMaster", isRoomMaster);

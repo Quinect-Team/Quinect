@@ -756,7 +756,17 @@ window.invitationsSubscribed = false;
 
 		// 게임 초대 처리...
 		if (isGameInvitation && roomCode) {
-			// ... 게임 초대 HTML
+			console.log('🎮 게임 초대 감지:', roomCode);
+
+			// ✅ showInvitationNotification() 호출!
+			const invitationData = {
+				type: 'ROOM_INVITATION',
+				roomCode: roomCode,
+				inviterName: msg.senderName || '친구',
+				messageText: msg.messageText
+			};
+
+			showInvitationNotification(invitationData);
 			return;
 		}
 
@@ -839,6 +849,8 @@ window.invitationsSubscribed = false;
 	window.sendFriendRequest = sendFriendRequest;
 	window.removeFriend = removeFriend;
 
+	window.showInvitationNotification = showInvitationNotification;
+
 	window.switchToChatView = switchToChatView;
 	window.backToFriendsList = backToFriendsList;
 	window.sendMessage = sendMessage;
@@ -850,68 +862,68 @@ window.invitationsSubscribed = false;
 	 * 1:1 채팅 메시지 실시간 수신 대기 (재구독 가능한 버전)
 	 */
 	function subscribeToPrivateMessages() {
-	    console.log('[PM] subscribeToPrivateMessages 호출');
+		console.log('[PM] subscribeToPrivateMessages 호출');
 
-	    if (!window.stompClient || !window.stompClient.connected) {
-	        console.warn('⚠️ WebSocket 연결 대기 중...');
-	        setTimeout(subscribeToPrivateMessages, 3000);
-	        return;
-	    }
+		if (!window.stompClient || !window.stompClient.connected) {
+			console.warn('⚠️ WebSocket 연결 대기 중...');
+			setTimeout(subscribeToPrivateMessages, 3000);
+			return;
+		}
 
-	    if (window.privateMessagesSubscribed) {
-	        console.log('[PM] 이미 구독됨, 재사용');
-	        return;
-	    }
+		if (window.privateMessagesSubscribed) {
+			console.log('[PM] 이미 구독됨, 재사용');
+			return;
+		}
 
-	    const userEmail = $('body').data('user-email');
-	    if (!userEmail) {
-	        console.warn('⚠️ user-email이 없음, 재시도');
-	        setTimeout(subscribeToPrivateMessages, 2000);
-	        return;
-	    }
+		const userEmail = $('body').data('user-email');
+		if (!userEmail) {
+			console.warn('⚠️ user-email이 없음, 재시도');
+			setTimeout(subscribeToPrivateMessages, 2000);
+			return;
+		}
 
-	    const subscribePath = '/user/' + userEmail + '/queue/friend-messages';
-	    console.log('[PM] 구독 경로:', subscribePath);
+		const subscribePath = '/user/' + userEmail + '/queue/friend-messages';
+		console.log('[PM] 구독 경로:', subscribePath);
 
-	    window.privateMessageSubscription =
-	        window.stompClient.subscribe(subscribePath, function(message) {
-	            console.log('[PM] 수신 raw:', message);
-	            const msg = JSON.parse(message.body);
-	            console.log('[PM] 파싱된 msg:', msg);
+		window.privateMessageSubscription =
+			window.stompClient.subscribe(subscribePath, function(message) {
+				console.log('[PM] 수신 raw:', message);
+				const msg = JSON.parse(message.body);
+				console.log('[PM] 파싱된 msg:', msg);
 
-	            // ⭐ 현재 열려 있는 채팅방의 friendshipId
-	            const chatData = $('#chatModal').data() || {};
-	            const currentFriendshipId = chatData.friendshipId;
+				// ⭐ 현재 열려 있는 채팅방의 friendshipId
+				const chatData = $('#chatModal').data() || {};
+				const currentFriendshipId = chatData.friendshipId;
 
-	            // msg.friendshipId 없다면 백엔드에서 DTO에 꼭 넣어줘야 함
-	            const msgFriendshipId = msg.friendshipId;
+				// msg.friendshipId 없다면 백엔드에서 DTO에 꼭 넣어줘야 함
+				const msgFriendshipId = msg.friendshipId;
 
-	            // 1) 현재 열려 있는 방과 같은 friendshipId일 때만 채팅창에 표시
-	            if (currentFriendshipId && msgFriendshipId === currentFriendshipId) {
-	                console.log('[PM] 현재 열린 대화방 메시지, 화면에 표시');
-	                displayMessage(msg);
-	            } else {
-	                console.log('[PM] 다른 대화방 메시지, 채팅창에는 표시 안 함');
-	            }
+				// 1) 현재 열려 있는 방과 같은 friendshipId일 때만 채팅창에 표시
+				if (currentFriendshipId && msgFriendshipId === currentFriendshipId) {
+					console.log('[PM] 현재 열린 대화방 메시지, 화면에 표시');
+					displayMessage(msg);
+				} else {
+					console.log('[PM] 다른 대화방 메시지, 채팅창에는 표시 안 함');
+				}
 
-	            // 2) 채팅 모달이 닫혀 있거나, 다른 방 메시지인 경우에만 드롭다운/뱃지 갱신
-	            const isChatModalOpen = $('#chatModal').css('display') !== 'none';
-	            const isSameRoom = currentFriendshipId && msgFriendshipId === currentFriendshipId;
+				// 2) 채팅 모달이 닫혀 있거나, 다른 방 메시지인 경우에만 드롭다운/뱃지 갱신
+				const isChatModalOpen = $('#chatModal').css('display') !== 'none';
+				const isSameRoom = currentFriendshipId && msgFriendshipId === currentFriendshipId;
 
-	            if (!isChatModalOpen || !isSameRoom) {
-	                if (typeof updateFriendMessageDropdown === 'function') {
-	                    updateFriendMessageDropdown(msg);
-	                }
-	                if (typeof incrementMessageBadge === 'function') {
-	                    incrementMessageBadge();
-	                }
-	            } else {
-	                console.log('[PM] 현재 방 메시지 + 채팅창 열려 있음 → 드롭다운/배지 갱신 스킵');
-	            }
-	        });
+				if (!isChatModalOpen || !isSameRoom) {
+					if (typeof updateFriendMessageDropdown === 'function') {
+						updateFriendMessageDropdown(msg);
+					}
+					if (typeof incrementMessageBadge === 'function') {
+						incrementMessageBadge();
+					}
+				} else {
+					console.log('[PM] 현재 방 메시지 + 채팅창 열려 있음 → 드롭다운/배지 갱신 스킵');
+				}
+			});
 
-	    window.privateMessagesSubscribed = true;
-	    console.log('[PM] 구독 완료: ' + subscribePath);
+		window.privateMessagesSubscribed = true;
+		console.log('[PM] 구독 완료: ' + subscribePath);
 	}
 
 	/**
@@ -997,9 +1009,66 @@ window.invitationsSubscribed = false;
 		});
 	}
 
-	/**
-	 * DOM 로드 후 초기화 (올바른 순서)
-	 */
+	function showInvitationNotification(invitation) {
+		console.log('🎉 showInvitationNotification 호출');
+
+		if (!invitation || !invitation.roomCode) {
+			console.error('❌ invitation 데이터 없음');
+			return;
+		}
+
+		const roomCode = invitation.roomCode;
+		const inviterName = invitation.inviterName || '친구';
+
+		console.log('🎮 방 초대 팝업 표시:', roomCode, 'by', inviterName);
+
+		Swal.fire({
+			title: '🎮 방 초대!',
+			html: `
+	            <div style="text-align: center; padding: 20px;">
+	                <p style="font-size: 18px; margin-bottom: 20px; font-weight: bold;">
+	                    <span style="color: #4e73df;">${escapeHtml(inviterName)}</span>님이 방으로 초대했습니다!
+	                </p>
+	                <div style="background: #f0f3ff; padding: 20px; border-radius: 12px; margin: 20px 0;">
+	                    <p style="margin: 0 0 10px 0; color: #888; font-size: 12px; text-transform: uppercase;">방 코드</p>
+	                    <p style="margin: 0; font-size: 32px; font-weight: bold; color: #4e73df; letter-spacing: 5px;">
+	                        ${roomCode}
+	                    </p>
+	                </div>
+	                <p style="color: #666; font-size: 13px; margin-top: 15px;">
+	                    <i class="fas fa-clock mr-2"></i>지금 참가하세요!
+	                </p>
+	            </div>
+	        `,
+			icon: 'success',
+			confirmButtonText: '✅ 참가하기',
+			cancelButtonText: '❌ 나중에',
+			showCancelButton: true,
+			confirmButtonColor: '#4e73df',
+			cancelButtonColor: '#858796',
+			allowOutsideClick: false,
+			allowEscapeKey: false
+		}).then((result) => {
+			if (result.isConfirmed) {
+				console.log('✅ 초대 수락:', roomCode);
+
+				// ✅ 참가자 업데이트 구독 시작 (새 탭에서도 실시간 업데이트)
+				if (typeof subscribeToParticipantUpdates === 'function') {
+					subscribeToParticipantUpdates(roomCode);
+					console.log('📡 참가자 업데이트 구독 시작');
+				}
+
+				// 1초 후 이동 (구독 시간 확보)
+				setTimeout(() => {
+					window.location.href = '/waitroom/' + roomCode;
+				}, 500);
+			} else {
+				console.log('⏭️ 초대 나중에');
+			}
+		});
+	}
+
+
 	/**
 	 * DOM 로드 후 초기화
 	 */

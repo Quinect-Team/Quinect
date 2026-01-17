@@ -236,6 +236,32 @@ function subscribeToMessageRead() {
 	}
 }
 
+function subscribeToParticipantUpdates(roomCode) {
+	if (!window.stompClient || !window.stompClient.connected) {
+		console.warn('⚠️ WebSocket 연결 대기 중...');
+		setTimeout(() => subscribeToParticipantUpdates(roomCode), 3000);
+		return;
+	}
+
+	const subscribePath = '/topic/participants/' + roomCode;
+	console.log('👥 참가자 업데이트 구독:', subscribePath);
+
+	window.stompClient.subscribe(subscribePath, function(message) {
+		var data = JSON.parse(message.body);
+		console.log('👥 참가자 업데이트 수신:', data);
+
+		if (data.type === 'PARTICIPANTUPDATE') {
+			console.log('🔄 참가자 리스트 갱신:', data.participants);
+
+			// ✅ 콜백 함수 호출 (각 페이지에서 처리)
+			if (typeof updateParticipantsList === 'function') {
+				updateParticipantsList(data.participants);
+			}
+		}
+	});
+}
+
+
 /**
  * 웹소켓 연결 해제
  */
@@ -261,3 +287,4 @@ window.subscribeToNotifications = subscribeToNotifications;
 window.subscribeToPrivateMessages = subscribeToPrivateMessages;
 window.subscribeToInvitations = subscribeToInvitations;
 window.subscribeToMessageRead = subscribeToMessageRead;  // ⭐ 추가
+window.subscribeToParticipantUpdates = subscribeToParticipantUpdates;

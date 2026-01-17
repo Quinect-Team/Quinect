@@ -1,380 +1,646 @@
-<!DOCTYPE html>
+<!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>퀴즈 대기실</title>
+    <link th:href="@{/css/sb-admin-2.css}" rel="stylesheet" />
+    <link th:href="@{/css/waitroom.css}" rel="stylesheet" />
+    <link
+      th:href="@{/vendor/fontawesome-free/css/all.min.css}"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="_csrf" th:content="${_csrf.token}">
-	<meta name="_csrf_header" th:content="${_csrf.headerName}">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>퀴즈 대기실</title>
-	<link th:href="@{/css/sb-admin-2.css}" rel="stylesheet" />
-	<link th:href="@{/css/waitroom.css}" rel="stylesheet" />
-	<link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
-	<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
+    <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+    <script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 
-	<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
-	<script th:src="@{/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
-	<script th:src="@{/vendor/jquery-easing/jquery.easing.min.js}"></script>
-	<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    <script th:src="@{/js/waitroom.js}"></script>
+  </head>
 
-	<script th:src="@{/js/waitroom.js}"></script>
-</head>
-
-<body class="bg-gradient-success" th:attr="data-room-code=${room.roomCode},
+  <body
+    class="bg-gradient-success"
+    th:attr="data-room-code=${room.roomCode},
            data-guest-nickname=${guestNickname},
            data-is-room-master=${isRoomMaster},
-		   data-user-id=${currentUser != null ? currentUser.id : 0}">
-	<div class="container-fluid py-4">
-		<div class="d-flex justify-content-between align-items-center mb-3">
-			<div class="container-fluid py-4">
-			<a class="d-flex align-items-center text-decoration-none">
-				<div class="rotate-n-15">
-					<img src="/img/app_icon.png" style="width: 40px; height: 40px;">
-				</div>
-				<div class="mx-2 font-weight-bold text-white"
-					style="font-size: 2.3rem; font-family: 'Fredoka', sans-serif;">
-					Quinect
-				</div>
-			</a>
-			
-			<!-- 여기다가 작업하시면 됩니다 나가는거 -->
-			<a th:href="@{/}" 
-			   class="text-decoration-none d-flex flex-column align-items-center"
-			   onmouseover="this.querySelector('i').classList.replace('fa-door-closed', 'fa-door-open')"
-			   onmouseout="this.querySelector('i').classList.replace('fa-door-open', 'fa-door-closed')"
-			   onclick="return confirm('정말 대기실에서 나가시겠습니까?');">
-			    
-			    <i class="fas fa-door-closed text-white" style="font-size: 1.8rem"></i>
-			    
-			    <span class="text-white small font-weight-bold mt-1"
-				>나가기</span>
-			</a>
+		   data-user-id=${effectiveUserId}">
+    <div class="container-fluid py-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a class="d-flex align-items-center text-decoration-none">
+            <div class="rotate-n-15">
+              <img src="/img/app_icon.png" style="width: 40px; height: 40px" />
+            </div>
+            <div
+              class="mx-2 font-weight-bold text-white"
+              style="
+                font-size: 2.3rem;
+                font-family: &quot;Fredoka&quot;, sans-serif;
+              "
+            >
+              Quinect
+            </div>
+          </a>
 
-		</div>
-		<!-- 상단 정보 영역 -->
-		<div class="row mb-3">
-			<div class="col">
-				<div class="card shadow border-left-success p-3 d-flex flex-row align-items-center">
-					<h3 class="text-success mb-0 mr-4"><i class="fas fa-key"></i> 방 코드:</h3>
-					<h1 class="display-4 font-weight-bold mr-3" th:text="${room.roomCode}">ABCD</h1>
-					<button class="btn btn-outline-warning btn-sm ml-3" onclick="copyCode()"><i class="fas fa-copy"></i>
-						복사</button>
-					<img th:if="${qrCodeBase64 != null}" th:src="'data:image/png;base64,' + ${qrCodeBase64}" alt="QR 코드"
-						width="150" height="150" />
-				</div>
-			</div>
-		</div>
+          <!-- 여기다가 작업하시면 됩니다 나가는거 -->
+          <a
+            th:href="@{/}"
+            class="text-decoration-none d-flex flex-column align-items-center"
+            onmouseover="
+              this.querySelector('i').classList.replace(
+                'fa-door-closed',
+                'fa-door-open',
+              )
+            "
+            onmouseout="
+              this.querySelector('i').classList.replace(
+                'fa-door-open',
+                'fa-door-closed',
+              )
+            "
+            onclick="return confirm('정말 대기실에서 나가시겠습니까?');"
+          >
+            <i
+              class="fas fa-door-closed text-white"
+              style="font-size: 1.8rem"
+            ></i>
 
-		<!-- 메인(참가자+채팅) -->
-		<div class="row">
-			<!-- 참가자 리스트 영역 -->
-			<div class="col-md-7">
-				<div class="card shadow mb-4">
-					<div class="card-header py-2 bg-info d-flex justify-content-between align-items-center">
-						<h6 class="m-0 font-weight-bold text-white"><i class="fas fa-users"></i> 참가자</h6>
-						<button class="btn btn-sm btn-light" onclick="openInviteFriendModal()">
-							<i class="fas fa-user-plus"></i> 친구 초대
-						</button>
-					</div>
-					<div class="card-body pb-1 d-flex flex-wrap">
-						<div class="card border-success m-2 text-center"
-							style="width: 114px; height: 180px; position: relative;" th:each="user : ${participants}"
-							th:attr="data-user-id=${user.id}">
-							<div class="mt-2">
-								<img th:src="@{${user.avatarUrl}}" class="rounded-circle mb-2" width="55" height="55"
-									alt="avatar">
-							</div>
-							<div class="font-weight-bold text-primary" th:text="${user.nickname}">닉네임</div>
-						</div>
-					</div>
-				</div>
-			</div>
+            <span class="text-white small font-weight-bold mt-1">나가기</span>
+          </a>
+        </div>
+        <!-- 상단 정보 영역 -->
+        <div class="row mb-3">
+          <div class="col">
+            <div
+              class="card shadow border-left-success p-3 d-flex flex-row align-items-center"
+            >
+              <h3 class="text-success mb-0 mr-4">
+                <i class="fas fa-key"></i> 방 코드:
+              </h3>
+              <h1
+                class="display-4 font-weight-bold mr-3"
+                th:text="${room.roomCode}"
+              >
+                ABCD
+              </h1>
+              <button
+                class="btn btn-outline-warning btn-sm ml-3"
+                onclick="copyCode()"
+              >
+                <i class="fas fa-copy"></i> 복사
+              </button>
+              <img
+                th:if="${qrCodeBase64 != null}"
+                th:src="'data:image/png;base64,' + ${qrCodeBase64}"
+                alt="QR 코드"
+                width="150"
+                height="150"
+              />
+            </div>
+          </div>
+        </div>
 
-			<!-- 채팅창 -->
-			<!-- 채팅창 -->
-			<div class="col-md-5">
-				<div class="card shadow mb-4 h-100 d-flex flex-column">
-					<div class="card-header py-2 bg-gradient-info">
-						<h6 class="m-0 font-weight-bold text-white"><i class="fas fa-comments"></i> 채팅</h6>
-					</div>
+        <!-- 메인(참가자+채팅) -->
+        <div class="row">
+          <!-- 참가자 리스트 영역 -->
+          <div class="col-md-7">
+            <div class="card shadow mb-4">
+              <div
+                class="card-header py-2 bg-info d-flex justify-content-between align-items-center"
+              >
+                <h6 class="m-0 font-weight-bold text-white">
+                  <i class="fas fa-users"></i> 참가자
+                </h6>
+                <button
+                  class="btn btn-sm btn-light"
+                  onclick="openInviteFriendModal()"
+                >
+                  <i class="fas fa-user-plus"></i> 친구 초대
+                </button>
+              </div>
+              <div class="card-body pb-1 d-flex flex-wrap">
+                <div
+                  class="card border-success m-2 text-center"
+                  style="width: 114px; height: 180px; position: relative"
+                  th:each="user : ${participants}"
+                  th:attr="data-user-id=${user.id}"
+                >
+                  <div class="mt-2">
+                    <img
+                      th:src="@{${user.avatarUrl}}"
+                      class="rounded-circle mb-2"
+                      width="55"
+                      height="55"
+                      alt="avatar"
+                    />
+                  </div>
+                  <div
+                    class="font-weight-bold text-primary"
+                    th:text="${user.nickname}"
+                  >
+                    닉네임
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-					<!-- 👇 카운트다운을 messages 위에 배치 -->
-					<div id="quizStartContainer"
-						style="display: none; padding: 10px 15px; background: linear-gradient(135deg, #FF6B6B, #FF8E72); border-radius: 10px; text-align: center; color: white; margin: 10px; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); animation: pulse 1s infinite;">
-						<h5 style="margin: 0 0 5px 0; font-size: 16px;">
-							<i class="fas fa-rocket" style="font-size: 1.2rem; margin-right: 5px;"></i>
-							퀴즈 시작!
-						</h5>
-						<p id="countdownMessage" style="font-size: 14px; opacity: 0.95; margin: 0;">
-							<span id="secondsText">5초</span> 안에 이동합니다
-						</p>
-					</div>
+          <!-- 채팅창 -->
+          <div class="col-md-5">
+            <div class="card shadow mb-4 h-100 d-flex flex-column">
+              <div class="card-header py-2 bg-gradient-info">
+                <h6 class="m-0 font-weight-bold text-white">
+                  <i class="fas fa-comments"></i> 채팅
+                </h6>
+              </div>
 
-					<!-- 채팅 메시지 영역 -->
-					<div class="card-body flex-fill px-2 py-2" id="messages" style="overflow-y:auto; height:200px;">
-					</div>
+              <!-- 👇 카운트다운을 messages 위에 배치 -->
+              <div
+                id="quizStartContainer"
+                style="
+                  display: none;
+                  padding: 10px 15px;
+                  background: linear-gradient(135deg, #ff6b6b, #ff8e72);
+                  border-radius: 10px;
+                  text-align: center;
+                  color: white;
+                  margin: 10px;
+                  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+                  animation: pulse 1s infinite;
+                "
+              >
+                <h5 style="margin: 0 0 5px 0; font-size: 16px">
+                  <i
+                    class="fas fa-rocket"
+                    style="font-size: 1.2rem; margin-right: 5px"
+                  ></i>
+                  퀴즈 시작!
+                </h5>
+                <p
+                  id="countdownMessage"
+                  style="font-size: 14px; opacity: 0.95; margin: 0"
+                >
+                  <span id="secondsText">5초</span> 안에 이동합니다
+                </p>
+              </div>
 
-					<!-- 입력 영역 -->
-					<div class="card-footer p-2 bg-light">
-						<form class="input-group mt-2" onsubmit="sendMessage(); return false;">
-							<input id="chat-input" type="text" class="form-control mr-2" placeholder="메시지 입력"
-								autocomplete="off" />
-							<button class="btn btn-warning font-weight-bold" type="submit">입력</button>
-						</form>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+              <!-- 채팅 메시지 영역 -->
+              <div
+                class="card-body flex-fill px-2 py-2"
+                id="messages"
+                style="overflow-y: auto; height: 200px"
+              ></div>
 
-	<!-- 하단 버튼 -->
-	<div class="col text-left vote-btn-container">
-		<button id="voteBtn" class="btn btn-danger btn-lg mr-2" style="display:none;" onclick="openCreateVoteModal()">
-			<i class="fas fa-poll"></i> 투표 시작
-		</button>
-		<button id="selectQuizBtn" class="btn btn-warning btn-lg mr-2" style="display:none;"
-			onclick="openSelectQuizModal()">
-			<i class="fas fa-book-open"></i> 퀴즈 선택
-		</button>
-		<button id="teamSelectBtn" class="btn btn-secondary btn-lg mr-2" onclick="openTeamSelectModal()">
-			<i class="fas fa-users-cog"></i> 팀 선택
-		</button>
-		<button class="btn btn-primary btn-lg font-weight-bold" onclick="toggleReady()" data-ready-btn>
-			<i class="fas fa-hourglass"></i> READY
-		</button>
-	</div>
-	</div>
+              <!-- 입력 영역 -->
+              <div class="card-footer p-2 bg-light">
+                <form
+                  class="input-group mt-2"
+                  onsubmit="
+                    sendMessage();
+                    return false;
+                  "
+                >
+                  <input
+                    id="chat-input"
+                    type="text"
+                    class="form-control mr-2"
+                    placeholder="메시지 입력"
+                    autocomplete="off"
+                  />
+                  <button
+                    class="btn btn-warning font-weight-bold"
+                    type="submit"
+                  >
+                    입력
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-	<!-- 방장용 투표 시작 모달 -->
-	<div class="modal fade" id="createVoteModal" tabindex="-1" role="dialog">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header bg-success text-white">
-					<h5 class="modal-title"><i class="fas fa-poll"></i> 투표 만들기</h5>
-					<button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
-				</div>
-				<div class="modal-body">
-					<div class="form-group">
-						<label for="voteTitle"><strong>투표 제목</strong></label>
-						<input type="text" class="form-control" id="voteTitle" placeholder="예: 게임 규칙 변경에 찬성하나요?"
-							maxlength="100">
-					</div>
-					<div class="form-group">
-						<label for="voteContent"><strong>투표 내용 (선택사항)</strong></label>
-						<textarea class="form-control" id="voteContent" rows="3"
-							placeholder="투표에 대한 자세한 설명을 입력하세요."></textarea>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
-					<button type="button" class="btn btn-danger" onclick="submitVoteCreate()"><i
-							class="fas fa-check"></i> 투표 시작</button>
-				</div>
-			</div>
-		</div>
-	</div>
+      <!-- 하단 버튼 -->
+      <div class="col text-left vote-btn-container">
+        <button
+          id="voteBtn"
+          class="btn btn-danger btn-lg mr-2"
+          style="display: none"
+          onclick="openCreateVoteModal()"
+        >
+          <i class="fas fa-poll"></i> 투표 시작
+        </button>
+        <button
+          id="selectQuizBtn"
+          class="btn btn-warning btn-lg mr-2"
+          style="display: none"
+          onclick="openSelectQuizModal()"
+        >
+          <i class="fas fa-book-open"></i> 퀴즈 선택
+        </button>
+        <button
+          id="teamSelectBtn"
+          class="btn btn-secondary btn-lg mr-2"
+          onclick="openTeamSelectModal()"
+        >
+          <i class="fas fa-users-cog"></i> 팀 선택
+        </button>
+        <button
+          class="btn btn-primary btn-lg font-weight-bold"
+          onclick="toggleReady()"
+          data-ready-btn
+        >
+          <i class="fas fa-hourglass"></i> READY
+        </button>
+      </div>
+    </div>
 
-	<!-- 사용자용 투표 참가 모달 -->
-	<div class="modal fade" id="participateVoteModal" tabindex="-1" role="dialog">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header bg-success text-white">
-					<h5 class="modal-title"><i class="fas fa-poll"></i> 투표</h5>
-					<button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
-				</div>
-				<div class="modal-body">
-					<div id="voteQuestion" class="mb-3">
-						<h6 class="font-weight-bold text-dark"></h6>
-					</div>
-					<div id="voteDescription" class="mb-4 text-muted small"></div>
+    <!-- 방장용 투표 시작 모달 -->
+    <div class="modal fade" id="createVoteModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title"><i class="fas fa-poll"></i> 투표 만들기</h5>
+            <button type="button" class="close text-white" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="voteTitle"><strong>투표 제목</strong></label>
+              <input
+                type="text"
+                class="form-control"
+                id="voteTitle"
+                placeholder="예: 게임 규칙 변경에 찬성하나요?"
+                maxlength="100"
+              />
+            </div>
+            <div class="form-group">
+              <label for="voteContent"
+                ><strong>투표 내용 (선택사항)</strong></label
+              >
+              <textarea
+                class="form-control"
+                id="voteContent"
+                rows="3"
+                placeholder="투표에 대한 자세한 설명을 입력하세요."
+              ></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              onclick="submitVoteCreate()"
+            >
+              <i class="fas fa-check"></i> 투표 시작
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-					<div class="row mb-4">
-						<div class="col-md-6">
-							<button class="btn btn-outline-primary btn-lg btn-block vote-agree-btn"
-								onclick="submitVoteChoice('AGREE')">
-								<i class="fas fa-check-circle"></i><br /><span>찬성</span>
-							</button>
-						</div>
-						<div class="col-md-6">
-							<button class="btn btn-outline-danger btn-lg btn-block vote-disagree-btn"
-								onclick="submitVoteChoice('DISAGREE')">
-								<i class="fas fa-times-circle"></i><br /><span>반대</span>
-							</button>
-						</div>
-					</div>
+    <!-- 사용자용 투표 참가 모달 -->
+    <div
+      class="modal fade"
+      id="participateVoteModal"
+      tabindex="-1"
+      role="dialog"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title"><i class="fas fa-poll"></i> 투표</h5>
+            <button type="button" class="close text-white" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div id="voteQuestion" class="mb-3">
+              <h6 class="font-weight-bold text-dark"></h6>
+            </div>
+            <div id="voteDescription" class="mb-4 text-muted small"></div>
 
-					<div id="voteResults" style="display:none;">
-						<hr>
-						<h6 class="font-weight-bold mb-3">실시간 투표 결과</h6>
-						<div class="mb-3">
-							<div class="d-flex justify-content-between mb-2">
-								<span><i class="fas fa-check-circle text-primary"></i> <strong>찬성</strong></span>
-								<span id="agreeCount" class="badge badge-primary">0표</span>
-							</div>
-							<div class="progress" style="height: 25px;">
-								<div class="progress-bar bg-primary" id="agreeBar" role="progressbar"
-									style="width: 0%;"><span id="agreePercent">0%</span></div>
-							</div>
-						</div>
-						<div class="mb-3">
-							<div class="d-flex justify-content-between mb-2">
-								<span><i class="fas fa-times-circle text-danger"></i> <strong>반대</strong></span>
-								<span id="disagreeCount" class="badge badge-danger">0표</span>
-							</div>
-							<div class="progress" style="height: 25px;">
-								<div class="progress-bar bg-danger" id="disagreeBar" role="progressbar"
-									style="width: 0%;"><span id="disagreePercent">0%</span></div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
-				</div>
-			</div>
-		</div>
-	</div>
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <button
+                  class="btn btn-outline-primary btn-lg btn-block vote-agree-btn"
+                  onclick="submitVoteChoice('AGREE')"
+                >
+                  <i class="fas fa-check-circle"></i><br /><span>찬성</span>
+                </button>
+              </div>
+              <div class="col-md-6">
+                <button
+                  class="btn btn-outline-danger btn-lg btn-block vote-disagree-btn"
+                  onclick="submitVoteChoice('DISAGREE')"
+                >
+                  <i class="fas fa-times-circle"></i><br /><span>반대</span>
+                </button>
+              </div>
+            </div>
 
-	<!-- 팀 선택 모달 -->
-	<div class="modal fade" id="teamSelectModal" tabindex="-1" role="dialog">
-		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header bg-info text-white">
-					<h5 class="modal-title"><i class="fas fa-users"></i> 팀 선택</h5>
-					<button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
-				</div>
-				<div class="modal-body">
-					<div class="form-group mb-4">
-						<label><strong>게임 모드 선택</strong></label>
-						<div class="btn-group btn-group-toggle d-flex" role="group">
-							<label class="btn btn-outline-primary flex-fill">
-								<input type="radio" name="mode" value="INDIVIDUAL" autocomplete="off"> 개인전
-							</label>
-							<label class="btn btn-outline-primary flex-fill">
-								<input type="radio" name="mode" value="TEAM" autocomplete="off"> 단체전
-							</label>
-						</div>
-					</div>
+            <div id="voteResults" style="display: none">
+              <hr />
+              <h6 class="font-weight-bold mb-3">실시간 투표 결과</h6>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                  <span
+                    ><i class="fas fa-check-circle text-primary"></i>
+                    <strong>찬성</strong></span
+                  >
+                  <span id="agreeCount" class="badge badge-primary">0표</span>
+                </div>
+                <div class="progress" style="height: 25px">
+                  <div
+                    class="progress-bar bg-primary"
+                    id="agreeBar"
+                    role="progressbar"
+                    style="width: 0%"
+                  >
+                    <span id="agreePercent">0%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                  <span
+                    ><i class="fas fa-times-circle text-danger"></i>
+                    <strong>반대</strong></span
+                  >
+                  <span id="disagreeCount" class="badge badge-danger">0표</span>
+                </div>
+                <div class="progress" style="height: 25px">
+                  <div
+                    class="progress-bar bg-danger"
+                    id="disagreeBar"
+                    role="progressbar"
+                    style="width: 0%"
+                  >
+                    <span id="disagreePercent">0%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-					<div class="form-group mb-4" id="teamCountDiv" style="display:none;">
-						<label><strong>팀 개수 선택</strong></label>
-						<div class="btn-group btn-group-toggle d-flex" role="group">
-							<label class="btn btn-outline-info flex-fill">
-								<input type="radio" name="teamCount" value="2" autocomplete="off"> 2팀
-							</label>
-							<label class="btn btn-outline-info flex-fill">
-								<input type="radio" name="teamCount" value="3" autocomplete="off"> 3팀
-							</label>
-							<label class="btn btn-outline-info flex-fill">
-								<input type="radio" name="teamCount" value="4" autocomplete="off"> 4팀
-							</label>
-						</div>
-					</div>
+    <!-- 팀 선택 모달 -->
+    <div class="modal fade" id="teamSelectModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-info text-white">
+            <h5 class="modal-title"><i class="fas fa-users"></i> 팀 선택</h5>
+            <button type="button" class="close text-white" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group mb-4">
+              <label><strong>게임 모드 선택</strong></label>
+              <div class="btn-group btn-group-toggle d-flex" role="group">
+                <label class="btn btn-outline-primary flex-fill">
+                  <input
+                    type="radio"
+                    name="mode"
+                    value="INDIVIDUAL"
+                    autocomplete="off"
+                  />
+                  개인전
+                </label>
+                <label class="btn btn-outline-primary flex-fill">
+                  <input
+                    type="radio"
+                    name="mode"
+                    value="TEAM"
+                    autocomplete="off"
+                  />
+                  단체전
+                </label>
+              </div>
+            </div>
 
-					<div id="dragDropArea" style="display:none;">
-						<hr>
-						<h6 class="font-weight-bold mb-3">참가자를 팀으로 배정하세요</h6>
-						<div class="mb-3">
-							<div class="border rounded p-3" style="min-height: 100px; background-color: #f8f9fa;">
-								<div id="unassignedArea" class="d-flex flex-wrap gap-2"></div>
-							</div>
-						</div>
-						<div id="teamsContainer" class="row"></div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
-					<button type="button" class="btn btn-info" onclick="submitTeamAssignment()"><i
-							class="fas fa-check"></i> 저장</button>
-				</div>
-			</div>
-		</div>
-	</div>
+            <div
+              class="form-group mb-4"
+              id="teamCountDiv"
+              style="display: none"
+            >
+              <label><strong>팀 개수 선택</strong></label>
+              <div class="btn-group btn-group-toggle d-flex" role="group">
+                <label class="btn btn-outline-info flex-fill">
+                  <input
+                    type="radio"
+                    name="teamCount"
+                    value="2"
+                    autocomplete="off"
+                  />
+                  2팀
+                </label>
+                <label class="btn btn-outline-info flex-fill">
+                  <input
+                    type="radio"
+                    name="teamCount"
+                    value="3"
+                    autocomplete="off"
+                  />
+                  3팀
+                </label>
+                <label class="btn btn-outline-info flex-fill">
+                  <input
+                    type="radio"
+                    name="teamCount"
+                    value="4"
+                    autocomplete="off"
+                  />
+                  4팀
+                </label>
+              </div>
+            </div>
 
-	<!-- ========== 친구 초대 모달 ========== -->
-	<div class="modal fade" id="inviteFriendModal" tabindex="-1" role="dialog" aria-labelledby="inviteFriendModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="inviteFriendModalLabel">
-						<i class="fas fa-user-plus mr-2"></i>친구 초대
-					</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
+            <div id="dragDropArea" style="display: none">
+              <hr />
+              <h6 class="font-weight-bold mb-3">참가자를 팀으로 배정하세요</h6>
+              <div class="mb-3">
+                <div
+                  class="border rounded p-3"
+                  style="min-height: 100px; background-color: #f8f9fa"
+                >
+                  <div id="unassignedArea" class="d-flex flex-wrap gap-2"></div>
+                </div>
+              </div>
+              <div id="teamsContainer" class="row"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              class="btn btn-info"
+              onclick="submitTeamAssignment()"
+            >
+              <i class="fas fa-check"></i> 저장
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-				<div class="modal-body">
-					<!-- 로딩 스피너 -->
-					<div id="friendLoadingSpinner" class="text-center" style="display: none;">
-						<div class="spinner-border text-primary" role="status">
-							<span class="sr-only">로딩 중...</span>
-						</div>
-						<p class="mt-2 text-muted">친구 목록을 불러오는 중...</p>
-					</div>
+    <!-- ========== 친구 초대 모달 ========== -->
+    <div
+      class="modal fade"
+      id="inviteFriendModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="inviteFriendModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="inviteFriendModalLabel">
+              <i class="fas fa-user-plus mr-2"></i>친구 초대
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
 
-					<!-- 친구 목록 -->
-					<div id="friendListForInvite" style="display: none;">
-						<!-- JavaScript에서 동적으로 생성됨 -->
-					</div>
-				</div>
+          <div class="modal-body">
+            <!-- 로딩 스피너 -->
+            <div
+              id="friendLoadingSpinner"
+              class="text-center"
+              style="display: none"
+            >
+              <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">로딩 중...</span>
+              </div>
+              <p class="mt-2 text-muted">친구 목록을 불러오는 중...</p>
+            </div>
 
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">
-						<i class="fas fa-times mr-1"></i>닫기
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+            <!-- 친구 목록 -->
+            <div id="friendListForInvite" style="display: none">
+              <!-- JavaScript에서 동적으로 생성됨 -->
+            </div>
+          </div>
 
-	<div class="modal fade" id="selectQuizModal" tabindex="-1" role="dialog" aria-labelledby="selectQuizModalLabel"
-		aria-hidden="true">
-		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header bg-warning text-dark">
-					<h5 class="modal-title" id="selectQuizModalLabel">
-						<i class="fas fa-book-open mr-2"></i>퀴즈 선택
-					</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              <i class="fas fa-times mr-1"></i>닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-				<div class="modal-body">
-					<!-- 로딩 스피너 -->
-					<div id="quizLoadingSpinner" class="text-center" style="display: none;">
-						<div class="spinner-border text-warning" role="status">
-							<span class="sr-only">로딩 중...</span>
-						</div>
-						<p class="mt-2 text-muted">퀴즈 목록을 불러오는 중...</p>
-					</div>
+    <div
+      class="modal fade"
+      id="selectQuizModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="selectQuizModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title" id="selectQuizModalLabel">
+              <i class="fas fa-book-open mr-2"></i>퀴즈 선택
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
 
-					<!-- 퀴즈 목록 -->
-					<div id="quizListContainer" style="display: none;">
-						<div class="list-group" id="quizList">
-							<!-- JavaScript에서 동적으로 생성됨 -->
-						</div>
-					</div>
+          <div class="modal-body">
+            <!-- 로딩 스피너 -->
+            <div
+              id="quizLoadingSpinner"
+              class="text-center"
+              style="display: none"
+            >
+              <div class="spinner-border text-warning" role="status">
+                <span class="sr-only">로딩 중...</span>
+              </div>
+              <p class="mt-2 text-muted">퀴즈 목록을 불러오는 중...</p>
+            </div>
 
-					<!-- 빈 상태 -->
-					<div id="emptyQuizState" style="display: none;" class="text-center py-5">
-						<i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
-						<p class="text-muted mt-3">사용 가능한 퀴즈가 없습니다.</p>
-					</div>
-				</div>
+            <!-- 퀴즈 목록 -->
+            <div id="quizListContainer" style="display: none">
+              <div class="list-group" id="quizList">
+                <!-- JavaScript에서 동적으로 생성됨 -->
+              </div>
+            </div>
 
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">
-						<i class="fas fa-times mr-1"></i>닫기
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
+            <!-- 빈 상태 -->
+            <div
+              id="emptyQuizState"
+              style="display: none"
+              class="text-center py-5"
+            >
+              <i class="fas fa-inbox text-muted" style="font-size: 3rem"></i>
+              <p class="text-muted mt-3">사용 가능한 퀴즈가 없습니다.</p>
+            </div>
+          </div>
 
-</body>
-
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              <i class="fas fa-times mr-1"></i>닫기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>

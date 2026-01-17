@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.project.quiz.domain.Participant;
 import com.project.quiz.domain.Room;
+import com.project.quiz.domain.User;
+import com.project.quiz.dto.GuestUserDto;
 import com.project.quiz.dto.QuizDto;
 import com.project.quiz.dto.QuizSubmitRequest;
 import com.project.quiz.dto.UserRank;
@@ -24,6 +26,8 @@ import com.project.quiz.service.QuizService;
 import com.project.quiz.service.QuizSubmitService;
 import com.project.quiz.service.RoomQuizService;
 import com.project.quiz.service.RoomService;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class RoomQuizController {
@@ -59,7 +63,8 @@ public class RoomQuizController {
 	private final Map<String, Integer> roomQuestionCallCount = new ConcurrentHashMap<>();
 
 	@GetMapping("/quiz/{roomCode}")
-	public String showQuiz(@PathVariable("roomCode") String roomCode, Model model, java.security.Principal principal) {
+	public String showQuiz(@PathVariable("roomCode") String roomCode, Model model, java.security.Principal principal,
+			HttpSession session) {
 		try {
 			Room room = roomService.getRoomByCode(roomCode);
 			if (room == null) {
@@ -76,13 +81,30 @@ public class RoomQuizController {
 				return "redirect:/waitroom/" + roomCode;
 			}
 
-			// 1. 현재 사용자 닉네임을 순위표에 미리 등록 (0점)
+			// ✅ effectiveUserId 계산 추가!
+			Long effectiveUserId = null;
+			GuestUserDto guestUser = (GuestUserDto) session.getAttribute("guestUser");
+
 			if (principal != null) {
-				userRepository.findByEmail(principal.getName()).ifPresent(user -> {
+				Optional<User> userOpt = userRepository.findByEmail(principal.getName());
+				if (userOpt.isPresent()) {
+					User user = userOpt.get();
 					model.addAttribute("currentUser", user);
-					// 방별 점수판에 유저 등록 (없으면 생성)
-					roomScores.computeIfAbsent(roomCode, k -> new ConcurrentHashMap<>()).putIfAbsent(user.getId(), 0);
-				});
+					effectiveUserId = user.getId();
+				}
+			} else if (guestUser != null) {
+				effectiveUserId = (long) guestUser.getGuestId().hashCode();
+				System.out.println("🆔 퀴즈 게스트 effectiveUserId: " + effectiveUserId);
+			}
+
+			model.addAttribute("effectiveUserId", effectiveUserId); // ✅ HTML에 전달!
+
+			// ✅ 모든 참가자 점수 0으로 초기화 (회원 + 게스트)
+			List<Participant> participants = participantService.findByRoom(room);
+			for (Participant p : participants) {
+				Long pId = p.getUser() != null ? p.getUser().getId() : (long) p.getGuestId().hashCode();
+				roomScores.computeIfAbsent(roomCode, k -> new ConcurrentHashMap<>()).put(pId, 0);
+				System.out.println("📊 초기 점수 설정: " + p.getNickname() + " (ID=" + pId + ") = 0점");
 			}
 
 			model.addAttribute("roomCode", roomCode);
@@ -92,7 +114,6 @@ public class RoomQuizController {
 			if (!roomCurrentQuestionIndex.containsKey(roomCode)) {
 				roomCurrentQuestionIndex.put(roomCode, -1);
 			}
-
 			if (!roomSubmittedUsers.containsKey(roomCode)) {
 				roomSubmittedUsers.put(roomCode, Collections.synchronizedSet(new HashSet<>()));
 			}
@@ -103,11 +124,15 @@ public class RoomQuizController {
 			System.err.println("❌ 퀴즈 진입 에러: " + e.getMessage());
 			e.printStackTrace();
 			return "redirect:/waitroom/" + roomCode;
-		} // <-- 여기서 try-catch가 정확히 닫혀야 합니다.
+		}
 	}
 
 	// 문제를 로드하고 브로드캐스트하는 메서드
 	private void loadAndBroadcastQuestion(String roomCode, QuizDto quiz, int questionIndex) {
+		System.out.println("🔴 loadAndBroadcastQuestion 호출: roomCode=" + roomCode + ", questionIndex=" + questionIndex);
+		System.out.println("   quiz: " + (quiz != null ? quiz.getTitle() : "NULL"));
+		System.out.println("   questions.size: "
+				+ (quiz != null && quiz.getQuestions() != null ? quiz.getQuestions().size() : "NULL"));
 		List<QuizDto.QuestionDto> questions = quiz.getQuestions();
 
 		// ⭐ 모든 문제를 다 풀었을 때
@@ -261,7 +286,7 @@ public class RoomQuizController {
 			boolean correct = false;
 
 			if (q.getQuizTypeCode() == 2) {
-				// 객관식
+				// ✅ 객관식
 				System.out.println("🔍 객관식 검증");
 				System.out.println(
 						"   선택한 답: " + selectedOption + " (타입: " + selectedOption.getClass().getSimpleName() + ")");
@@ -269,7 +294,6 @@ public class RoomQuizController {
 						+ q.getAnswerOption().getClass().getSimpleName() + ")");
 
 				if (q.getAnswerOption() != null) {
-					// ✅ String을 Integer로 변환해서 비교
 					try {
 						Integer answerAsInt = Integer.parseInt(q.getAnswerOption());
 						correct = answerAsInt.equals(selectedOption);
@@ -277,8 +301,18 @@ public class RoomQuizController {
 					} catch (NumberFormatException e) {
 						System.out.println("   ⚠️ 정답 변환 실패: " + q.getAnswerOption());
 					}
+				}
+			} else if (q.getQuizTypeCode() == 1) {
+				// ✅ 서술형 (answerText 정답 사용!)
+				System.out.println("🔍 서술형 검증");
+				System.out.println("   입력한 답: " + textAnswer);
+				System.out.println("   정답: " + q.getSubjectiveAnswer()); // ← getAnswerOption() 아니라 getAnswerText()!
+
+				if (q.getSubjectiveAnswer() != null && textAnswer != null) {
+					correct = textAnswer.trim().equalsIgnoreCase(q.getSubjectiveAnswer().trim());
+					System.out.println("   결과: " + (correct ? "✅ 정답" : "❌ 오답"));
 				} else {
-					System.out.println("   ⚠️ 정답이 없습니다!");
+					System.out.println("   ⚠️ 정답 또는 입력값 없음");
 				}
 			}
 
@@ -296,11 +330,20 @@ public class RoomQuizController {
 				System.out.println("❌ 오답: userId=" + userId);
 			}
 
-			// 나머지 기존 코드...
-			messagingTemplate.convertAndSend("/topic/quiz/" + roomCode, Map.of("type", "ANSWER_RESULT", "userId",
-					userId, "isCorrect", correct, "ranking", recalculateRanking(roomCode)));
+			// ✅ 실시간 순위 갱신 (매 답변마다!)
+			List<UserRank> currentRanking = recalculateRanking(roomCode);
+			Map<String, Object> rankingData = new HashMap<>();
+			rankingData.put("type", "RANKING");
+			rankingData.put("ranking", currentRanking);
+			System.out.println("📊 [실시간 순위 전송] " + roomCode + ": " + currentRanking);
+			messagingTemplate.convertAndSend("/topic/quiz/" + roomCode, rankingData);
 
-			int totalPlayers = roomScores.getOrDefault(roomCode, new HashMap<>()).size();
+			// ANSWER_RESULT (선택사항 - 정답/오답 표시)
+			messagingTemplate.convertAndSend("/topic/quiz/" + roomCode,
+					Map.of("type", "ANSWER_RESULT", "userId", userId, "isCorrect", correct));
+
+			List<Participant> participants = participantService.findByRoom(room);
+			int totalPlayers = participants.size();
 			int submittedCount = submitted.size();
 
 			System.out.println("📊 제출 현황 [" + roomCode + "]: " + submittedCount + "/" + totalPlayers);
@@ -337,27 +380,50 @@ public class RoomQuizController {
 		List<Map.Entry<Long, Integer>> sortedScores = scores.entrySet().stream()
 				.sorted((a, b) -> b.getValue().compareTo(a.getValue())).collect(Collectors.toList());
 
+		// ⭐ 방 참가자 목록 (회원 + 게스트)
+		Room room = roomService.getRoomByCode(roomCode);
+		List<Participant> participants = participantService.findByRoom(room);
+
 		List<UserRank> ranking = new ArrayList<>();
 		int rank = 1;
 
 		for (Map.Entry<Long, Integer> entry : sortedScores) {
-			Long userId = entry.getKey();
+			Long keyId = entry.getKey(); // 회원이면 userId, 게스트면 hashId
 
-			// ⭐ User 엔티티를 찾으면 연관된 UserProfile도 자동으로 따라옵니다.
-			String realNickname = userRepository.findById(userId).map(user -> {
+			String nickname;
+
+			// 1) 회원 먼저 시도
+			var userOpt = userRepository.findById(keyId);
+			if (userOpt.isPresent()) {
+				var user = userOpt.get();
 				if (user.getUserProfile() != null) {
-					return user.getUserProfile().getUsername(); // 프로필의 진짜 이름
+					nickname = user.getUserProfile().getUsername();
+				} else {
+					nickname = "이름없음(" + keyId + ")";
 				}
-				return "이름없음(" + userId + ")";
-			}).orElse("알수없음");
+			} else {
+				// 2) DB에 없으면 게스트라고 보고, Participant에서 찾기
+				Participant guestP = participants.stream().filter(p -> p.getUser() == null) // 회원 아닌 참가자
+						.filter(p -> {
+							Long guestHash = (long) p.getGuestId().hashCode();
+							return guestHash.equals(keyId);
+						}).findFirst().orElse(null);
+
+				if (guestP != null) {
+					nickname = guestP.getNickname(); // ✅ 게스트 닉네임
+				} else {
+					nickname = "알수없음";
+				}
+			}
 
 			UserRank userRank = new UserRank();
-			userRank.setUserId(userId);
-			userRank.setNickname(realNickname);
+			userRank.setUserId(keyId);
+			userRank.setNickname(nickname);
 			userRank.setScore(entry.getValue());
 			userRank.setRank(rank++);
 			ranking.add(userRank);
 		}
+
 		return ranking;
 	}
 
