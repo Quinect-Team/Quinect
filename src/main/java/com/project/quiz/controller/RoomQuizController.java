@@ -217,7 +217,7 @@ public class RoomQuizController {
 		System.out.println("🔔 nextQuestion 호출: " + callCount + "/" + totalPlayers);
 
 		// ✅ 첫 번째 호출일 때만 문제 로드!
-		if (callCount == 1) { // ← 이렇게 간단히!
+		if (callCount == 1) {
 			int currentIndex = roomCurrentQuestionIndex.getOrDefault(roomCode, -1);
 			int nextIndex = currentIndex + 1;
 

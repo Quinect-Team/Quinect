@@ -307,13 +307,20 @@
 		            else if (data.type === 'RANKING') displayRanking(data.ranking);
 		            else if (data.type === 'FINISH') finishQuiz();
 		        });
-				var storageKey = 'quiz_started_' + roomCode;
-				if (localStorage.getItem(storageKey) !== 'true') {
-				    localStorage.setItem(storageKey, 'true');
-				    stompClient.send('/app/quiz/next-question/' + roomCode, {}, {});
-				}
+
+		        // ✅ userId 기반 (각 사용자별 한 번만 호출)
+		        var userStorageKey = 'quiz_started_' + roomCode + '_' + userId;
+		        if (!sessionStorage.getItem(userStorageKey)) {
+		            sessionStorage.setItem(userStorageKey, 'true');
+		            console.log('📤 nextQuestion 호출 (userId=' + userId + ')');
+		            stompClient.send('/app/quiz/next-question/' + roomCode, {}, {});
+		        } else {
+		            console.log('⏭️ 이미 호출함 (userId=' + userId + ')');
+		        }
 		    });
 		}
+
+
 
 		function displayQuestion(question) {
 			currentQuestionData = question;
