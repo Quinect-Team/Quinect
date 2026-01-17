@@ -1,6 +1,15 @@
 package com.project.quiz.controller;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -18,10 +27,13 @@ import com.project.quiz.domain.Room;
 import com.project.quiz.domain.User;
 import com.project.quiz.dto.GuestUserDto;
 import com.project.quiz.dto.QuizDto;
-import com.project.quiz.dto.QuizSubmitRequest;
 import com.project.quiz.dto.UserRank;
+import com.project.quiz.repository.QuizRepository;
+import com.project.quiz.repository.QuizSubmissionRepository;
+import com.project.quiz.repository.UserActivityLogRepository;
 import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.ParticipantService;
+import com.project.quiz.service.PointService;
 import com.project.quiz.service.QuizService;
 import com.project.quiz.service.QuizSubmitService;
 import com.project.quiz.service.RoomQuizService;
@@ -53,6 +65,18 @@ public class RoomQuizController {
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
 
+	@Autowired
+	private PointService pointService;
+
+	@Autowired
+	private UserActivityLogRepository userActivityLogRepository;
+
+	@Autowired
+	private QuizSubmissionRepository quizSubmissionRepository;
+
+	@Autowired
+	private QuizRepository quizRepository;
+
 	// 현재 문제 상태 관리 (roomCode -> questionIndex)
 	private final Map<String, Integer> roomCurrentQuestionIndex = new ConcurrentHashMap<>();
 
@@ -61,6 +85,8 @@ public class RoomQuizController {
 	private final Map<String, Map<Long, Integer>> roomScores = new ConcurrentHashMap<>();
 
 	private final Map<String, Integer> roomQuestionCallCount = new ConcurrentHashMap<>();
+	
+	private final Map<String, Map<Long, Set<Long>>> roomUserCorrectQuestions = new ConcurrentHashMap<>();
 
 	@GetMapping("/quiz/{roomCode}")
 	public String showQuiz(@PathVariable("roomCode") String roomCode, Model model, java.security.Principal principal,
@@ -129,33 +155,38 @@ public class RoomQuizController {
 
 	// 문제를 로드하고 브로드캐스트하는 메서드
 	private void loadAndBroadcastQuestion(String roomCode, QuizDto quiz, int questionIndex) {
-		System.out.println("🔴 loadAndBroadcastQuestion 호출: roomCode=" + roomCode + ", questionIndex=" + questionIndex);
-		System.out.println("   quiz: " + (quiz != null ? quiz.getTitle() : "NULL"));
-		System.out.println("   questions.size: "
-				+ (quiz != null && quiz.getQuestions() != null ? quiz.getQuestions().size() : "NULL"));
-		List<QuizDto.QuestionDto> questions = quiz.getQuestions();
+	    List<QuizDto.QuestionDto> questions = quiz.getQuestions();
 
-		// ⭐ 모든 문제를 다 풀었을 때
-		if (questionIndex >= questions.size()) {
+	    // [게임 종료 조건]
+	    if (questionIndex >= questions.size()) {
+	        
+	        // 1. 순위 계산
+	        List<UserRank> finalRanking = recalculateRanking(roomCode);
+	        Room room = roomService.getRoomByCode(roomCode);
+	        
+	        Map<Long, Set<Long>> correctQuestions = roomUserCorrectQuestions.getOrDefault(roomCode, new HashMap<>());
+	        
+	        // 2. 결과 저장 (Participant 테이블)
+	        participantService.saveQuizResults(room, finalRanking);
 
-			// ✅ 최종 순위 계산
-			List<UserRank> finalRanking = recalculateRanking(roomCode);
+	        // ⭐ 3. [수정됨] 보상 및 기록 저장 (서비스로 위임하여 트랜잭션 보장)
+	        try {
+	            // Service에 새로 만든 메서드 호출
+	        	participantService.processQuizRewards(room, finalRanking, quiz.getQuizId(), correctQuestions);
+	            System.out.println("💰 보상 지급 및 DB 저장 완료");
+	        } catch (Exception e) {
+	            System.err.println("❌ 보상 지급 중 에러 발생: " + e.getMessage());
+	            e.printStackTrace();
+	        }
 
-			// ✅ 방 조회
-			Room room = roomService.getRoomByCode(roomCode);
+	        // 4. 종료 신호 전송
+	        Map<String, Object> finishSignal = new HashMap<>();
+	        finishSignal.put("type", "FINISH");
+	        finishSignal.put("ranking", finalRanking);
+	        messagingTemplate.convertAndSend("/topic/quiz/" + roomCode, finishSignal);
 
-			// ✅ DB에 저장
-			participantService.saveQuizResults(room, finalRanking);
-
-			// 클라이언트에 FINISH 신호 전송
-			Map<String, Object> finishSignal = new HashMap<>();
-			finishSignal.put("type", "FINISH");
-			finishSignal.put("ranking", finalRanking);
-
-			messagingTemplate.convertAndSend("/topic/quiz/" + roomCode, finishSignal);
-
-			return;
-		}
+	        return;
+	    }
 
 		// ⭐ 나머지 기존 코드 (변경 없음)
 		QuizDto.QuestionDto question = questions.get(questionIndex);
@@ -251,15 +282,14 @@ public class RoomQuizController {
 			int questionIndex = roomCurrentQuestionIndex.get(roomCode);
 			Long questionId = quiz.getQuestions().get(questionIndex).getQuestionId(); // ✅ 실제 questionId!
 
-			// ⭐ 2. QuizSubmitService 호출
-			QuizSubmitRequest request = new QuizSubmitRequest();
-			request.setUserId(userId);
-			QuizSubmitRequest.AnswerRequest ar = new QuizSubmitRequest.AnswerRequest();
-			ar.setQuestionId(questionId); // ✅ 실제 questionId 사용!
-			ar.setSelectedOption(selectedOption);
-			ar.setAnswerText(textAnswer);
-			request.setAnswers(List.of(ar));
-			quizSubmitService.submit(quizId, request);
+			/*
+			 * QuizSubmitRequest request = new QuizSubmitRequest();
+			 * request.setUserId(userId); QuizSubmitRequest.AnswerRequest ar = new
+			 * QuizSubmitRequest.AnswerRequest(); ar.setQuestionId(questionId); // ✅ 실제
+			 * questionId 사용! ar.setSelectedOption(selectedOption);
+			 * ar.setAnswerText(textAnswer); request.setAnswers(List.of(ar));
+			 * quizSubmitService.submit(quizId, request);
+			 */
 
 			System.out.println("✅ DB 저장: questionId=" + questionId);
 
@@ -326,6 +356,11 @@ public class RoomQuizController {
 
 				Integer currentScore = roomScores.get(roomCode).get(userId);
 				System.out.println("📊 누적 점수: userId=" + userId + ", score=" + currentScore);
+				
+				roomUserCorrectQuestions
+                .computeIfAbsent(roomCode, k -> new ConcurrentHashMap<>())
+                .computeIfAbsent(userId, k -> new HashSet<>())
+                .add(questionId);
 			} else {
 				System.out.println("❌ 오답: userId=" + userId);
 			}

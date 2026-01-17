@@ -109,7 +109,7 @@ public class QuizGradingService {
 			// 1️⃣ [타임라인] 활동 로그 기록 (ActivityType: "QUIZ")
 			// TimelineService가 이 로그를 읽어서 타임라인에 표시함 [cite: 1050, 1053]
 			UserActivityLog activityLog = UserActivityLog.builder().user(user).activityType("QUIZ")
-					.description(user.getUserProfile().getUsername() + "님이 [" + quizTitle + "] 퀴즈를 풀었습니다.")
+					.description(user.getUserProfile().getUsername() + "님이 [" + quizTitle + "] 퀴즈를 완료했습니다.")
 					.createdAt(LocalDateTime.now()).build();
 			logRepository.save(activityLog);
 

@@ -11,7 +11,8 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, String
 
 	Optional<UserProfile> findByUserId(Long userId);
 
-	@Query("SELECT up FROM UserProfile up " + "ORDER BY up.pointBalance DESC, up.user.id ASC " + "LIMIT 10")
+	@Query("SELECT up FROM UserProfile up " + "WHERE up.user.id <> 1 " // userid = 1은 관리자 계정이므로 제외함
+			+ "ORDER BY up.pointBalance DESC, up.user.id ASC " + "LIMIT 10")
 	List<UserProfile> findTopByPointBalance();
 
 }

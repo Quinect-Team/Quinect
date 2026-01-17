@@ -92,7 +92,7 @@ function checkProfileChanges() {
 		} else if (length > 16.5) {
 			isNicknameValid = false;
 			nicknameInput.addClass("is-invalid");
-			msgBox.text("닉네임이 너무 깁니다! (" + length + "/16.5)").css("color", "red");
+			msgBox.text("닉네임이 너무 깁니다!").css("color", "red");
 		} else {
 			// ⭐ [핵심] 통과했을 때 명시적으로 true 설정 및 UI 초기화
 			isNicknameValid = true;
