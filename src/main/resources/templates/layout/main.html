@@ -126,68 +126,70 @@
 
 		<!-- Area Chart -->
 		<div class="col-xl-8 col-lg-7">
-			<div class="card shadow mb-4">
-				<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-					<h6 class="m-0 font-weight-bold text-success">🏆 전체 순위</h6>
-				</div>
-				<div class="card-body">
-					<div class="table-responsive">
-						<table class="table table-hover">
-							<thead>
-								<tr style="background-color: #f8f9fc;">
-									<th style="width: 10%;">순위</th>
-									<th style="width: 50%;">닉네임</th>
-									<th style="width: 40%; text-align: right;">총 점수</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr th:each="userProfile, iter : ${topUsers}"
-									th:style="${iter.count == 1} ? 'background-color: #fff3cd; font-weight: bold;' : ''">
-									<td>
-										<span class="badge"
-											th:classappend="${iter.count == 1} ? 'badge-warning' : 'badge-light'"
-											th:text="${iter.count}"></span>
-									</td>
-									<td>
-										<i class="fas"
-											th:classappend="${iter.count == 1} ? 'fa-crown text-warning' : (${iter.count == 2} ? 'fa-medal text-secondary' : 'fa-user-circle text-gray-400')"
-											style="margin-right: 8px;"></i>
-										<strong th:text="${userProfile.username}"></strong>
-									</td>
-									<td style="text-align: right;">
-										<span class="text-primary font-weight-bold"
-											th:text="${#numbers.formatInteger(userProfile.pointBalance, 0, 'COMMA')} + '점'"></span>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
+		    <div class="card shadow mb-4 h-100">  <!-- ✅ h-100 추가 -->
+		        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+		            <h6 class="m-0 font-weight-bold text-success">🏆 전체 순위</h6>
+		        </div>
+		        <div class="card-body d-flex flex-column">  <!-- ✅ d-flex flex-column 추가 -->
+		            <div class="chart-area flex-grow-1">  <!-- ✅ flex-grow-1 추가 -->
+		                <div class="table-responsive">
+		                    <table class="table table-hover">
+		                        <thead>
+		                            <tr style="background-color: #f8f9fc;">
+		                                <th style="width: 10%;">순위</th>
+		                                <th style="width: 50%;">닉네임</th>
+		                                <th style="width: 40%; text-align: right;">총 점수</th>
+		                            </tr>
+		                        </thead>
+		                        <tbody>
+		                            <tr th:each="userProfile, iter : ${topUsers}" 
+		                                th:style="${iter.count == 1} ? 'background-color: #fff3cd; font-weight: bold;' : ''">
+		                                <td>
+		                                    <span class="badge" 
+		                                          th:classappend="${iter.count == 1} ? 'badge-warning' : 'badge-light'"
+		                                          th:text="${iter.count}"></span>
+		                                </td>
+		                                <td>
+		                                    <i class="fas" 
+		                                       th:classappend="${iter.count == 1} ? 'fa-crown text-warning' : (${iter.count == 2} ? 'fa-medal text-secondary' : 'fa-user-circle text-gray-400')"
+		                                       style="margin-right: 8px;"></i>
+		                                    <strong th:text="${userProfile.username}"></strong>
+		                                </td>
+		                                <td style="text-align: right;">
+		                                    <span class="text-primary font-weight-bold" 
+		                                          th:text="${#numbers.formatInteger(userProfile.pointBalance, 0, 'COMMA')} + '점'"></span>
+		                                </td>
+		                            </tr>
+		                        </tbody>
+		                    </table>
+		                </div>
+		            </div>
+		        </div>
+		    </div>
 		</div>
 
 		<!-- Pie Chart -->
 		<div class="col-xl-4 col-lg-5">
-			<div class="card shadow mb-4">
-				<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-					<h6 class="m-0 font-weight-bold text-success">📊 내 정답률</h6>
-				</div>
-				<div class="card-body">
-					<div class="chart-pie pt-4 pb-2">
-						<canvas id="myPieChart"></canvas>
-					</div>
-					<div class="mt-4 text-center small">
-						<span class="mr-3">
-							<i class="fas fa-circle text-success"></i>
-							정답 <strong th:text="${correctCount}">0</strong>개
-						</span>
-						<span>
-							<i class="fas fa-circle text-danger"></i>
-							오답 <strong th:text="${wrongCount}">0</strong>개
-						</span>
-					</div>
-				</div>
-			</div>
+		    <div class="card shadow mb-4 h-100">  <!-- ✅ h-100 추가 -->
+		        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+		            <h6 class="m-0 font-weight-bold text-success">📊 내 정답률</h6>
+		        </div>
+		        <div class="card-body d-flex flex-column">  <!-- ✅ d-flex flex-column 추가 -->
+		            <div class="chart-area flex-grow-1">  <!-- ✅ flex-grow-1 추가 -->
+		                <canvas id="myPieChart"></canvas>
+		            </div>
+		            <div class="mt-4 text-center small">
+		                <span class="mr-3">
+		                    <i class="fas fa-circle text-success"></i> 
+		                    정답 <strong th:text="${correctCount}">0</strong>개
+		                </span>
+		                <span>
+		                    <i class="fas fa-circle text-danger"></i>
+		                    오답 <strong th:text="${wrongCount}">0</strong>개
+		                </span>
+		            </div>
+		        </div>
+		    </div>
 		</div>
 	</div>
 </div>

@@ -298,17 +298,21 @@
 		}
 
 		function connectWebSocket() {
-			var socket = new SockJS('/ws');
-			stompClient = Stomp.over(socket);
-			stompClient.connect({}, function (frame) {
-				stompClient.subscribe('/topic/quiz/' + roomCode, function (message) {
-					var data = JSON.parse(message.body);
-					if (data.type === 'QUESTION') displayQuestion(data);
-					else if (data.type === 'RANKING') displayRanking(data.ranking);
-					else if (data.type === 'FINISH') finishQuiz();
-				});
-				stompClient.send('/app/quiz/next-question/' + roomCode, {}, {});
-			});
+		    var socket = new SockJS('/ws');
+		    stompClient = Stomp.over(socket);
+		    stompClient.connect({}, function(frame) {
+		        stompClient.subscribe('/topic/quiz/' + roomCode, function(message) {
+		            var data = JSON.parse(message.body);
+		            if (data.type === 'QUESTION') displayQuestion(data);
+		            else if (data.type === 'RANKING') displayRanking(data.ranking);
+		            else if (data.type === 'FINISH') finishQuiz();
+		        });
+				var storageKey = 'quiz_started_' + roomCode;
+				if (localStorage.getItem(storageKey) !== 'true') {
+				    localStorage.setItem(storageKey, 'true');
+				    stompClient.send('/app/quiz/next-question/' + roomCode, {}, {});
+				}
+		    });
 		}
 
 		function displayQuestion(question) {

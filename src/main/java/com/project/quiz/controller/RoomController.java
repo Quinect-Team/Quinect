@@ -123,11 +123,18 @@ public class RoomController {
 
 		participantService.joinRoomIfNotExists(room, user, guestId, nickname, avatarUrl);
 
+		List<?> participants = participantService.findByRoom(room);
+		Map<String, Object> message = new HashMap<>();
+		message.put("type", "PARTICIPANTUPDATE");
+		message.put("participants", participants);
+		messagingTemplate.convertAndSend("/topic/participants/" + roomCode, message);
+
 		model.addAttribute("room", room);
 		model.addAttribute("participants", participantService.findByRoom(room));
 		model.addAttribute("guestNickname", nickname);
 		model.addAttribute("guestAvatarUrl", avatarUrl);
 		model.addAttribute("currentUser", user);
+		model.addAttribute("guestId", guestId);
 
 		boolean isRoomMaster = (user != null && room.getHostUserId().equals(user.getId()));
 		model.addAttribute("isRoomMaster", isRoomMaster);
@@ -225,11 +232,9 @@ public class RoomController {
 	public Map<String, Object> handleReadyStatus(@DestinationVariable("roomCode") String roomCode,
 			Map<String, Object> readyData) {
 
-		// 1. userId, isReady 추출
 		Long userId = ((Number) readyData.get("userId")).longValue();
 		boolean isReady = (Boolean) readyData.get("isReady");
 
-		// 2. 서버 메모리에 상태 저장
 		roomReadyStatus.computeIfAbsent(roomCode, k -> new ConcurrentHashMap<>()).put(userId, isReady);
 
 		System.out
@@ -242,8 +247,14 @@ public class RoomController {
 			var readyMap = roomReadyStatus.get(roomCode);
 
 			boolean allReady = true;
+
+			// ✅ 인라인으로 처리 (엔티티 수정 없음!)
 			for (var p : participants) {
-				Long pId = p.getUser().getId();
+				// ✅ 게스트와 회원 모두 처리
+				Long pId = (p.getUser() != null) ? p.getUser().getId() : Long.valueOf(p.getGuestId().hashCode());
+
+				System.out.println("참가자: " + p.getNickname() + ", pId: " + pId + ", ready: " + readyMap.get(pId));
+
 				if (!Boolean.TRUE.equals(readyMap.get(pId))) {
 					allReady = false;
 					break;
@@ -252,27 +263,27 @@ public class RoomController {
 
 			System.out.println("Room " + roomCode + " allReady: " + allReady);
 
-			// 3. 모두 READY면 QUIZ_START 신호 전송
+			// 모두 READY면 퀴즈 시작
 			if (allReady) {
 				Long quizId = roomQuizService.getLatestQuizIdByRoom(room.getId());
 				if (quizId != null) {
 					Map<String, Object> startSignal = new HashMap<>();
-					startSignal.put("type", "QUIZ_START"); // ← 중요!
+					startSignal.put("type", "QUIZ_START");
 					startSignal.put("quizId", quizId);
-					startSignal.put("countdown", 5); // 5초 카운트다운
+					startSignal.put("countdown", 5);
 
 					System.out.println("🚀 QUIZ_START 신호 전송: " + roomCode);
 					messagingTemplate.convertAndSend("/topic/ready/" + roomCode, startSignal);
-
 				} else {
 					System.out.println("❌ 퀴즈가 선택되지 않았습니다");
 				}
 			}
 		}
 
-		// 5. 기존 READY 데이터도 브로드캐스트 (UI 업데이트용)
 		return readyData;
 	}
+
+	// ✅ getParticipantId() 메서드 삭제!
 
 	/**
 	 * 친구를 대기방으로 초대 (email 사용)
@@ -301,13 +312,20 @@ public class RoomController {
 				return response;
 			}
 
-			System.out.println("✅ 친구 초대 - roomCode: " + roomCode + ", email: " + friendEmail);
-
 			// 3. 참가자 추가 (중복 제거)
 			participantService.joinRoomIfNotExists(room, invitedUser, null,
 					invitedUser.getUserProfile() != null ? invitedUser.getUserProfile().getUsername()
 							: invitedUser.getEmail(),
 					invitedUser.getUserProfile() != null ? invitedUser.getUserProfile().getProfileImage() : null);
+
+			List<?> participants = participantService.findByRoom(room);
+			Map<String, Object> wsMessage = new HashMap<>();
+			wsMessage.put("type", "PARTICIPANTUPDATE");
+			wsMessage.put("participants", participants);
+			messagingTemplate.convertAndSend("/topic/participants/" + roomCode, wsMessage);
+
+			response.put("success", true);
+			System.out.println("✅ 친구 초대 성공 - roomCode: " + roomCode + ", email: " + friendEmail);
 
 		} catch (Exception e) {
 			System.err.println("❌ 친구 초대 실패: " + e.getMessage());

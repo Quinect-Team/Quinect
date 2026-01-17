@@ -83,23 +83,62 @@ function initWebSocket() {
 		});
 
 		// 참가자 업데이트 구독에서 시스템 메시지 완전 제거
+		// WebSocket으로 새 참가자 정보 받음
 		stompClient.subscribe('/topic/participants/' + roomCode, function(message) {
 			var data = JSON.parse(message.body);
-			if (data.type === 'PARTICIPANT_UPDATE') {
-				console.log('참가자 업데이트:', data.participants.length, '명');
+			if (data.type === 'PARTICIPANTUPDATE') {
 
-				// 👇 입장 메시지 완전 삭제! (새로고침 시에도 X)
+				var newParticipants = [];  // ✅ 새로운 참가자 저장
+
+				// ✅ 새로운 참가자 감지
 				data.participants.forEach(function(participant) {
-					if (!initialParticipants.includes(participant.id) && participant.id !== userId) {
+					if (!initialParticipants.includes(participant.id)) {
 						initialParticipants.push(participant.id);
+						newParticipants.push(participant);  // ✅ 새 참가자 목록에 추가
 					}
 				});
 
-				updateParticipantUI(data.participants);
+				// ✅ 새로운 참가자가 있으면 한 번만 UI 업데이트
+				if (newParticipants.length > 0) {
+					updateParticipantUI(data.participants);  // ✅ 모든 참가자로 업데이트
+
+					// ✅ 새로운 참가자마다 개별 알림
+					newParticipants.forEach(function(newParticipant) {
+						displaySystemMessage('시스템', '👋 ' + newParticipant.nickname + '님이 입장하셨습니다!');
+					});
+				}
 			}
 		});
 
+		// ✅ updateParticipantUI는 그대로 사용
+		function updateParticipantUI(participants) {
+			var cardBody = document.querySelector('.card-header.bg-info')?.parentElement?.querySelector('.card-body');
+			if (!cardBody) {
+				console.warn('Participant card body not found');
+				return;
+			}
 
+			participants.forEach(function(participant) {
+				var existingCard = document.querySelector('[data-user-id="' + participant.id + '"]');
+
+				if (!existingCard) {
+					var newCard = document.createElement('div');
+					newCard.className = 'card border-success m-2 text-center';
+					newCard.style.cssText = 'width: 114px; height: 180px; position: relative;';
+					newCard.setAttribute('data-user-id', participant.id);
+
+					newCard.innerHTML = `
+		                <div class="mt-2">
+		                    <img src="${participant.avatarUrl || '/img/default-avatar.png'}" 
+		                         class="rounded-circle mb-2" width="55" height="55" alt="avatar">
+		                </div>
+		                <div class="font-weight-bold text-primary">${participant.nickname}</div>
+		            `;
+
+					cardBody.appendChild(newCard);
+				}
+			});
+		}
 
 		// ✅ 퀴즈 선택 WebSocket 구독 추가
 		stompClient.subscribe('/topic/room/' + roomCode, function(message) {
@@ -162,33 +201,40 @@ function displaySystemMessage(sender, content) {
 function updateParticipantUI(participants) {
 	console.log('Updating participant UI with:', participants);
 
-	var cardBody = document.querySelector('.card.shadow.mb-4 .card-body');
-
+	// ✅ 카드 컨테이너 찾기
+	var cardBody = document.querySelector('.card-header.bg-info').parentElement.querySelector('.card-body');
 	if (!cardBody) {
 		console.warn('Participant card body not found');
 		return;
 	}
 
 	participants.forEach(function(participant) {
+		// ✅ 이미 있는 카드 확인
 		var existingCard = document.querySelector('[data-user-id="' + participant.id + '"]');
 
 		if (!existingCard) {
+			// ✅ 새로운 참가자 카드 생성
 			var newCard = document.createElement('div');
 			newCard.className = 'card border-success m-2 text-center';
 			newCard.style.cssText = 'width: 114px; height: 180px; position: relative;';
 			newCard.setAttribute('data-user-id', participant.id);
 
-			newCard.innerHTML =
-				'<div class="mt-2">' +
-				'<img src="' + (participant.avatarUrl ? participant.avatarUrl : '/img/default-avatar.png') + '" ' +
-				'class="rounded-circle mb-2" width="55" height="55" alt="avatar">' +
-				'</div>' +
-				'<div class="font-weight-bold text-primary">' + participant.nickname + '</div>';
+			newCard.innerHTML = `
+                <div class="mt-2">
+                    <img src="${participant.avatarUrl ? participant.avatarUrl : '/img/default-avatar.png'}" 
+                         class="rounded-circle mb-2" width="55" height="55" alt="avatar">
+                </div>
+                <div class="font-weight-bold text-primary">${participant.nickname}</div>
+            `;
 
 			cardBody.appendChild(newCard);
+
+			// ✅ 입장 알림
+			displaySystemMessage('시스템', '👋 ' + participant.nickname + '님이 입장하셨습니다!');
 		}
 	});
 }
+
 
 function displayMessage(sender, content) {
 	var messagesDiv = document.getElementById('messages');
@@ -1376,7 +1422,19 @@ document.addEventListener('DOMContentLoaded', function() {
 	roomCode = body.getAttribute('data-room-code');
 	username = body.getAttribute('data-guest-nickname');
 	isRoomMaster = body.getAttribute('data-is-room-master') === 'true';
-	userId = parseInt(body.getAttribute('data-user-id') || '0');
+
+	var userIdAttr = body.getAttribute('data-user-id');
+	var guestIdAttr = body.getAttribute('data-guest-id');
+
+	if (guestIdAttr && guestIdAttr !== '') {
+		// ✅ getJavaHashCode() 사용 (Math.abs() 제거!)
+		userId = getJavaHashCode(guestIdAttr);
+		console.log('게스트 userId 계산:', guestIdAttr, '→', userId);
+	} else {
+		// 회원: 직접 사용
+		userId = parseInt(userIdAttr) || 0;
+		console.log('회원 userId:', userId);
+	}
 
 	console.log('Initialized with:', { roomCode, username, isRoomMaster, userId });
 
@@ -1422,3 +1480,15 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	});
 });
+
+// ✅ 이 함수 추가 (맨 아래)
+function getJavaHashCode(str) {
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		const char = str.charCodeAt(i);
+		hash = ((hash << 5) - hash) + char;
+		hash = hash & hash;  // 32-bit signed integer 유지
+	}
+	return hash;  // 음수도 그대로 반환!
+}
+

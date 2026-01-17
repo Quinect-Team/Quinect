@@ -56,6 +56,8 @@ public class RoomQuizController {
 
 	private final Map<String, Map<Long, Integer>> roomScores = new ConcurrentHashMap<>();
 
+	private final Map<String, Integer> roomQuestionCallCount = new ConcurrentHashMap<>();
+
 	@GetMapping("/quiz/{roomCode}")
 	public String showQuiz(@PathVariable("roomCode") String roomCode, Model model, java.security.Principal principal) {
 		try {
@@ -87,8 +89,13 @@ public class RoomQuizController {
 			model.addAttribute("totalQuestions", quiz.getQuestions().size());
 
 			// 2. 상태 초기화
-			roomCurrentQuestionIndex.put(roomCode, -1);
-			roomSubmittedUsers.put(roomCode, Collections.synchronizedSet(new HashSet<>()));
+			if (!roomCurrentQuestionIndex.containsKey(roomCode)) {
+				roomCurrentQuestionIndex.put(roomCode, -1);
+			}
+
+			if (!roomSubmittedUsers.containsKey(roomCode)) {
+				roomSubmittedUsers.put(roomCode, Collections.synchronizedSet(new HashSet<>()));
+			}
 
 			return "quiz";
 
@@ -174,11 +181,34 @@ public class RoomQuizController {
 		if (quiz == null)
 			return;
 
-		int currentIndex = roomCurrentQuestionIndex.getOrDefault(roomCode, -1);
-		int nextIndex = currentIndex + 1;
+		// ✅ 방에 참여한 실제 참가자 수
+		List<Participant> participants = participantService.findByRoom(room);
+		int totalPlayers = participants.size();
 
-		roomCurrentQuestionIndex.put(roomCode, nextIndex);
-		loadAndBroadcastQuestion(roomCode, quiz, nextIndex);
+		// ✅ 호출 횟수 카운트
+		int callCount = roomQuestionCallCount.getOrDefault(roomCode, 0) + 1;
+		roomQuestionCallCount.put(roomCode, callCount);
+
+		System.out.println("🔔 nextQuestion 호출: " + callCount + "/" + totalPlayers);
+
+		// ✅ 첫 번째 호출일 때만 문제 로드!
+		if (callCount == 1) { // ← 이렇게 간단히!
+			int currentIndex = roomCurrentQuestionIndex.getOrDefault(roomCode, -1);
+			int nextIndex = currentIndex + 1;
+
+			System.out.println("✅ 문제 로드: nextIndex=" + nextIndex);
+
+			roomCurrentQuestionIndex.put(roomCode, nextIndex);
+			loadAndBroadcastQuestion(roomCode, quiz, nextIndex);
+		} else {
+			System.out.println("⏭️ 아직 대기 중... (" + callCount + "/" + totalPlayers + ")");
+		}
+
+		// ✅ 모든 참가자가 호출했으면 초기화
+		if (callCount >= totalPlayers) {
+			roomQuestionCallCount.put(roomCode, 0);
+			System.out.println("🔄 카운트 초기화!");
+		}
 	}
 
 	// 답 제출
@@ -189,25 +219,30 @@ public class RoomQuizController {
 			Integer selectedOption = (Integer) data.get("selectedOption");
 			String textAnswer = (String) data.get("textAnswer");
 
-			// ⭐⭐⭐ 1~5단계 추가 (여기!)
-			Long quizId = roomQuizService.getLatestQuizIdByRoom(roomService.getRoomByCode(roomCode).getId());
+			// ⭐ 1. 현재 퀴즈 + 문제 정보 정확히 가져오기
+			Room room = roomService.getRoomByCode(roomCode);
+			Long quizId = roomQuizService.getLatestQuizIdByRoom(room.getId());
+			QuizDto quiz = quizService.getQuizForPlay(quizId); // 전체 퀴즈 로드
+			int questionIndex = roomCurrentQuestionIndex.get(roomCode);
+			Long questionId = quiz.getQuestions().get(questionIndex).getQuestionId(); // ✅ 실제 questionId!
+
+			// ⭐ 2. QuizSubmitService 호출
 			QuizSubmitRequest request = new QuizSubmitRequest();
 			request.setUserId(userId);
 			QuizSubmitRequest.AnswerRequest ar = new QuizSubmitRequest.AnswerRequest();
-			ar.setQuestionId(roomCurrentQuestionIndex.get(roomCode).longValue()); // 현재 문제 ID
+			ar.setQuestionId(questionId); // ✅ 실제 questionId 사용!
 			ar.setSelectedOption(selectedOption);
 			ar.setAnswerText(textAnswer);
 			request.setAnswers(List.of(ar));
-			quizSubmitService.submit(quizId, request); // ✅ DB 저장!
-			// ⭐⭐⭐ 끝!
+			quizSubmitService.submit(quizId, request);
+
+			System.out.println("✅ DB 저장: questionId=" + questionId);
 
 			System.out.println("📤 답변 수신: userId=" + userId + ", option=" + selectedOption + ", text=" + textAnswer);
 
 			// 기존 코드 그대로 유지 (점수 계산, 정답/오답 등)
 			int index = roomCurrentQuestionIndex.get(roomCode);
 
-			Room room = roomService.getRoomByCode(roomCode);
-			QuizDto quiz = quizService.getQuizForPlay(quizId);
 			QuizDto.QuestionDto q = quiz.getQuestions().get(index);
 
 			System.out
