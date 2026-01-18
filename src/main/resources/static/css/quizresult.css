@@ -1,0 +1,62 @@
+body { font-family: 'Fredoka', sans-serif; }
+.result-card { border-radius: 15px; overflow: hidden; background: white; }
+
+/* 메인 레이아웃: 왼쪽(TOP3) / 오른쪽(전체순위) */
+.flex-container { display: flex; gap: 20px; flex-wrap: wrap; }
+.winners-section { flex: 1.2; min-width: 350px; }
+.ranking-table-section { flex: 1; min-width: 350px; }
+
+/* 왼쪽 TOP 3 비주얼 (2등-1등-3등 순서) */
+.podium-container { 
+    display: flex; 
+    justify-content: center; 
+    align-items: flex-end; 
+    gap: 10px; 
+    padding: 40px 10px;
+    background: #f8f9fc;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+.podium-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    flex: 1;
+}
+.podium-card.rank-1 { height: 220px; border-top: 5px solid #f6c23e; }
+.podium-card.rank-2 { height: 180px; border-top: 5px solid #858796; }
+.podium-card.rank-3 { height: 150px; border-top: 5px solid #e74a3b; }
+
+.crown-icon { font-size: 2rem; color: #f6c23e; margin-bottom: 5px; }
+.avatar-circle {
+    width: 50px; height: 50px;
+    background: #e9ecef;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; color: #adb5bd;
+}
+.rank-1 .avatar-circle { width: 70px; height: 70px; background: #fff3cd; color: #f6c23e; }
+
+/* 오른쪽 테이블 스타일 */
+.table thead th { border: none; background: #f8f9fc; color: #4e73df; }
+.rank-badge {
+    width: 28px; height: 28px;
+    background: #4e73df; color: white;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 0.8rem;
+}
+
+/* 하단 버튼 */
+.footer-action {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}

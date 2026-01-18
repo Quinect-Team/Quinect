@@ -264,7 +264,13 @@ public class RoomQuizController {
 		if (callCount >= totalPlayers) {
 			roomQuestionCallCount.put(roomCode, 0);
 			System.out.println("🔄 카운트 초기화!");
+
+			// ⭐ 늦게 온 사람들을 위해 재전송!
+			int currentIndex = roomCurrentQuestionIndex.getOrDefault(roomCode, -1);
+			System.out.println("🔄 재전송: 문제 " + (currentIndex + 1));
+			loadAndBroadcastQuestion(roomCode, quiz, currentIndex);
 		}
+
 	}
 
 	// 답 제출

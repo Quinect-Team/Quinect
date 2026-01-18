@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-	
+
 	private final OAuth2SuccessHandler oAuth2SuccessHandler;
 	private final CustomLoginSuccessHandler customLoginSuccessHandler;
 
@@ -29,7 +29,7 @@ public class SecurityConfig {
 				.requestMatchers("/", "/index", "/login", "/signup/**", "/register", "/api/user/check-email",
 						"/guest/**", "/css/**", "/js/**", "/images/**", "/vendor/**", "/joinroom", "/waitroom/**",
 						"/ws/**", "/forgot/**", "/send", "/verify", "/check", "/reset", "/success", "/img/**",
-						"/quiz/**")
+						"/quiz/**", "/quiz-result/**")
 				.permitAll().requestMatchers("/api/**").authenticated()
 
 				.requestMatchers("/notice/write").hasRole("ADMIN")
@@ -40,8 +40,7 @@ public class SecurityConfig {
 				.anyRequest().authenticated()).formLogin((form) -> form.loginPage("/login") // 로그인 페이지 URL
 						.usernameParameter("email") // HTML 폼의 input name (이메일로 로그인 시)
 						.passwordParameter("password") // HTML 폼의 input name
-						.successHandler(customLoginSuccessHandler)
-						.failureUrl("/login?error").permitAll())
+						.successHandler(customLoginSuccessHandler).failureUrl("/login?error").permitAll())
 
 				.oauth2Login(oauth2 -> oauth2.loginPage("/login")
 						.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
