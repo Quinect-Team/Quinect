@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -26,6 +27,11 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 	    	    left join fetch q.questions
 	    	    where q.quizId = :id
 	    	""")
-	    	Optional<Quiz> findByIdWithQuestions(@Param("id") Long id);
-	
+
+	    Optional<Quiz> findByIdWithQuestions(@Param("id") Long id);
+	    @Modifying
+	    @Query("update Quiz q set q.scorePublic = :scorePublic where q.id = :quizId")
+	    void updateScorePublic(@Param("quizId") Long quizId,
+	                           @Param("scorePublic") boolean scorePublic);
+
 }

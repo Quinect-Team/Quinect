@@ -32,67 +32,83 @@ public class QuizService {
 	private final UserRepository userRepository;
 
 	/* ================== 저장 ================== */
+	@Transactional
 	public Long saveQuiz(QuizDto quizDto) {
+	    Quiz quiz;
 
-		Quiz quiz;
+	    if (quizDto.getQuizId() != null) {
+	        quiz = quizRepository.findById(quizDto.getQuizId())
+	                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
 
-		if (quizDto.getQuizId() != null) {
-			quiz = quizRepository.findById(quizDto.getQuizId())
-					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
+	        quiz.setTitle(quizDto.getTitle());
+	        quiz.setDescription(quizDto.getDescription());
+	        quiz.setScorePublic(quizDto.isScorePublic());
+	        quiz.setUpdatedAt(LocalDateTime.now());
+	        
+	        // quiz.getQuestions().clear(); <- 이 부분을 삭제했습니다.
+	    } else {
+	        quiz = new Quiz();
+	        quiz.setTitle(quizDto.getTitle());
+	        quiz.setDescription(quizDto.getDescription());
+	        quiz.setScorePublic(quizDto.isScorePublic());
+	        quiz.setUserId(getLoginUserId());
+	        quiz.setCreatedAt(LocalDateTime.now());
+	        quiz.setUpdatedAt(LocalDateTime.now());
+	    }
 
-			quiz.setTitle(quizDto.getTitle());
-			quiz.setDescription(quizDto.getDescription());
-			quiz.setScorePublic(quizDto.isScorePublic());
-			quiz.setUpdatedAt(LocalDateTime.now());
+	    // [수정/추가 로직 시작]
+	    for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
+	        QuizQuestion question = null;
 
-			quiz.getQuestions().clear();
-		} else {
-			quiz = new Quiz();
-			quiz.setTitle(quizDto.getTitle());
-			quiz.setDescription(quizDto.getDescription());
-			quiz.setScorePublic(quizDto.isScorePublic());
-			quiz.setUserId(getLoginUserId());
-			quiz.setCreatedAt(LocalDateTime.now());
-			quiz.setUpdatedAt(LocalDateTime.now());
-		}
+	        // 1. 수정 모드일 때 기존 질문이 있는지 ID로 확인
+	        if (quizDto.getQuizId() != null && q.getQuestionId() != null) {
+	            question = quiz.getQuestions().stream()
+	                    .filter(existingQ -> existingQ.getQuestionId().equals(q.getQuestionId()))
+	                    .findFirst()
+	                    .orElse(null);
+	        }
 
-		List<QuizQuestion> questionEntities = new ArrayList<>();
+	        // 2. 기존 질문이 없으면 새로 생성, 있으면 기존 객체 사용
+	        if (question == null) {
+	            question = new QuizQuestion();
+	            quiz.addQuestion(question); // 신규일 때만 리스트에 추가
+	        }
 
-		for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
+	        question.setQuestionText(q.getQuestionText());
+	        question.setQuizTypeCode(q.getQuizTypeCode());
+	        question.setPoint(q.getPoint());
+	        question.setImage(q.getImage());
 
-			QuizQuestion question = new QuizQuestion();
+	        /* ===== 객관식 ===== */
+	        if (q.getQuizTypeCode() == 2) {
+	            question.setAnswerOption(q.getAnswerOption());
+	            question.setSubjectiveAnswer(null);
 
-			question.setQuestionText(q.getQuestionText());
-			question.setQuizTypeCode(q.getQuizTypeCode());
-			question.setPoint(q.getPoint());
-			question.setImage(q.getImage());
+	            // 보기는 관계가 복잡하므로 수정 시 일단 비우고 새로 넣는 것이 안전합니다 (addOption 사용)
+	            if (question.getOptions() != null) {
+	                question.getOptions().clear();
+	            }
 
-			/* ===== 객관식 ===== */
-			if (q.getQuizTypeCode() == 2) {
-				question.setAnswerOption(q.getAnswerOption());
-				question.setSubjectiveAnswer(null);
+	            if (q.getOptions() != null) {
+	                for (QuizDto.OptionDto opt : q.getOptions()) {
+	                    QuizOption option = new QuizOption();
+	                    option.setOptionNumber(opt.getOptionNumber());
+	                    option.setOptionText(opt.getOptionText());
+	                    question.addOption(option);
+	                }
+	            }
+	        /* ===== 서술형 ===== */
+	        } else {
+	            question.setSubjectiveAnswer(q.getSubjectiveAnswer());
+	            question.setAnswerOption(null);
+	            if (question.getOptions() != null) {
+	                question.getOptions().clear();
+	            }
+	        }
+	    }
 
-				if (q.getOptions() != null) {
-					for (QuizDto.OptionDto opt : q.getOptions()) {
-						QuizOption option = new QuizOption();
-						option.setOptionNumber(opt.getOptionNumber());
-						option.setOptionText(opt.getOptionText());
-						question.addOption(option);
-					}
-				}
-
-				/* ===== 서술형 ===== */
-			} else {
-				question.setSubjectiveAnswer(q.getSubjectiveAnswer());
-				question.setAnswerOption(null);
-			}
-
-			quiz.addQuestion(question);
-		}
-
-		quizRepository.save(quiz);
-
-		return quiz.getQuizId();
+	    quizRepository.save(quiz);
+	    return quiz.getQuizId();
 	}
 
 	public String storeImage(MultipartFile file) throws Exception {
