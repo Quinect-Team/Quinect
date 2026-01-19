@@ -277,6 +277,18 @@ function resetQuizUI() {
 //   불러온 퀴즈 UI 반영
 // -----------------------------
 function applyQuizToUI(quiz) {
+	if (typeof quiz.scorePublic === "boolean") {
+	        const scoreToggle = document.getElementById("scorePublicToggle");
+	        const scoreText = document.getElementById("scorePublicText");
+
+	        if (scoreToggle) {
+	            scoreToggle.checked = quiz.scorePublic;
+	        }
+	        if (scoreText) {
+	            scoreText.textContent =
+	                quiz.scorePublic ? "점수 공개" : "점수 비공개";
+	        }
+	   }
 	// 1. 제목/설명 덮어쓰기
 	if (quiz.title) quizTitle.value = quiz.title;
 	if (quiz.description) quizDesc.value = quiz.description;
@@ -348,6 +360,14 @@ document.addEventListener("change", debounceAutoSave);
 
 // 저장 버튼 => 서버 전송 (기존 로직 재사용)
 saveBtn.addEventListener('click', async () => {
+	const scoreToggle = document.getElementById("scorePublicToggle");
+	console.log(
+	  "[SAVE CLICK]",
+	  "UI checked =", scoreToggle?.checked,
+	  "currentQuizId =", currentQuizId
+	);
+
+	
 	try {
 		const quizJson = collectQuizData(); // UI 데이터 수집
 
@@ -621,6 +641,8 @@ function collectQuizDataForLocal() {
 	return {
 		title: quizTitle.value || "",
 		description: quizDesc.value || "",
+		scorePublic: getScorePublicValue(),
+
 		questions: result
 	};
 }
@@ -671,6 +693,30 @@ function loadQuizFromLocal(list) {
 	quizTitle.value = list.title || "";
 	quizDesc.value = list.description || "";
 
+	// 점수 공개
+	if (typeof list.scorePublic === "boolean") {
+		const scoreToggle = document.getElementById("scorePublicToggle");
+		const scoreText = document.getElementById("scorePublicText");
+
+		if (scoreToggle && scoreText) {
+			scoreToggle.checked = list.scorePublic;
+			scoreText.textContent =
+			list.scorePublic ? "점수 공개" : "점수 비공개";
+		}
+	}
+
+	// 정답 공개
+	if (typeof list.answerPublic === "boolean") {
+		const answerToggle = document.getElementById("answerPublicToggle");
+		const answerText = document.getElementById("answerPublicText");
+
+		if (answerToggle && answerText) {
+			answerToggle.checked = list.answerPublic;
+			answerText.textContent =
+			list.answerPublic ? "정답 공개" : "정답 비공개";
+		}
+	}
+		
 	renumber();
 }
 
@@ -877,7 +923,8 @@ function isEditorDirty() {
 }
 
 function getScorePublicValue() {
-    const toggle = document.getElementById("score-public-toggle");
+    const toggle = document.getElementById("scorePublicToggle");
     return toggle ? toggle.checked : false;
 }
+
 
