@@ -18,10 +18,12 @@ import com.project.quiz.domain.UserActivityLog;
 import com.project.quiz.domain.UserInventory;
 import com.project.quiz.domain.UserProfile;
 import com.project.quiz.dto.TimelineDto;
+import com.project.quiz.repository.QuizSubmissionRepository;
 import com.project.quiz.repository.UserAchievementRepository;
 import com.project.quiz.repository.UserActivityLogRepository;
 import com.project.quiz.repository.UserProfileRepository;
 import com.project.quiz.repository.UserRepository;
+import com.project.quiz.service.FriendshipService;
 import com.project.quiz.service.InventoryService;
 import com.project.quiz.service.TimelineService;
 import com.project.quiz.service.UserService;
@@ -39,6 +41,8 @@ public class ProfileController {
 	private final UserAchievementRepository userAchievementRepository;
 	private final UserProfileRepository userProfileRepository;
 	private final UserActivityLogRepository userActivityLogRepository;
+	private final FriendshipService friendshipService;
+    private final QuizSubmissionRepository quizSubmissionRepository;
 
 	// 프로필 페이지 이동
 	@GetMapping({ "/profile", "/profile/{profileId}" })
@@ -87,6 +91,14 @@ public class ProfileController {
 	        model.addAttribute("user", targetUser); // 🚩 정상 유저 정보 담기
 	        model.addAttribute("isOwner", isOwner);
 	        model.addAttribute("isWithdrawn", false);
+	        
+	        long solvedQuizCount = quizSubmissionRepository.countByUserId(targetUser.getId());
+            model.addAttribute("solvedQuizCount", solvedQuizCount);
+
+            // 2. 친구 수 (FriendshipService 활용)
+            // (기존 서비스 메서드가 리스트를 반환하므로 .size()로 개수 파악)
+            long friendCount = friendshipService.getAcceptedFriends(targetUser.getId()).size();
+            model.addAttribute("friendCount", friendCount);
 
 	        // 인벤토리, 업적, 타임라인 등 조회
 	        String borderUrl = inventoryService.getEquippedItemUrl(targetUser, "BORDER");

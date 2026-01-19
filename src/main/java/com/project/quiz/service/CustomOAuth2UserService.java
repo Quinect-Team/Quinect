@@ -3,8 +3,10 @@ package com.project.quiz.service;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
 	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -61,6 +64,9 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 		User user = userRepository.findByEmail(attributes.getEmail()).orElseGet(() -> {
 			// 신규 유저 생성 시
 			User newUser = attributes.toEntity(); // 여기엔 email, role 등만 있음
+			
+			String randomPassword = UUID.randomUUID().toString();
+            newUser.setPassword(passwordEncoder.encode(randomPassword));
 
 			// 프로필 생성
 			UserProfile profile = UserProfile.builder().username(attributes.getUsername()).pointBalance(100L).build();
