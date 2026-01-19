@@ -42,6 +42,7 @@ public class QuizService {
 
 			quiz.setTitle(quizDto.getTitle());
 			quiz.setDescription(quizDto.getDescription());
+			quiz.setScorePublic(quizDto.isScorePublic());
 			quiz.setUpdatedAt(LocalDateTime.now());
 
 			quiz.getQuestions().clear();
@@ -49,6 +50,7 @@ public class QuizService {
 			quiz = new Quiz();
 			quiz.setTitle(quizDto.getTitle());
 			quiz.setDescription(quizDto.getDescription());
+			quiz.setScorePublic(quizDto.isScorePublic());
 			quiz.setUserId(getLoginUserId());
 			quiz.setCreatedAt(LocalDateTime.now());
 			quiz.setUpdatedAt(LocalDateTime.now());

@@ -242,7 +242,7 @@ function renderQuiz(quizData) {
 
 	    if (LOCAL_KEY) localStorage.removeItem(LOCAL_KEY);
 
-		showResultModal(result.score, result.maxScore);
+		showResultModal(result.score, result.maxScore, result.scorePublic);
 	  } catch (err) {
 	    console.error(err);
 	    alert('제출 중 오류 발생');
@@ -380,7 +380,7 @@ function collectSubmitPayload() {
   return payload;
 }
 
-function showResultModal(score, maxScore) {
+function showResultModal(score, maxScore, scorePublic) {
   const overlay = document.createElement('div');
   overlay.style.position = 'fixed';
   overlay.style.top = 0;
@@ -401,13 +401,22 @@ function showResultModal(score, maxScore) {
   modal.style.minWidth = '260px';
   modal.style.boxShadow = '0 8px 30px rgba(0,0,0,.25)';
 
+  const resultContent = scorePublic
+    ? `<p style="font-size:18px;font-weight:600">
+         ${score} / ${maxScore} 점
+       </p>`
+    : `<p style="font-size:15px;
+                 color:#374151;
+                 line-height:1.5;">
+         해당 퀴즈는<br>
+         <strong>점수가 비공개</strong>로 설정되어 있습니다.
+       </p>`;
+
   modal.innerHTML = `
     <h2 style="margin-top:0">채점 결과</h2>
-    <p style="font-size:18px;font-weight:600">
-      ${score} / ${maxScore} 점
-    </p>
+    ${resultContent}
     <button id="closeModalBtn"
-            style="margin-top:12px;
+            style="margin-top:16px;
                    padding:8px 14px;
                    border:0;
                    border-radius:8px;
@@ -417,6 +426,7 @@ function showResultModal(score, maxScore) {
       확인
     </button>
   `;
+
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);

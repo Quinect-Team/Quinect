@@ -728,6 +728,7 @@ function collectQuizData() {
 		quizId: currentQuizId || null,
 		title: quizTitle.value,
 		description: quizDesc.value,
+		scorePublic: getScorePublicValue(),
 		userId: currentUserId,
 		questions: []
 	};
@@ -874,3 +875,9 @@ function isEditorDirty() {
 	// 아무것도 안 썼으면 false (깨끗함)
 	return false;
 }
+
+function getScorePublicValue() {
+    const toggle = document.getElementById("score-public-toggle");
+    return toggle ? toggle.checked : false;
+}
+

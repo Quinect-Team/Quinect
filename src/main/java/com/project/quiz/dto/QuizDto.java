@@ -17,6 +17,8 @@ public class QuizDto {
     private String title;
     private String description;
     private Long userId;
+    private boolean scorePublic;
+
 
     private List<QuestionDto> questions;
 
@@ -59,6 +61,8 @@ public class QuizDto {
         dto.setTitle(quiz.getTitle());
         dto.setDescription(quiz.getDescription());
         dto.setUserId(quiz.getUserId());
+        dto.setScorePublic(quiz.isScorePublic());
+
 
         List<QuestionDto> questionDtos = quiz.getQuestions()
                 .stream()

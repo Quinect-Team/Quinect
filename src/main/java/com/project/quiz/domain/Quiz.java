@@ -43,5 +43,8 @@ public class Quiz {
         question.setQuiz(this);
     }
 
+    @Column(name = "score_public", nullable = false)
+    private boolean scorePublic = true;
+
 
 }

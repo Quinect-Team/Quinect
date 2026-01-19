@@ -23,6 +23,7 @@ public class QuizSubmitController {
     private final QuizGradingService quizGradingService;
     private final QuizSubmissionRepository quizSubmissionRepository;
     private final UserService userService; // ⭐ 유저 정보 조회를 위해 추가
+    
 
     @PostMapping("/{quizId}/submit")
     public ResponseEntity<?> submit(
@@ -55,13 +56,17 @@ public class QuizSubmitController {
                 .stream()
                 .mapToInt(q -> q.getPoint() != null ? q.getPoint() : 0)
                 .sum();
+        
+        boolean scorePublic = submission.getQuiz().isScorePublic();
+        
 
         // 7. 결과 반환
         return ResponseEntity.ok(
                 Map.of(
                         "submissionId", submissionId,
                         "score", score,
-                        "maxScore", maxScore
+                        "maxScore", maxScore,
+                        "scorePublic", scorePublic
                 )
         );
     }

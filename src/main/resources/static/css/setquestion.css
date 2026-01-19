@@ -55,3 +55,79 @@
 		/* 버튼 꽉 차게 */
 	}
 }
+
+/* 8. 점수 공개 전체 블록 우측 정렬 */
+/* ===============================
+   점수 공개 (미니멀 / 버튼 라인 스타일)
+================================ */
+
+/* 전체 위치 */
+.score-public-simple {
+	display: flex;
+	justify-content: flex-end;
+}
+
+/* 텍스트 + 토글 한 줄 */
+.score-public-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* 공개 텍스트 */
+.score-public-text {
+	font-size: 0.9rem;
+	color: #6c757d;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+/* ===== 커스텀 토글 ===== */
+
+.score-toggle {
+	position: relative;
+	display: inline-block;
+	width: 42px;
+	height: 22px;
+}
+
+/* 체크박스 숨김 */
+.score-toggle input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+/* 토글 배경 */
+.score-slider {
+	position: absolute;
+	inset: 0;
+	background-color: #d1d3e2;
+	border-radius: 999px;
+	cursor: pointer;
+	transition: 0.25s;
+}
+
+/* 토글 원 */
+.score-slider::before {
+	content: "";
+	position: absolute;
+	width: 16px;
+	height: 16px;
+	left: 3px;
+	top: 3px;
+	background-color: #fff;
+	border-radius: 50%;
+	transition: 0.25s;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* ON */
+.score-toggle input:checked + .score-slider {
+	background-color: #4e73df;
+}
+
+/* ON 이동 */
+.score-toggle input:checked + .score-slider::before {
+	transform: translateX(20px);
+}
