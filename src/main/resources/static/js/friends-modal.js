@@ -1047,7 +1047,15 @@ window.invitationsSubscribed = false;
 			confirmButtonColor: '#4e73df',
 			cancelButtonColor: '#858796',
 			allowOutsideClick: false,
-			allowEscapeKey: false
+			allowEscapeKey: false,
+			didOpen: function() {
+				// ⭐ 1분(60초) 후 자동으로 팝업 닫기
+				setTimeout(() => {
+					Swal.close();
+					console.log('⏰ 1분 경과, 초대 팝업 자동 닫음');
+				}, 60000);  // 60000ms = 1분
+			}
+
 		}).then((result) => {
 			if (result.isConfirmed) {
 				console.log('✅ 초대 수락:', roomCode);
