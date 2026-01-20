@@ -399,6 +399,7 @@ saveBtn.addEventListener('click', async () => {
 		alert("저장 성공!");
 		resetQuizEditor();   // Q1 블록만 남는 초기 상태로 되돌림
 		currentQuizId = null; // 기존 퀴즈 ID 제거 → 새 퀴즈 모드
+		window.history.back();
 
 	} catch (err) {
 		console.error("저장 중 오류:", err);
