@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.project.quiz.domain.Quiz;
+import com.project.quiz.dto.QuizDto;
 import com.project.quiz.service.QuizService;
 
 import lombok.RequiredArgsConstructor;
@@ -32,8 +33,9 @@ public class QuizViewController {
 		System.out.println("===== quiz count: " + quizzes.size());
 
 		model.addAttribute("quizzes", quizzes);
-		return "/quiz_list";
+		return "quiz_list";
 	}
+	
 
 	@GetMapping("/setquestion")
 	public String setquestion(@RequestParam(value = "quizId", required = false) Long quizId, Model model) {
@@ -42,7 +44,7 @@ public class QuizViewController {
 	}
 
 	// 템플릿 반환 ONLY
-	@GetMapping("/view/{id}")
+	@GetMapping("/quiz/view/{id}")
 	public String view(@PathVariable("id") Long id, Model model) {
 		model.addAttribute("quizId", id);
 		return "layout/quiz_view";

@@ -29,23 +29,23 @@
             </div>
 
             <hr class="sidebar-divider my-4"> <div id="list">
-                <th:block th:each="quiz : ${quizzes}">
-                    <a th:href="@{/view/{id}(id=${quiz.quizId})}" class="quiz-item-link">
-                        <div class="quiz-card">
-                            <div class="thumb" th:if="${!#lists.isEmpty(quiz.questions)}"
-                                 th:style="'background-image:url(/uploads/quiz/' + ${quiz.questions[0].image} + ')'">
-                            </div>
-                            <div class="thumb placeholder-thumb" th:unless="${!#lists.isEmpty(quiz.questions)}">
-                                 <i class="fas fa-question fa-3x text-gray-300"></i>
-                            </div>
+				<th:block th:each="quiz : ${quizzes}">
+				    <a th:href="'/view/' + ${quiz.quizId}" class="quiz-item-link" style="display: block; text-decoration: none;">
+				        <div class="quiz-card" style="cursor: pointer;">
+				            <div class="thumb" th:if="${quiz.questions != null and !#lists.isEmpty(quiz.questions)}"
+				                 th:style="|background-image:url('/uploads/${quiz.questions[0].image}')|">
+				            </div>
+				            <div class="thumb placeholder-thumb" th:unless="${quiz.questions != null and !#lists.isEmpty(quiz.questions)}">
+				                 <i class="fas fa-question fa-3x text-gray-300"></i>
+				            </div>
 
-                            <div class="info">
-                                <div class="title" th:text="${quiz.title}">퀴즈 제목</div>
-                                <div class="desc" th:text="${quiz.description}">퀴즈 설명</div>
-                            </div>
-                        </div>
-                    </a>
-                </th:block>
+				            <div class="info">
+				                <div class="title" th:text="${quiz.title}">퀴즈 제목</div>
+				                <div class="desc" th:text="${quiz.description}">퀴즈 설명</div>
+				            </div>
+				        </div>
+				    </a>
+				</th:block>
             </div>
             
             <div th:if="${#lists.isEmpty(quizzes)}" class="text-center py-5">
