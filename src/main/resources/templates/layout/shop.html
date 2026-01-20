@@ -41,24 +41,18 @@
 
 	<div class="row mb-4">
 		<div class="col-md-4 mb-2">
-			<select class="form-control border-left-success">
-				<option>전체 카테고리</option>
-				<option>테두리</option>
-				<option>배경</option>
-				<option>이모티콘</option>
+			<select id="categorySelect" class="form-control border-left-success">
+				<option value="" th:selected="${param.category == null}">전체 카테고리</option>
+
+				<option value="BORDER" th:selected="${#strings.equals(param.category, 'BORDER')}">테두리</option>
+				<option value="THEME" th:selected="${#strings.equals(param.category, 'THEME')}">배경</option>
+
+				<option value="EMOTICON" th:selected="${#strings.equals(param.category, 'EMOTICON')}">이모티콘</option>
 			</select>
 		</div>
 		<div class="col-md-8 mb-2">
 			<div class="input-group">
-				<input type="text" class="form-control bg-light border-0 small" placeholder="상품 검색..."
-					aria-label="Search">
-				<div class="input-group-append">
-					<button class="btn btn-success" type="button">
-						<i class="fas fa-search fa-sm"></i>
-					</button>
-				</div>
-
-				<div class="input-group-append ml-2">
+				<div class="input-group-append ml-auto">
 					<button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown"
 						data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 						<i class="fas fa-sort-amount-down mr-1"></i> 정렬

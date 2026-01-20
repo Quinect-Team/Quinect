@@ -7,4 +7,6 @@ import java.util.List;
 public interface ShopItemRepository extends JpaRepository<ShopItem, Long> {
     // 판매 중인 상품만 가져오기
     List<ShopItem> findByIsAvailableTrue();
+    
+    List<ShopItem> findByIsAvailableTrueAndCategory(String category);
 }
