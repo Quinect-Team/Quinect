@@ -271,4 +271,8 @@ public class UserService {
 		return Map.of("correct", correctCount, "wrong", wrongCount);
 	}
 
+	public long getActiveUsers() {
+		return userRepository.count() - 1;
+	}
+
 }

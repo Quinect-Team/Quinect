@@ -12,11 +12,6 @@ window.invitationsSubscribed = false;
 	'use strict';
 
 	/**
-	 * 1:1 채팅 메시지 실시간 수신 대기
-	 */
-
-
-	/**
 	 * 친구 모달 열기
 	 */
 	function openFriendModal(e) {
@@ -412,6 +407,13 @@ window.invitationsSubscribed = false;
 		} else if (user.friendshipStatus === 'ACCEPTED') {
 			buttonHtml = `
             <div class="d-flex gap-2">
+				<button type="button"
+                        class="btn btn-warning btn-sm firend-profile-btn"
+                        data-user-id="${user.id}"
+						data-profile-id="${user.profileId}"
+                        title="메시지 보내기">
+                    <i class="fas fa-user-circle"></i> 프로필 보기
+                </button>
                 <button type="button"
                         class="btn btn-info btn-sm send-message-btn"
                         data-user-id="${user.id}"
@@ -1163,6 +1165,13 @@ window.invitationsSubscribed = false;
 			if (confirm('이 친구를 삭제하시겠습니까?')) {
 				removeFriend(friendshipId);
 			}
+		});
+
+		$(document).on('click', '.firend-profile-btn', function() {
+			const userId = $(this).data('user-id');
+			const profileId = $(this).data('profile-id');
+
+			window.location.href = '/profile/' + profileId;
 		});
 
 		// 메시지 버튼 → 채팅 모달로 전환

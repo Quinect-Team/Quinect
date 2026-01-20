@@ -14,6 +14,8 @@ public class UserSearchResponse {
 	private String email;
 	private String username;
 	private String profileImage;
+	private String profileId; // 👈 추가!
+
 	private String friendshipStatus;
 	private Long friendshipId; // ⭐ 이 줄 1개만 추가!
 
@@ -23,6 +25,7 @@ public class UserSearchResponse {
 	public static UserSearchResponse from(User user) {
 		return UserSearchResponse.builder().id(user.getId()).userId(user.getId()).email(user.getEmail())
 				.username(user.getUserProfile() != null ? user.getUserProfile().getUsername() : null)
+				.profileId(user.getUserProfile() != null ? user.getUserProfile().getId() : null)
 				.profileImage(user.getUserProfile() != null ? user.getUserProfile().getProfileImage() : null)
 				.friendshipStatus(null).build();
 	}
@@ -33,6 +36,7 @@ public class UserSearchResponse {
 	public static UserSearchResponse from(User user, String friendshipStatus) {
 		return UserSearchResponse.builder().id(user.getId()).userId(user.getId()).email(user.getEmail())
 				.username(user.getUserProfile() != null ? user.getUserProfile().getUsername() : null)
+				.profileId(user.getUserProfile() != null ? user.getUserProfile().getId() : null)
 				.profileImage(user.getUserProfile() != null ? user.getUserProfile().getProfileImage() : null)
 				.friendshipStatus(friendshipStatus).build();
 	}
@@ -46,6 +50,7 @@ public class UserSearchResponse {
 				.userId(user.getId()) // User ID
 				.email(user.getEmail())
 				.username(user.getUserProfile() != null ? user.getUserProfile().getUsername() : null)
+				.profileId(user.getUserProfile() != null ? user.getUserProfile().getId() : null)
 				.profileImage(user.getUserProfile() != null ? user.getUserProfile().getProfileImage() : null)
 				.friendshipStatus(friendshipStatus).friendshipId(friendshipId) // ⭐ 그리고 이 줄 1개만 추가!
 				.build();

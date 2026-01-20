@@ -8,9 +8,7 @@ var currentVoteChoice = null;
 var voteResults = { AGREE: 0, DISAGREE: 0 };
 
 var participants = [];
-var teamAssignment = {};
-var currentTeamMode = null;
-var currentTeamCount = 0;
+
 var stompClient = null;
 var currentQuizRoomId = null;
 
@@ -167,10 +165,6 @@ function initWebSocket() {
 			}
 		}
 
-		var teamSelectBtn = document.getElementById('teamSelectBtn');
-		if (teamSelectBtn) {
-			teamSelectBtn.style.display = isRoomMaster ? 'inline-block' : 'none';
-		}
 	}, function(error) {
 		console.error('Error: ' + error);
 	});
@@ -417,298 +411,6 @@ function escapeHtml(text) {
 	return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-function openTeamSelectModal() {
-	participants = [];
-	teamAssignment = {};
-
-	var savedTeamAssignment = localStorage.getItem('teamAssignment_' + roomCode);
-	if (savedTeamAssignment) {
-		teamAssignment = JSON.parse(savedTeamAssignment);
-	}
-
-	var savedTeamMode = localStorage.getItem('teamMode_' + roomCode);
-	if (savedTeamMode) {
-		currentTeamMode = savedTeamMode;
-		currentTeamCount = parseInt(localStorage.getItem('teamCount_' + roomCode) || '0');
-	}
-
-	document.querySelectorAll('[data-user-id]').forEach(function(el) {
-		var userId = el.getAttribute('data-user-id');
-		var nicknameEl = el.querySelector('.font-weight-bold');
-		var nickname = nicknameEl ? nicknameEl.textContent : 'Unknown';
-
-		if (userId && nickname && el.tagName !== 'BODY') {
-			participants.push({ id: parseInt(userId), nickname: nickname });
-			console.log('Added participant:', { id: userId, nickname: nickname });
-		}
-	});
-
-	console.log('Participants:', participants);
-	initializeTeamModal();
-	$('#teamSelectModal').modal('show');
-}
-
-function initializeTeamModal() {
-	document.querySelectorAll('input[name="mode"]').forEach(function(el) { el.checked = false; });
-	document.querySelectorAll('input[name="teamCount"]').forEach(function(el) { el.checked = false; });
-
-	if (currentTeamMode) {
-		var modeEl = document.querySelector('input[name="mode"][value="' + currentTeamMode + '"]');
-		if (modeEl) modeEl.checked = true;
-
-		if (currentTeamMode === 'TEAM') {
-			document.getElementById('teamCountDiv').style.display = 'block';
-			var countEl = document.querySelector('input[name="teamCount"][value="' + currentTeamCount + '"]');
-			if (countEl) countEl.checked = true;
-			setupDragDrop(currentTeamCount);
-			document.getElementById('dragDropArea').style.display = 'block';
-		}
-	}
-
-	document.querySelectorAll('input[name="mode"]').forEach(function(el) {
-		el.addEventListener('change', function() {
-			console.log('Mode changed to:', this.value);
-			currentTeamMode = this.value;
-			if (currentTeamMode === 'TEAM') {
-				document.getElementById('teamCountDiv').style.display = 'block';
-				document.getElementById('dragDropArea').style.display = 'none';
-			} else {
-				document.getElementById('teamCountDiv').style.display = 'none';
-				document.getElementById('dragDropArea').style.display = 'none';
-				teamAssignment = {};
-			}
-		});
-	});
-
-	document.querySelectorAll('input[name="teamCount"]').forEach(function(el) {
-		el.addEventListener('change', function() {
-			console.log('Team count changed to:', this.value);
-			var teamCount = parseInt(this.value);
-			currentTeamCount = teamCount;
-			setupDragDrop(teamCount);
-			document.getElementById('dragDropArea').style.display = 'block';
-		});
-	});
-
-	renderUnassignedParticipants();
-}
-
-function renderUnassignedParticipants() {
-	var unassignedArea = document.getElementById('unassignedArea');
-	unassignedArea.innerHTML = '';
-
-	participants.forEach(function(participant) {
-		if (!teamAssignment[participant.id]) {
-			var participantEl = document.createElement('div');
-			participantEl.className = 'draggable-participant';
-			participantEl.draggable = true;
-			participantEl.setAttribute('data-user-id', participant.id);
-			participantEl.textContent = participant.nickname;
-
-			participantEl.addEventListener('dragstart', function(e) {
-				e.dataTransfer.effectAllowed = 'move';
-				e.dataTransfer.setData('userId', String(participant.id));
-				console.log('🎯 DRAGSTART - userId:', participant.id);
-			});
-
-			participantEl.addEventListener('dragend', function(e) {
-				console.log('🎯 DRAGEND');
-			});
-
-			unassignedArea.appendChild(participantEl);
-		}
-	});
-
-	console.log('Unassigned participants rendered');
-}
-
-function setupDragDrop(teamCount) {
-	console.log('Setting up drag drop for', teamCount, 'teams');
-
-	var teamsContainer = document.getElementById('teamsContainer');
-	teamsContainer.innerHTML = '';
-
-	var savedTeamNames = {};
-	var savedTeamNamesJson = localStorage.getItem('teamNames_' + roomCode);
-	if (savedTeamNamesJson) {
-		savedTeamNames = JSON.parse(savedTeamNamesJson);
-	}
-
-	for (var i = 1; i <= teamCount; i++) {
-		var colDiv = document.createElement('div');
-		colDiv.className = 'col-md-6 mb-3';
-
-		var teamName = savedTeamNames[i] || ('팀 ' + i);
-
-		var teamBox = document.createElement('div');
-
-		teamBox.innerHTML =
-			'<div class="form-group mb-2">' +
-			'<input type="text" id="teamName_' + i + '" class="form-control font-weight-bold text-center" value="' + teamName + '" placeholder="팀 이름 입력">' +
-			'</div>' +
-			'<div class="team-members" data-team="' + i + '" style="min-height: 100px; padding: 10px; border: 2px dashed #ccc; border-radius: 6px;"></div>';
-
-		colDiv.appendChild(teamBox);
-		teamsContainer.appendChild(colDiv);
-	}
-
-	document.querySelectorAll('.team-members').forEach(function(teamMembersDiv) {
-		var teamNum = teamMembersDiv.getAttribute('data-team');
-		console.log('Registering drop events for team', teamNum);
-
-		teamMembersDiv.addEventListener('dragover', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-			e.dataTransfer.dropEffect = 'move';
-			teamMembersDiv.closest('.team-box').classList.add('drag-over');
-			console.log('🔄 DRAGOVER - team:', teamNum);
-		});
-
-		teamMembersDiv.addEventListener('dragleave', function(e) {
-			e.stopPropagation();
-			teamMembersDiv.closest('.team-box').classList.remove('drag-over');
-		});
-
-		teamMembersDiv.addEventListener('drop', function(e) {
-			e.preventDefault();
-			e.stopPropagation();
-
-			console.log('💧 DROP EVENT FIRED');
-
-			var userId = e.dataTransfer.getData('userId');
-			var teamNumber = parseInt(teamMembersDiv.getAttribute('data-team'));
-
-			console.log('Drop data - userId:', userId, 'teamNumber:', teamNumber);
-
-			if (userId && teamNumber) {
-				var userIdInt = parseInt(userId);
-				teamAssignment[userIdInt] = teamNumber;
-				console.log('✅ Assigned userId', userIdInt, 'to team', teamNumber);
-				console.log('Current assignments:', teamAssignment);
-
-				renderTeamAssignment();
-				renderUnassignedParticipants();
-			} else {
-				console.log('❌ Invalid userId or teamNumber');
-			}
-
-			teamMembersDiv.closest('.team-box').classList.remove('drag-over');
-		});
-	});
-
-	renderTeamAssignment();
-}
-
-function renderTeamAssignment() {
-	console.log('Rendering team assignments:', teamAssignment);
-
-	document.querySelectorAll('.team-members').forEach(function(el) { el.innerHTML = ''; });
-
-	Object.keys(teamAssignment).forEach(function(userId) {
-		var teamNumber = teamAssignment[userId];
-		var participant = participants.find(function(p) { return p.id == userId; });
-
-		if (participant) {
-			var teamMemberEl = document.createElement('div');
-			teamMemberEl.className = 'team-member';
-			teamMemberEl.innerHTML = participant.nickname + ' <span class="ml-2" style="cursor:pointer; opacity:0.7; font-weight:bold;" onclick="removeFromTeam(' + userId + ')">✕</span>';
-
-			var targetTeam = document.querySelector('[data-team="' + teamNumber + '"]');
-			if (targetTeam) {
-				targetTeam.appendChild(teamMemberEl);
-			}
-		}
-	});
-}
-
-function removeFromTeam(userId) {
-	console.log('Removing userId', userId, 'from teams');
-	delete teamAssignment[userId];
-	renderTeamAssignment();
-	renderUnassignedParticipants();
-}
-
-function updateParticipantList() {
-	console.log('Updating participant list with team info');
-
-	var savedTeamAssignment = localStorage.getItem('teamAssignment_' + roomCode);
-	var savedTeamNames = localStorage.getItem('teamNames_' + roomCode);
-
-	if (!savedTeamAssignment || !savedTeamNames) {
-		console.log('No team assignment data found');
-		return;
-	}
-
-	teamAssignment = JSON.parse(savedTeamAssignment);
-	var teamNames = JSON.parse(savedTeamNames);
-
-	var participantCards = document.querySelectorAll('.card[data-user-id]');
-
-	participantCards.forEach(function(card) {
-		var userId = parseInt(card.getAttribute('data-user-id'));
-		var teamNumber = teamAssignment[userId];
-
-		var existingBadge = card.querySelector('.team-badge');
-		if (existingBadge) {
-			existingBadge.remove();
-		}
-
-		if (teamNumber && teamNames[teamNumber]) {
-			var badge = document.createElement('div');
-			badge.className = 'team-badge';
-			badge.style.cssText = 'position: absolute; top: 5px; right: 5px; background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;';
-			badge.textContent = teamNames[teamNumber];
-			card.appendChild(badge);
-		}
-	});
-}
-
-function submitTeamAssignment() {
-	var mode = document.querySelector('input[name="mode"]:checked') ?
-		document.querySelector('input[name="mode"]:checked').value : null;
-
-	if (!mode) {
-		alert('게임 모드를 선택해주세요.');
-		return;
-	}
-
-	if (mode === 'TEAM') {
-		var teamCountEl = document.querySelector('input[name="teamCount"]:checked');
-		var teamCount = teamCountEl ? teamCountEl.value : null;
-
-		if (!teamCount) {
-			alert('팀 개수를 선택해주세요.');
-			return;
-		}
-
-		var unassignedCount = participants.length - Object.keys(teamAssignment).length;
-		if (unassignedCount > 0) {
-			alert('모든 참가자를 팀에 배정해주세요. (' + unassignedCount + '명)');
-			return;
-		}
-
-		var teamNames = {};
-		for (var i = 1; i <= parseInt(teamCount); i++) {
-			var teamNameInput = document.getElementById('teamName_' + i);
-			var teamName = teamNameInput ? teamNameInput.value.trim() : '';
-			teamNames[i] = teamName || ('팀 ' + i);
-		}
-
-		localStorage.setItem('teamAssignment_' + roomCode, JSON.stringify(teamAssignment));
-		localStorage.setItem('teamMode_' + roomCode, 'TEAM');
-		localStorage.setItem('teamCount_' + roomCode, teamCount);
-		localStorage.setItem('teamNames_' + roomCode, JSON.stringify(teamNames));
-	} else {
-		localStorage.setItem('teamMode_' + roomCode, 'INDIVIDUAL');
-		localStorage.removeItem('teamAssignment_' + roomCode);
-		localStorage.removeItem('teamNames_' + roomCode);
-	}
-
-	alert('팀 설정이 저장되었습니다.');
-	$('#teamSelectModal').modal('hide');
-	updateParticipantList();
-}
-
 function toggleReady() {
 	var newReadyStatus = !myReadyStatus;
 
@@ -890,36 +592,67 @@ function renderQuizzes(quizzes) {
 	const quizList = document.getElementById('quizList');
 	quizList.innerHTML = '';
 
+	// 현재 선택된 퀴즈 ID 가져오기
+	const selectedQuizData = localStorage.getItem('selectedQuiz_' + roomCode);
+	const selectedQuizId = selectedQuizData ? JSON.parse(selectedQuizData).id : null;
+	console.log('현재 선택된 퀴즈 ID:', selectedQuizId);
+
 	quizzes.forEach(quiz => {
+		const isSelected = quiz.quizId === selectedQuizId;
+
 		const quizItem = document.createElement('a');
 		quizItem.href = 'javascript:void(0)';
 		quizItem.className = 'list-group-item list-group-item-action';
+
+		// 👈 선택 상태에 따른 스타일
+		if (isSelected) {
+			quizItem.classList.add('list-group-item-success');
+			quizItem.style.backgroundColor = '#d4edda';
+			quizItem.style.borderLeft = '4px solid #28a745';
+			quizItem.style.boxShadow = '0 2px 8px rgba(40, 167, 69, 0.2)';
+		} else {
+			quizItem.style.opacity = '0.6';
+			quizItem.style.color = '#666';
+		}
 		quizItem.style.cursor = 'pointer';
+		quizItem.style.transition = 'all 0.2s ease';
+
+		// 👈 체크 표시 조건부 렌더링!
+		const checkIcon = isSelected ? '<i class="fas fa-check-circle text-success mr-2"></i>' : '';
+		const buttonText = isSelected ? '선택됨' : '선택';
+		const buttonClass = isSelected ? 'btn-success' : 'btn-outline-success';
 
 		quizItem.innerHTML = `
             <div class="d-flex justify-content-between align-items-start">
                 <div class="flex-grow-1">
-                    <h6 class="mb-1 font-weight-bold text-dark">
-                        ${escapeHtml(quiz.title)}
+                    <h6 class="mb-1 font-weight-bold ${isSelected ? 'text-success' : 'text-muted'}">
+                        ${checkIcon}${escapeHtml(quiz.title)}
                     </h6>
                     ${quiz.description ? `
-                        <p class="mb-1 text-muted small">
+                        <p class="mb-1 small ${isSelected ? 'text-success' : 'text-muted'}">
                             ${escapeHtml(quiz.description)}
                         </p>
                     ` : ''}
                 </div>
-                <button type="button" class="btn btn-sm btn-primary ml-2" 
+                <button type="button" class="btn btn-sm ${buttonClass} ml-2" 
                         onclick="selectQuiz(${quiz.quizId})">
-                    <i class="fas fa-check"></i>
+                    ${isSelected ? '<i class="fas fa-check"></i>' : ''}
+                    ${buttonText}
                 </button>
             </div>
         `;
 
 		quizItem.addEventListener('mouseenter', function() {
-			this.style.backgroundColor = '#f8f9fa';
+			if (!isSelected) {
+				this.style.opacity = '0.9';
+				this.style.transform = 'translateX(4px)';
+			}
 		});
 		quizItem.addEventListener('mouseleave', function() {
-			this.style.backgroundColor = '';
+			if (!isSelected) {
+				this.style.opacity = '0.6';
+				this.style.transform = 'translateX(0)';
+			}
 		});
 
 		quizList.appendChild(quizItem);

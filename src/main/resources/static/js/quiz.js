@@ -91,8 +91,6 @@ function connectWebSocket() {
 	});
 }
 
-
-
 function displayQuestion(question) {
 	currentQuestionData = question;
 	document.getElementById('loading-state').style.display = 'none';
@@ -106,7 +104,7 @@ function displayQuestion(question) {
 
 	if (question.imageUrl) {
 		var img = document.getElementById('question-image');
-		img.src = question.imageUrl;
+		img.src = '/uploads/quiz/' + question.imageUrl;
 		img.style.display = 'block';
 	} else {
 		document.getElementById('question-image').style.display = 'none';

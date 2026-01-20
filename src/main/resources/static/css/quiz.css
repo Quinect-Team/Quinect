@@ -7,6 +7,14 @@
 	color: white;
 }
 
+.question-header {
+  display: flex;
+  justify-content: space-between;  /* 👈 왼쪽-오른쪽 끝 배치 */
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 16px;
+}
+
 .progress-bar-quiz {
 	height: 6px;
 	background: rgba(255, 255, 255, .3);
@@ -31,7 +39,7 @@
 .question-image {
 	max-width: 100%;
 	max-height: 300px;
-	margin: 15px 0;
+	margin: 10px auto 14px auto;  /* 👈 auto로 좌우 중앙 정렬 */
 	border-radius: 10px;
 }
 
@@ -42,6 +50,13 @@
 	border-radius: 10px;
 	padding: 10px;
 	font-size: 18px;
+}
+
+#point-badge {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 15px !important;
+  padding: 8px 16px !important;
 }
 
 .answer-textarea:focus {

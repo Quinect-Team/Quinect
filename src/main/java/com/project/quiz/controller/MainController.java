@@ -18,6 +18,9 @@ import com.project.quiz.repository.QuizRepository;
 import com.project.quiz.repository.UserAchievementRepository;
 import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.AttendanceService;
+import com.project.quiz.service.QuizAnswerService;
+import com.project.quiz.service.QuizQuestionService;
+import com.project.quiz.service.RoomQuizService;
 import com.project.quiz.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +34,9 @@ public class MainController {
 	private final UserRepository userRepository;
 	private final QuizRepository quizRepository;
 	private final UserService userService;
+	private final QuizQuestionService quizQuestionService;
+	private final QuizAnswerService quizAnswerService;
+	private final RoomQuizService roomQuizService;
 
 	// 1. 루트 접속 시 /index로 리다이렉트 (또는 바로 index 보여주기)
 	@GetMapping("/")
@@ -46,10 +52,21 @@ public class MainController {
 
 	// 2. 인덱스 페이지 (비로그인 접근 가능)
 	@GetMapping("/index")
-	public String index(Principal principal) {
+	public String index(Principal principal, Model model) {
 		if (principal != null) {
 			return "redirect:/main";
 		}
+		long totalQuestions = quizQuestionService.getTotalQuestionCount();
+		long activeUsers = userService.getActiveUsers();
+		long totalAnswers = quizAnswerService.getTotalAnswer();
+		long totalRoomQuizs = roomQuizService.getTotalRoomQuiz();
+
+
+		model.addAttribute("totalQuestionCount", totalQuestions);
+		model.addAttribute("activeUsersCount", activeUsers);
+		model.addAttribute("totalAnswersCount", totalAnswers);
+		model.addAttribute("totalRoomQuizsCount", totalRoomQuizs);
+		
 		return "index";
 	}
 

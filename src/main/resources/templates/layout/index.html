@@ -7,13 +7,13 @@
 		</h1>
 		<p class="mb-2 fs-5 text-white">퀴즈와 대화, 모두가 함께하는 즐거운 지식 대결 플랫폼!</p>
 		<div class="row mb-3 fs-6 text-center justify-content-center mt-5">
-			<div class="col-6 col-md-3 text-white">문제 출제<br><span class="font-weight-bolder display-5">12,345</span>
+			<div class="col-6 col-md-3 text-white">문제 출제<br><span class="font-weight-bolder display-5" th:text="${totalQuestionCount}">12,345</span>
 			</div>
-			<div class="col-6 col-md-3 text-white">참여 인원<br><span class="font-weight-bolder display-5">67,890</span>
+			<div class="col-6 col-md-3 text-white">참여 인원<br><span class="font-weight-bolder display-5" th:text="${activeUsersCount}">67,890</span>
 			</div>
-			<div class="col-6 col-md-3 text-white">진행 중인 퀴즈<br><span class="font-weight-bolder display-5">23</span>
+			<div class="col-6 col-md-3 text-white">총 퀴즈 도전 횟수<br><span class="font-weight-bolder display-5" th:text="${totalAnswersCount}">23</span>
 			</div>
-			<div class="col-6 col-md-3 text-white">누적 대결<br><span class="font-weight-bolder display-5">6,789</span>
+			<div class="col-6 col-md-3 text-white">누적 대결<br><span class="font-weight-bolder display-5" th:text="${totalRoomQuizsCount}">>6,789</span>
 			</div>
 		</div>
 	</div>

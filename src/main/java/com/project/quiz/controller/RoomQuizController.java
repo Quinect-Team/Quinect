@@ -28,14 +28,9 @@ import com.project.quiz.domain.User;
 import com.project.quiz.dto.GuestUserDto;
 import com.project.quiz.dto.QuizDto;
 import com.project.quiz.dto.UserRank;
-import com.project.quiz.repository.QuizRepository;
-import com.project.quiz.repository.QuizSubmissionRepository;
-import com.project.quiz.repository.UserActivityLogRepository;
 import com.project.quiz.repository.UserRepository;
 import com.project.quiz.service.ParticipantService;
-import com.project.quiz.service.PointService;
 import com.project.quiz.service.QuizService;
-import com.project.quiz.service.QuizSubmitService;
 import com.project.quiz.service.RoomQuizService;
 import com.project.quiz.service.RoomService;
 
@@ -60,22 +55,7 @@ public class RoomQuizController {
 	private ParticipantService participantService;
 
 	@Autowired
-	private QuizSubmitService quizSubmitService;
-
-	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
-
-	@Autowired
-	private PointService pointService;
-
-	@Autowired
-	private UserActivityLogRepository userActivityLogRepository;
-
-	@Autowired
-	private QuizSubmissionRepository quizSubmissionRepository;
-
-	@Autowired
-	private QuizRepository quizRepository;
 
 	// 현재 문제 상태 관리 (roomCode -> questionIndex)
 	private final Map<String, Integer> roomCurrentQuestionIndex = new ConcurrentHashMap<>();
@@ -85,7 +65,7 @@ public class RoomQuizController {
 	private final Map<String, Map<Long, Integer>> roomScores = new ConcurrentHashMap<>();
 
 	private final Map<String, Integer> roomQuestionCallCount = new ConcurrentHashMap<>();
-	
+
 	private final Map<String, Map<Long, Set<Long>>> roomUserCorrectQuestions = new ConcurrentHashMap<>();
 
 	@GetMapping("/quiz/{roomCode}")
@@ -155,38 +135,38 @@ public class RoomQuizController {
 
 	// 문제를 로드하고 브로드캐스트하는 메서드
 	private void loadAndBroadcastQuestion(String roomCode, QuizDto quiz, int questionIndex) {
-	    List<QuizDto.QuestionDto> questions = quiz.getQuestions();
+		List<QuizDto.QuestionDto> questions = quiz.getQuestions();
 
-	    // [게임 종료 조건]
-	    if (questionIndex >= questions.size()) {
-	        
-	        // 1. 순위 계산
-	        List<UserRank> finalRanking = recalculateRanking(roomCode);
-	        Room room = roomService.getRoomByCode(roomCode);
-	        
-	        Map<Long, Set<Long>> correctQuestions = roomUserCorrectQuestions.getOrDefault(roomCode, new HashMap<>());
-	        
-	        // 2. 결과 저장 (Participant 테이블)
-	        participantService.saveQuizResults(room, finalRanking);
+		// [게임 종료 조건]
+		if (questionIndex >= questions.size()) {
 
-	        // ⭐ 3. [수정됨] 보상 및 기록 저장 (서비스로 위임하여 트랜잭션 보장)
-	        try {
-	            // Service에 새로 만든 메서드 호출
-	        	participantService.processQuizRewards(room, finalRanking, quiz.getQuizId(), correctQuestions);
-	            System.out.println("💰 보상 지급 및 DB 저장 완료");
-	        } catch (Exception e) {
-	            System.err.println("❌ 보상 지급 중 에러 발생: " + e.getMessage());
-	            e.printStackTrace();
-	        }
+			// 1. 순위 계산
+			List<UserRank> finalRanking = recalculateRanking(roomCode);
+			Room room = roomService.getRoomByCode(roomCode);
 
-	        // 4. 종료 신호 전송
-	        Map<String, Object> finishSignal = new HashMap<>();
-	        finishSignal.put("type", "FINISH");
-	        finishSignal.put("ranking", finalRanking);
-	        messagingTemplate.convertAndSend("/topic/quiz/" + roomCode, finishSignal);
+			Map<Long, Set<Long>> correctQuestions = roomUserCorrectQuestions.getOrDefault(roomCode, new HashMap<>());
 
-	        return;
-	    }
+			// 2. 결과 저장 (Participant 테이블)
+			participantService.saveQuizResults(room, finalRanking);
+
+			// ⭐ 3. [수정됨] 보상 및 기록 저장 (서비스로 위임하여 트랜잭션 보장)
+			try {
+				// Service에 새로 만든 메서드 호출
+				participantService.processQuizRewards(room, finalRanking, quiz.getQuizId(), correctQuestions);
+				System.out.println("💰 보상 지급 및 DB 저장 완료");
+			} catch (Exception e) {
+				System.err.println("❌ 보상 지급 중 에러 발생: " + e.getMessage());
+				e.printStackTrace();
+			}
+
+			// 4. 종료 신호 전송
+			Map<String, Object> finishSignal = new HashMap<>();
+			finishSignal.put("type", "FINISH");
+			finishSignal.put("ranking", finalRanking);
+			messagingTemplate.convertAndSend("/topic/quiz/" + roomCode, finishSignal);
+
+			return;
+		}
 
 		// ⭐ 나머지 기존 코드 (변경 없음)
 		QuizDto.QuestionDto question = questions.get(questionIndex);
@@ -362,11 +342,9 @@ public class RoomQuizController {
 
 				Integer currentScore = roomScores.get(roomCode).get(userId);
 				System.out.println("📊 누적 점수: userId=" + userId + ", score=" + currentScore);
-				
-				roomUserCorrectQuestions
-                .computeIfAbsent(roomCode, k -> new ConcurrentHashMap<>())
-                .computeIfAbsent(userId, k -> new HashSet<>())
-                .add(questionId);
+
+				roomUserCorrectQuestions.computeIfAbsent(roomCode, k -> new ConcurrentHashMap<>())
+						.computeIfAbsent(userId, k -> new HashSet<>()).add(questionId);
 			} else {
 				System.out.println("❌ 오답: userId=" + userId);
 			}
