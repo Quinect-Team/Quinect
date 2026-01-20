@@ -18,33 +18,32 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 @Setter
 public class Quiz {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long quizId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long quizId;
 
-    private String title;
+	private String title;
 
-    private String description;
+	private String description;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+	@Column(name = "user_id", nullable = false)
+	private Long userId;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDateTime createdAt;
+	@JsonFormat(pattern = "yyyy-MM-dd")
+	private LocalDateTime createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDateTime updatedAt;
+	@JsonFormat(pattern = "yyyy-MM-dd")
+	private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<QuizQuestion> questions = new ArrayList();
-    
-    public void addQuestion(QuizQuestion question) {
-        questions.add(question);
-        question.setQuiz(this);
-    }
+	@OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<QuizQuestion> questions = new ArrayList<>();
 
-    @Column(name = "score_public", nullable = false)
-    private boolean scorePublic = true;
+	public void addQuestion(QuizQuestion question) {
+		questions.add(question);
+		question.setQuiz(this);
+	}
 
+	@Column(name = "score_public", nullable = false)
+	private boolean scorePublic = true;
 
 }

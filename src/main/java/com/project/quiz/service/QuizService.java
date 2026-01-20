@@ -15,7 +15,6 @@ import com.project.quiz.domain.Quiz;
 import com.project.quiz.domain.QuizOption;
 import com.project.quiz.domain.QuizQuestion;
 import com.project.quiz.dto.QuizDto;
-import com.project.quiz.repository.QuizQuestionRepository;
 import com.project.quiz.repository.QuizRepository;
 import com.project.quiz.repository.UserRepository;
 
@@ -35,92 +34,89 @@ public class QuizService {
 	/* ================== 저장 ================== */
 	@Transactional
 	public Long saveQuiz(QuizDto quizDto) {
-	    Quiz quiz;
+		Quiz quiz;
 
-	    if (quizDto.getQuizId() != null) {
-	        // [수정 모드] 기존 퀴즈 로드
-	        quiz = quizRepository.findById(quizDto.getQuizId())
-	                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
+		if (quizDto.getQuizId() != null) {
+			// [수정 모드] 기존 퀴즈 로드
+			quiz = quizRepository.findById(quizDto.getQuizId())
+					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
 
-	        quiz.setTitle(quizDto.getTitle());
-	        quiz.setDescription(quizDto.getDescription());
-	        quiz.setScorePublic(quizDto.isScorePublic());
-	        quiz.setUpdatedAt(LocalDateTime.now());
-	        
-	        List<Long> dtoQuestionIds = quizDto.getQuestions().stream()
-	                .map(QuizDto.QuestionDto::getQuestionId)
-	                .filter(id -> id != null)
-	                .collect(Collectors.toList());
-	        
-	        quiz.getQuestions().removeIf(q -> !dtoQuestionIds.contains(q.getQuestionId()));
+			quiz.setTitle(quizDto.getTitle());
+			quiz.setDescription(quizDto.getDescription());
+			quiz.setScorePublic(quizDto.isScorePublic());
+			quiz.setUpdatedAt(LocalDateTime.now());
 
-	    } else {
-	        // [등록 모드] 새 퀴즈 생성
-	        quiz = new Quiz();
-	        quiz.setTitle(quizDto.getTitle());
-	        quiz.setDescription(quizDto.getDescription());
-	        quiz.setScorePublic(quizDto.isScorePublic());
-	        quiz.setUserId(getLoginUserId());
-	        quiz.setCreatedAt(LocalDateTime.now());
-	        quiz.setUpdatedAt(LocalDateTime.now());
-	    }
+			List<Long> dtoQuestionIds = quizDto.getQuestions().stream().map(QuizDto.QuestionDto::getQuestionId)
+					.filter(id -> id != null).collect(Collectors.toList());
 
-	    // [문제 처리 로직]
-	    for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
-	        QuizQuestion question = null;
+			quiz.getQuestions().removeIf(q -> !dtoQuestionIds.contains(q.getQuestionId()));
 
-	        // 1. 기존 질문 찾기
-	        if (quizDto.getQuizId() != null && q.getQuestionId() != null) {
-	            question = quiz.getQuestions().stream()
-	                    .filter(existingQ -> existingQ.getQuestionId().equals(q.getQuestionId()))
-	                    .findFirst()
-	                    .orElse(null);
-	        }
+		} else {
+			// [등록 모드] 새 퀴즈 생성
+			quiz = new Quiz();
+			quiz.setTitle(quizDto.getTitle());
+			quiz.setDescription(quizDto.getDescription());
+			quiz.setScorePublic(quizDto.isScorePublic());
+			quiz.setUserId(getLoginUserId());
+			quiz.setCreatedAt(LocalDateTime.now());
+			quiz.setUpdatedAt(LocalDateTime.now());
+		}
 
-	        // 2. 기존 질문이 없으면(신규 추가된 문항) 생성 및 리스트에 추가
-	        if (question == null) {
-	            question = new QuizQuestion();
-	            question.setQuiz(quiz); // 관계 설정
-	            quiz.getQuestions().add(question); 
-	        }
+		// [문제 처리 로직]
+		for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
+			QuizQuestion question = null;
 
-	        // 3. 필드 값 업데이트 (기존이든 신규든 공통)
-	        question.setQuestionText(q.getQuestionText());
-	        question.setQuizTypeCode(q.getQuizTypeCode());
-	        question.setPoint(q.getPoint());
-	        question.setImage(q.getImage());
+			// 1. 기존 질문 찾기
+			if (quizDto.getQuizId() != null && q.getQuestionId() != null) {
+				question = quiz.getQuestions().stream()
+						.filter(existingQ -> existingQ.getQuestionId().equals(q.getQuestionId())).findFirst()
+						.orElse(null);
+			}
 
-	        /* ===== 객관식/서술형 처리 ===== */
-	        if (q.getQuizTypeCode() == 2) { // 객관식
-	            question.setAnswerOption(q.getAnswerOption());
-	            question.setSubjectiveAnswer(null);
+			// 2. 기존 질문이 없으면(신규 추가된 문항) 생성 및 리스트에 추가
+			if (question == null) {
+				question = new QuizQuestion();
+				question.setQuiz(quiz); // 관계 설정
+				quiz.getQuestions().add(question);
+			}
 
-	            if (question.getOptions() != null) {
-	                question.getOptions().clear();
-	            } else {
-	                question.setOptions(new ArrayList<>());
-	            }
+			// 3. 필드 값 업데이트 (기존이든 신규든 공통)
+			question.setQuestionText(q.getQuestionText());
+			question.setQuizTypeCode(q.getQuizTypeCode());
+			question.setPoint(q.getPoint());
+			question.setImage(q.getImage());
 
-	            if (q.getOptions() != null) {
-	                for (QuizDto.OptionDto opt : q.getOptions()) {
-	                    QuizOption option = new QuizOption();
-	                    option.setOptionNumber(opt.getOptionNumber());
-	                    option.setOptionText(opt.getOptionText());
-	                    option.setQuestion(question); // 관계 설정
-	                    question.getOptions().add(option);
-	                }
-	            }
-	        } else { // 서술형
-	            question.setSubjectiveAnswer(q.getSubjectiveAnswer());
-	            question.setAnswerOption(null);
-	            if (question.getOptions() != null) {
-	                question.getOptions().clear();
-	            }
-	        }
-	    }
+			/* ===== 객관식/서술형 처리 ===== */
+			if (q.getQuizTypeCode() == 2) { // 객관식
+				question.setAnswerOption(q.getAnswerOption());
+				question.setSubjectiveAnswer(null);
 
-	    quizRepository.save(quiz);
-	    return quiz.getQuizId();
+				if (question.getOptions() != null) {
+					question.getOptions().clear();
+				} else {
+					question.setOptions(new ArrayList<>());
+				}
+
+				if (q.getOptions() != null) {
+					for (QuizDto.OptionDto opt : q.getOptions()) {
+						QuizOption option = new QuizOption();
+						option.setOptionNumber(opt.getOptionNumber());
+						option.setOptionText(opt.getOptionText());
+						option.setQuestion(question); // 관계 설정
+						question.getOptions().add(option);
+					}
+				}
+			} else { // 서술형
+				question.setSubjectiveAnswer(q.getSubjectiveAnswer());
+				question.setAnswerOption(null);
+				if (question.getOptions() != null) {
+					question.getOptions().clear();
+				}
+			}
+		}
+
+		quizRepository.save(quiz);
+		return quiz.getQuizId();
 	}
 
 	public String storeImage(MultipartFile file) throws Exception {
@@ -211,9 +207,9 @@ public class QuizService {
 
 	@Transactional(readOnly = true)
 	public List<Quiz> getQuizList(String sort, String keyword) {
-	    if ("popular".equals(sort)) {
-	        return quizRepository.findAllOrderByPopularityAndTitle(keyword);
-	    }
-	    return quizRepository.findByTitleContainingOrderByCreatedAtDesc(keyword);
+		if ("popular".equals(sort)) {
+			return quizRepository.findAllOrderByPopularityAndTitle(keyword);
+		}
+		return quizRepository.findByTitleContainingOrderByCreatedAtDesc(keyword);
 	}
 }
