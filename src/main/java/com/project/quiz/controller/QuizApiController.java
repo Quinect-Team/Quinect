@@ -52,8 +52,8 @@ public class QuizApiController {
     }
     
     @GetMapping("/list")
-    public List<QuizDto.ListResponse> getQuizList() {
-        return quizService.findAll().stream()
+    public List<QuizDto.ListResponse> getQuizList(@RequestParam(name = "sort", defaultValue = "latest") String sort) {
+        return quizService.getQuizList(sort).stream()
                 .map(QuizDto.ListResponse::fromEntity)
                 .toList();
     }
@@ -64,7 +64,6 @@ public class QuizApiController {
                 .map(QuizDto.ListResponse::fromEntity)
                 .toList();
     }
-
 
     
 }

@@ -33,5 +33,13 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 	    @Query("update Quiz q set q.scorePublic = :scorePublic where q.id = :quizId")
 	    void updateScorePublic(@Param("quizId") Long quizId,
 	                           @Param("scorePublic") boolean scorePublic);
+	    
+
+	    // 2. 인기순: quiz_submission(QuizSubmission)의 개수가 많은 순서
+	    @Query("SELECT q FROM Quiz q " +
+	           "LEFT JOIN QuizSubmission s ON q.quizId = s.quiz.quizId " +
+	           "GROUP BY q.quizId " +
+	           "ORDER BY COUNT(s.submissionId) DESC, q.createdAt DESC")
+	    List<Quiz> findAllOrderByPopularity();
 
 }

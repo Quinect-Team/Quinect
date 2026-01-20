@@ -209,4 +209,11 @@ public class QuizService {
 		return QuizDto.fromEntity(quiz);
 	}
 
+	@Transactional(readOnly = true)
+	public List<Quiz> getQuizList(String sort) {
+	    if ("popular".equals(sort)) {
+	        return quizRepository.findAllOrderByPopularity();
+	    }
+	    return quizRepository.findAllByOrderByCreatedAtDesc();
+	}
 }
