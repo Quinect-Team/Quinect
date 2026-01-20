@@ -52,8 +52,11 @@ public class QuizApiController {
     }
     
     @GetMapping("/list")
-    public List<QuizDto.ListResponse> getQuizList(@RequestParam(name = "sort", defaultValue = "latest") String sort) {
-        return quizService.getQuizList(sort).stream()
+    public List<QuizDto.ListResponse> getQuizList(
+            @RequestParam(name = "sort", defaultValue = "latest") String sort,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+        
+        return quizService.getQuizList(sort, keyword).stream()
                 .map(QuizDto.ListResponse::fromEntity)
                 .toList();
     }

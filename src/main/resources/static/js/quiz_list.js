@@ -55,38 +55,88 @@ function loadQuizzes(sortType = 'latest') {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. 초기 로딩 (최신순)
-    loadQuizzes('latest');
+    const searchInput = document.querySelector('.search-input-group input');
+    const searchBtn = document.querySelector('.search-input-group button');
 
-    // 2. 버튼 클릭 이벤트 통합 관리
+    // [정렬 버튼 클릭]
     document.querySelectorAll('.sort-btn').forEach(button => {
         button.addEventListener('click', function() {
-            const sortType = this.value; // 'popular' 또는 'latest'
-            
-            // 버튼 UI 상태 변경
             document.querySelectorAll('.sort-btn').forEach(btn => {
                 btn.classList.replace('btn-secondary', 'btn-outline-secondary');
             });
             this.classList.replace('btn-outline-secondary', 'btn-secondary');
-
-            // 데이터 로드
-            loadQuizzes(sortType);
+            
+            loadQuizzes(); // 정렬 상태가 바뀌면 검색어와 함께 다시 호출
         });
     });
+
+    // [검색 버튼 클릭]
+    searchBtn.addEventListener('click', function(e) {
+        e.preventDefault(); // 폼 제출로 인한 새로고침 방지
+        loadQuizzes();
+    });
+
+    // [엔터키 입력]
+    searchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            loadQuizzes();
+        }
+    });
+
+    // 초기 로드
+    loadQuizzes();
 });
 
-function loadQuizzes(sortType = 'latest') {
-    const url = `/quiz/list?sort=${sortType}`;
-    
-    fetch(url)
-        .then(res => {
-            if (!res.ok) throw new Error('데이터를 불러올 수 없습니다.');
-            return res.json();
-        })
+function loadQuizzes() {
+    const sortType = document.querySelector('.sort-btn.btn-secondary').value;
+    const keyword = document.querySelector('.search-input-group input').value;
+    const container = document.getElementById('list');
+
+    // 로딩 중 표시
+    container.innerHTML = '<div class="text-center w-100 py-5"><div class="spinner-border text-success"></div></div>';
+
+    fetch(`/quiz/list?sort=${sortType}&keyword=${encodeURIComponent(keyword)}`)
+        .then(res => res.json())
         .then(data => {
-            renderQuizList(data);
+            container.innerHTML = ''; // 기존 목록 비우기
+
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5 w-100">
+                        <i class="fas fa-search fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">"${keyword}"에 대한 검색 결과가 없습니다.</p>
+                    </div>`;
+                return;
+            }
+
+            // 요청하신 양식 그대로 적용
+            data.forEach(quiz => {
+                const imagePath = (quiz.questions && quiz.questions.length > 0 && quiz.questions[0].image)
+                    ? `/uploads/quiz/${quiz.questions[0].image}`
+                    : null;
+
+                const item = `
+                    <a href="/quiz/view/${quiz.quizId}" class="quiz-item-link">
+                        <div class="quiz-card">
+                            <div class="thumb" ${imagePath ? `style="background-image:url('${imagePath}')"` : 'style="display:flex; align-items:center; justify-content:center; background-color:#f8f9fc;"'}>
+                                ${!imagePath ? '<i class="fas fa-question fa-2x text-gray-300"></i>' : ''}
+                            </div>
+                            <div class="info">
+                                <div class="title">${quiz.title}</div>
+                                <div class="desc">${quiz.description || ''}</div>
+                                <div class="meta text-xs text-gray-500 mt-2">
+                                    <i class="fas fa-user-edit"></i> 작성일: ${quiz.createdAt.split('T')[0]}
+                                </div>
+                            </div>
+                        </div>
+                    </a>`;
+                container.insertAdjacentHTML('beforeend', item);
+            });
         })
-        .catch(err => console.error("로딩 실패:", err));
+        .catch(err => {
+            console.error("데이터 로드 실패:", err);
+            container.innerHTML = '<p class="text-center text-danger py-5">데이터를 불러오는 중 오류가 발생했습니다.</p>';
+        });
 }
 
 function renderQuizList(quizzes) {

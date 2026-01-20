@@ -210,10 +210,10 @@ public class QuizService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<Quiz> getQuizList(String sort) {
+	public List<Quiz> getQuizList(String sort, String keyword) {
 	    if ("popular".equals(sort)) {
-	        return quizRepository.findAllOrderByPopularity();
+	        return quizRepository.findAllOrderByPopularityAndTitle(keyword);
 	    }
-	    return quizRepository.findAllByOrderByCreatedAtDesc();
+	    return quizRepository.findByTitleContainingOrderByCreatedAtDesc(keyword);
 	}
 }

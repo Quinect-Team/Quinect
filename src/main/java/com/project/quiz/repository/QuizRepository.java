@@ -15,9 +15,7 @@ import com.project.quiz.domain.User;
 
 @Repository
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
-	    List<Quiz> findAllByOrderByCreatedAtDesc();  // 최신순
-	    List<Quiz> findAllByOrderByQuizIdDesc();     // 인기순(예시)
-	    List<QuizQuestion> findByQuizId(Long quizId);
+		List<QuizQuestion> findByQuizId(Long quizId);
 	    List<Quiz> findByUserIdOrderByCreatedAtDesc(Long userId);
 	    long countByUserId(Long UserId);
 
@@ -34,12 +32,15 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 	    void updateScorePublic(@Param("quizId") Long quizId,
 	                           @Param("scorePublic") boolean scorePublic);
 	    
+	    List<Quiz> findByTitleContainingOrderByCreatedAtDesc(String title); // 최신순
+	    
 
 	    // 2. 인기순: quiz_submission(QuizSubmission)의 개수가 많은 순서
 	    @Query("SELECT q FROM Quiz q " +
-	           "LEFT JOIN QuizSubmission s ON q.quizId = s.quiz.quizId " +
-	           "GROUP BY q.quizId " +
-	           "ORDER BY COUNT(s.submissionId) DESC, q.createdAt DESC")
-	    List<Quiz> findAllOrderByPopularity();
+	            "LEFT JOIN QuizSubmission s ON q.quizId = s.quiz.quizId " +
+	            "WHERE q.title LIKE %:title% " + // 검색 조건 추가
+	            "GROUP BY q.quizId " +
+	            "ORDER BY COUNT(s.submissionId) DESC, q.createdAt DESC")
+	     List<Quiz> findAllOrderByPopularityAndTitle(@Param("title") String title);
 
 }
