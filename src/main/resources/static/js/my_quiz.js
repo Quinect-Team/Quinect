@@ -19,7 +19,7 @@ function renderQuizzes(quizzes) {
             <div class="col-12 text-center py-5">
                 <i class="fas fa-folder-open fa-3x text-gray-300 mb-3"></i>
                 <p class="text-gray-500 mb-0">아직 출제한 퀴즈가 없습니다.</p>
-                <a href="/setquestion" class="btn btn-primary btn-sm mt-3">새 퀴즈 만들기</a>
+                <a href="/setquestion" class="btn btn-success btn-sm mt-3">새 퀴즈 만들기</a>
             </div>`;
         return;
     }
