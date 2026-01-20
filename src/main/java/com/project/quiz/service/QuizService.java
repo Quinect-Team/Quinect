@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class QuizService {
 	    Quiz quiz;
 
 	    if (quizDto.getQuizId() != null) {
+	        // [수정 모드] 기존 퀴즈 로드
 	        quiz = quizRepository.findById(quizDto.getQuizId())
 	                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 퀴즈 ID: " + quizDto.getQuizId()));
 
@@ -45,8 +47,15 @@ public class QuizService {
 	        quiz.setScorePublic(quizDto.isScorePublic());
 	        quiz.setUpdatedAt(LocalDateTime.now());
 	        
-	        // quiz.getQuestions().clear(); <- 이 부분을 삭제했습니다.
+	        List<Long> dtoQuestionIds = quizDto.getQuestions().stream()
+	                .map(QuizDto.QuestionDto::getQuestionId)
+	                .filter(id -> id != null)
+	                .collect(Collectors.toList());
+	        
+	        quiz.getQuestions().removeIf(q -> !dtoQuestionIds.contains(q.getQuestionId()));
+
 	    } else {
+	        // [등록 모드] 새 퀴즈 생성
 	        quiz = new Quiz();
 	        quiz.setTitle(quizDto.getTitle());
 	        quiz.setDescription(quizDto.getDescription());
@@ -56,11 +65,11 @@ public class QuizService {
 	        quiz.setUpdatedAt(LocalDateTime.now());
 	    }
 
-	    // [수정/추가 로직 시작]
+	    // [문제 처리 로직]
 	    for (QuizDto.QuestionDto q : quizDto.getQuestions()) {
 	        QuizQuestion question = null;
 
-	        // 1. 수정 모드일 때 기존 질문이 있는지 ID로 확인
+	        // 1. 기존 질문 찾기
 	        if (quizDto.getQuizId() != null && q.getQuestionId() != null) {
 	            question = quiz.getQuestions().stream()
 	                    .filter(existingQ -> existingQ.getQuestionId().equals(q.getQuestionId()))
@@ -68,25 +77,28 @@ public class QuizService {
 	                    .orElse(null);
 	        }
 
-	        // 2. 기존 질문이 없으면 새로 생성, 있으면 기존 객체 사용
+	        // 2. 기존 질문이 없으면(신규 추가된 문항) 생성 및 리스트에 추가
 	        if (question == null) {
 	            question = new QuizQuestion();
-	            quiz.addQuestion(question); // 신규일 때만 리스트에 추가
+	            question.setQuiz(quiz); // 관계 설정
+	            quiz.getQuestions().add(question); 
 	        }
 
+	        // 3. 필드 값 업데이트 (기존이든 신규든 공통)
 	        question.setQuestionText(q.getQuestionText());
 	        question.setQuizTypeCode(q.getQuizTypeCode());
 	        question.setPoint(q.getPoint());
 	        question.setImage(q.getImage());
 
-	        /* ===== 객관식 ===== */
-	        if (q.getQuizTypeCode() == 2) {
+	        /* ===== 객관식/서술형 처리 ===== */
+	        if (q.getQuizTypeCode() == 2) { // 객관식
 	            question.setAnswerOption(q.getAnswerOption());
 	            question.setSubjectiveAnswer(null);
 
-	            // 보기는 관계가 복잡하므로 수정 시 일단 비우고 새로 넣는 것이 안전합니다 (addOption 사용)
 	            if (question.getOptions() != null) {
 	                question.getOptions().clear();
+	            } else {
+	                question.setOptions(new ArrayList<>());
 	            }
 
 	            if (q.getOptions() != null) {
@@ -94,11 +106,11 @@ public class QuizService {
 	                    QuizOption option = new QuizOption();
 	                    option.setOptionNumber(opt.getOptionNumber());
 	                    option.setOptionText(opt.getOptionText());
-	                    question.addOption(option);
+	                    option.setQuestion(question); // 관계 설정
+	                    question.getOptions().add(option);
 	                }
 	            }
-	        /* ===== 서술형 ===== */
-	        } else {
+	        } else { // 서술형
 	            question.setSubjectiveAnswer(q.getSubjectiveAnswer());
 	            question.setAnswerOption(null);
 	            if (question.getOptions() != null) {
