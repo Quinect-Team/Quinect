@@ -42,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			titleElement.innerText = "퀴즈 수정하기";
 		}
 		loadQuiz(quizId);
-		return;
 	}
 
 	// 새 퀴즈 생성 모드
@@ -51,7 +50,30 @@ document.addEventListener("DOMContentLoaded", () => {
 	// ==========================================
 	// 4️⃣ 유틸리티 함수
 	// ==========================================
+	async function loadQuiz(id) {
+		try {
+			console.log("▶ 퀴즈 데이터 로딩 시작: ID " + id);
 
+			// 1. 서버 API 호출 (QuizApiController의 /quiz/api/{id} 사용)
+			const res = await fetch(`/quiz/api/${id}`);
+			if (!res.ok) throw new Error("퀴즈 로드 실패: " + res.status);
+
+			const data = await res.json();
+			console.log("▶ 서버에서 가져온 퀴즈:", data);
+
+			// 2. 전역 변수 세팅 (저장할 때 수정 모드로 인식하게 함)
+			currentQuizId = data.quizId;
+			currentUserId = data.userId; // (필요하면 사용)
+
+			// 3. 화면에 뿌리기 (applyQuizToUI 함수 사용)
+			// applyQuizToUI는 파일 하단에 정의되어 있지만, function으로 선언되어 있어서 여기서도 호출 가능
+			applyQuizToUI(data);
+
+		} catch (e) {
+			console.error("❌ 퀴즈 불러오기 오류:", e);
+			alert("퀴즈 정보를 불러오는데 실패했습니다.");
+		}
+	}
 	/**
 	 * 디바운스 자동저장
 	 */
@@ -594,17 +616,19 @@ document.addEventListener("DOMContentLoaded", () => {
 	setQidsAndAttachAll();
 
 	// 자동 복구
-	(function autoRestoreIfExists() {
-		const saved = localStorage.getItem(LOCAL_KEY);
-		if (!saved) return;
-		try {
-			const parsed = JSON.parse(saved);
-			loadQuizFromLocal(parsed);
-			console.log("[autosave] 로컬 임시본 복원 완료.");
-		} catch (e) {
-			console.warn("로컬 임시본 파싱 실패", e);
-		}
-	})();
+	if (!quizId) {
+		(function autoRestoreIfExists() {
+			const saved = localStorage.getItem(LOCAL_KEY);
+			if (!saved) return;
+			try {
+				const parsed = JSON.parse(saved);
+				loadQuizFromLocal(parsed);
+				console.log("[autosave] 로컬 임시본 복원 완료.");
+			} catch (e) {
+				console.warn("로컬 임시본 파싱 실패", e);
+			}
+		})();
+	}
 
 	// 내용 변경 시 자동 임시 저장
 	document.addEventListener("input", debounceAutoSave);
@@ -920,6 +944,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 			block.querySelector(".q-title").value = q.questionText || "";
 			block.querySelector(".q-point").value = q.point || 10;
+
+			if (q.image) {
+				block.dataset.image = q.image; // 데이터셋에 기존 파일명 저장
+
+				// 미리보기 강제 표시
+				const previewWrapper = block.querySelector(".image-preview-wrapper");
+				const previewImg = block.querySelector(".image-preview");
+				const filenameText = block.querySelector(".filename-text");
+
+				if (previewWrapper && previewImg) {
+					previewWrapper.style.display = "block";
+					previewImg.src = "/uploads/quiz/" + q.image; // 경로 주의
+					if (filenameText) filenameText.textContent = q.image;
+				}
+			}
 
 			const isMultiple = (q.quizTypeCode === 2);
 			const typeBtn = block.querySelector(".dropdown-toggle");

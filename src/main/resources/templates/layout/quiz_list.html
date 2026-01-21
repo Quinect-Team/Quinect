@@ -32,9 +32,10 @@
 				<th:block th:each="quiz : ${quizzes}">
 				    <a th:href="'/view/' + ${quiz.quizId}" class="quiz-item-link" style="display: block; text-decoration: none;">
 				        <div class="quiz-card" style="cursor: pointer;">
-				            <div class="thumb" th:if="${quiz.questions != null and !#lists.isEmpty(quiz.questions)}"
-				                 th:style="|background-image:url('/uploads/${quiz.questions[0].image}')|">
-				            </div>
+							<div class="thumb" 
+							     th:unless="${quiz.questions != null and !#lists.isEmpty(quiz.questions) and quiz.questions[0].image != null}"
+							     style="background-image:url('/uploads/app_logo_grey.png'); background-color: #eee;">
+							</div>
 				            <div class="thumb placeholder-thumb" th:unless="${quiz.questions != null and !#lists.isEmpty(quiz.questions)}">
 				                 <i class="fas fa-question fa-3x text-gray-300"></i>
 				            </div>
