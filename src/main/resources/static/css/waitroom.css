@@ -134,3 +134,19 @@
 .gap-2 {
     gap: 8px;
 }
+
+.vote-timer {
+    text-align: center;
+    margin-top: 10px;
+    padding: 10px;
+    background: #fff3cd;
+    border-radius: 6px;
+    font-weight: bold;
+    color: #ff6b6b;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}

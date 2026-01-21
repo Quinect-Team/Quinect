@@ -6,6 +6,8 @@ var userId = null;
 var currentVoteId = null;
 var currentVoteChoice = null;
 var voteResults = { AGREE: 0, DISAGREE: 0 };
+var voteCountdownInterval = null;
+var voteCountdownTimer = null;
 
 var participants = [];
 
@@ -275,12 +277,30 @@ function openCreateVoteModal() {
 	document.getElementById('voteTitle').focus();
 }
 
+function setVoteDuration(seconds) {
+	document.getElementById('voteDuration').value = seconds;
+
+	document.querySelectorAll('.btn-group-sm .btn').forEach(btn => {
+		btn.classList.remove('active', 'btn-primary');
+		btn.classList.add('btn-outline-secondary');
+	});
+
+	event.target.classList.remove('btn-outline-secondary');
+	event.target.classList.add('active', 'btn-primary');
+}
+
 function submitVoteCreate() {
 	var title = document.getElementById('voteTitle').value.trim();
 	var content = document.getElementById('voteContent').value.trim();
+	var duration = parseInt(document.getElementById('voteDuration').value) || 30;
 
 	if (!title) {
 		alert('투표 제목을 입력해주세요.');
+		return;
+	}
+
+	if (duration < 10 || duration > 300) {
+		alert('투표 시간은 10초 ~ 300초 범위여야 합니다.');
 		return;
 	}
 
@@ -291,15 +311,140 @@ function submitVoteCreate() {
 			question: title,
 			description: content,
 			creator: username,
+			duration: duration,  // ⭐ 투표 시간 포함
 			timestamp: new Date().getTime()
 		};
 
 		stompClient.send('/app/vote/start/' + roomCode, {}, JSON.stringify(voteData));
+
+		// ⭐ 프로그레스바 타이머 시작
+		startVoteProgressTimer(duration, voteData.voteId);
+
 		$('#createVoteModal').modal('hide');
 	} else {
 		alert('WebSocket이 연결되지 않았습니다.');
 	}
 }
+
+function startVoteProgressTimer(duration, voteId) {
+	console.log('🗳️ 투표 프로그레스바 시작:', duration + '초', 'voteId:', voteId);
+
+	const startTime = Date.now();
+	const endTime = startTime + (duration * 1000); // 종료 시각 미리 계산
+
+	var voteMessages = document.querySelectorAll('.vote-message');
+	var voteMessage = voteMessages[voteMessages.length - 1];
+
+	if (!voteMessage) return;
+
+	// (프로그레스바 HTML 생성 부분은 기존과 동일하므로 생략)
+	var progressContainer = document.createElement('div');
+	progressContainer.className = 'vote-progress-container';
+	progressContainer.id = 'vote-progress-' + voteId;
+	// ... [중략: 기존 스타일 및 innerHTML 코드] ...
+	progressContainer.innerHTML = `
+            <small style="color: #ffffff; font-size: 15px;">
+                <span class="vote-remaining-time">${duration}</span>초 / ${duration}초
+            </small>
+        <div class="progress" style="height: 20px; border-radius: 4px; overflow: hidden; background: #e9ecef;">
+            <div class="progress-bar vote-progress-bar" 
+                 role="progressbar" 
+                 style="width: 0%; background: linear-gradient(90deg, #4e73df, #2e59d9); 
+                         transition: width 0.05s linear; display: flex; align-items: center; justify-content: center;">
+            </div>
+        </div>
+    `;
+	voteMessage.appendChild(progressContainer);
+
+	function updateProgress() {
+		const now = Date.now();
+		const remainingMs = endTime - now;
+		const elapsed = (now - startTime) / 1000;
+
+		let progress = Math.min((elapsed / duration) * 100, 100);
+
+		// ⭐ 수정된 부분: 0.9초 이하로 남으면 바로 '0'을 출력하도록 설정
+		// Math.floor를 쓰거나, 특정 임계점(0.1초 등) 이하일 때 0으로 강제
+		let remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+		if (remainingMs <= 500) { // 0.5초 미만으로 남았을 때 미리 0으로 표시
+			remainingSeconds = 0;
+		}
+
+		var progressBar = progressContainer.querySelector('.vote-progress-bar');
+		var remainingTimeSpan = progressContainer.querySelector('.vote-remaining-time');
+
+		if (progressBar) progressBar.style.width = progress + '%';
+		if (remainingTimeSpan) remainingTimeSpan.textContent = remainingSeconds;
+
+		// ⭐ 종료 조건 세분화
+		if (now >= endTime) {
+			// 마지막 렌더링 확인
+			if (remainingTimeSpan) remainingTimeSpan.textContent = '0';
+			if (progressBar) progressBar.style.width = '100%';
+
+			console.log('⏰ 0초 표시 완료 -> 종료 프로세스 진입');
+
+			// 멈추기 전에 0을 확실히 보여주기 위해 프레임 루프를 여기서 종료
+			cancelAnimationFrame(voteCountdownInterval);
+
+			// 0초를 눈으로 확인할 시간을 줍니다 (500ms)
+			setTimeout(() => {
+				stopVoteProgressTimer();
+				endVote(voteId);
+			}, 500);
+			return;
+		}
+
+		voteCountdownInterval = requestAnimationFrame(updateProgress);
+	}
+
+	voteCountdownInterval = requestAnimationFrame(updateProgress);
+
+	// 하단의 기존 setTimeout은 삭제하거나 시간을 훨씬 더 길게(duration + 2초) 잡으세요.
+}
+
+function stopVoteProgressTimer() {
+	console.log('⏹️ 투표 프로그레스바 중지');
+
+	if (voteCountdownInterval) {
+		cancelAnimationFrame(voteCountdownInterval);
+		voteCountdownInterval = null;
+	}
+	if (voteCountdownTimer) {
+		clearTimeout(voteCountdownTimer);
+		voteCountdownTimer = null;
+	}
+}
+
+function endVote(voteId) {
+	console.log('🗳️ 투표 종료:', voteId);
+
+	// 투표 버튼 비활성화
+	var voteMessages = document.querySelectorAll('[data-vote-id="' + voteId + '"]');
+	voteMessages.forEach(function(msg) {
+		var buttons = msg.querySelectorAll('.vote-agree-btn, .vote-disagree-btn');
+		buttons.forEach(btn => {
+			btn.disabled = true;
+			btn.style.opacity = '0.5';
+		});
+	});
+
+	// 시스템 메시지
+	var messagesDiv = document.getElementById('messages');
+	var msgDiv = document.createElement('div');
+	msgDiv.innerHTML = '<strong style="color: #dc3545;">✓ 시스템:</strong> <em>투표가 종료되었습니다.</em>';
+	msgDiv.style.padding = '8px';
+	msgDiv.style.marginBottom = '8px';
+	msgDiv.style.borderBottom = '1px solid #eee';
+	msgDiv.style.color = '#dc3545';
+	msgDiv.style.fontStyle = 'italic';
+	messagesDiv.appendChild(msgDiv);
+	messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+	localStorage.removeItem('currentVote_' + roomCode);
+	currentVoteId = null;
+}
+
 
 function openParticipateVoteModal(voteId, question, description) {
 	currentVoteId = voteId;
@@ -348,6 +493,7 @@ function displayVoteMessageInChat(voteData) {
 	var msgDiv = document.createElement('div');
 
 	msgDiv.className = 'vote-message';
+	msgDiv.setAttribute('data-vote-id', voteData.voteId);
 	msgDiv.innerHTML = '<div class="vote-message-title">🗳️ ' + escapeHtml(voteData.question) + '</div>' +
 		(voteData.description ? '<div class="vote-message-desc">' + escapeHtml(voteData.description) + '</div>' : '') +
 		'<div class="vote-message-button" onclick="openParticipateVoteModal(' +
@@ -370,12 +516,20 @@ function handleVoteUpdate(voteData) {
 			voteId: voteData.voteId,
 			question: voteData.question,
 			description: voteData.description,
-			creator: voteData.creator
+			creator: voteData.creator,
+			duration: voteData.duration
 		}));
+
+		// ⭐ 프로그레스바 타이머 시작
+		if (voteData.duration) {
+			startVoteProgressTimer(voteData.duration, voteData.voteId);
+		}
+
 	} else if (voteData.type === 'UPDATE') {
 		updateVoteResults(voteData.results);
 		localStorage.setItem('voteResults_' + roomCode + '_' + voteData.voteId, JSON.stringify(voteData.results));
 	} else if (voteData.type === 'END') {
+		stopVoteProgressTimer();
 		localStorage.removeItem('currentVote_' + roomCode);
 		localStorage.removeItem('voteResults_' + roomCode + '_' + currentVoteId);
 		localStorage.removeItem('myVoteChoice_' + roomCode + '_' + currentVoteId);

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방에 접속할 수 없습니다</title>
+    
+	<link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css" />
+	<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
+	<link th:href="@{/css/sb-admin-2.css}" rel="stylesheet" />
+</head>
+<body class="bg-gradient-success d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <!-- Error Card -->
+                <div class="card border shadow-lg h-100 py-5">
+                    <div class="card-body text-center">
+                        
+                        <!-- Error Icon -->
+                        <div class="mb-4">
+                            <i class="fas fa-exclamation-triangle text-danger" style="font-size: 80px;"></i>
+                        </div>
+                        
+                        <!-- Error Title -->
+                        <h1 class="h3 text-dark font-weight-bold mb-3">
+                            방에 접속할 수 없습니다
+                        </h1>
+                        
+                        <!-- Error Message -->
+                        <p class="text-secondary mb-4">
+                            요청하신 게임 방이 존재하지 않거나<br>
+                            이미 게임이 시작되어 마감되었습니다.
+                        </p>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 justify-content-center flex-wrap mb-4">
+                            <a href="/" class="btn btn-success btn-lg">
+                                <i class="fas fa-home mr-2"></i>홈으로 이동
+                            </a>
+                        </div>
+
+                        <!-- Footer Info -->
+                        <div class="border-top pt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-lightbulb mr-2"></i>
+                                새로운 방을 만들거나 친구가 보낸 초대를 확인해보세요.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>>
+</body>
+</html>

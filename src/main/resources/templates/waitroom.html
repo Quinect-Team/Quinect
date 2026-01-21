@@ -256,58 +256,69 @@
       </div>
     </div>
 
-    <!-- 방장용 투표 시작 모달 -->
-    <div class="modal fade" id="createVoteModal" tabindex="-1" role="dialog">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title"><i class="fas fa-poll"></i> 투표 만들기</h5>
-            <button type="button" class="close text-white" data-dismiss="modal">
-              <span>&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="voteTitle"><strong>투표 제목</strong></label>
-              <input
-                type="text"
-                class="form-control"
-                id="voteTitle"
-                placeholder="예: 게임 규칙 변경에 찬성하나요?"
-                maxlength="100"
-              />
-            </div>
-            <div class="form-group">
-              <label for="voteContent"
-                ><strong>투표 내용 (선택사항)</strong></label
-              >
-              <textarea
-                class="form-control"
-                id="voteContent"
-                rows="3"
-                placeholder="투표에 대한 자세한 설명을 입력하세요."
-              ></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              onclick="submitVoteCreate()"
-            >
-              <i class="fas fa-check"></i> 투표 시작
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+	<!-- 투표 생성 모달 -->
+	<div class="modal fade" id="createVoteModal" tabindex="-1">
+	    <div class="modal-dialog">
+	        <div class="modal-content">
+	            <div class="modal-header bg-danger text-white">
+	                <h5 class="modal-title">투표 생성</h5>
+	                <button type="button" class="close text-white" data-dismiss="modal">
+	                    <span>&times;</span>
+	                </button>
+	            </div>
+	            <div class="modal-body">
+	                <div class="form-group">
+	                    <label for="voteTitle">투표 제목</label>
+	                    <input type="text" class="form-control" id="voteTitle" 
+	                           placeholder="투표 제목을 입력하세요">
+	                </div>
+
+	                <div class="form-group">
+	                    <label for="voteContent">투표 설명 (선택사항)</label>
+	                    <textarea class="form-control" id="voteContent" rows="3" 
+	                              placeholder="투표 설명을 입력하세요"></textarea>
+	                </div>
+
+	                <!-- ⭐ 시간 선택 추가 -->
+	                <div class="form-group">
+	                    <label for="voteDuration">투표 시간</label>
+	                    <div class="input-group">
+	                        <input type="number" class="form-control" id="voteDuration" 
+	                               value="20" min="10" max="30" step="5"
+	                               placeholder="10~300초 사이의 값">
+	                        <div class="input-group-append">
+	                            <span class="input-group-text">초</span>
+	                        </div>
+	                    </div>
+	                    <small class="form-text text-muted">
+	                        10초 ~ 30초 범위에서 선택 가능합니다
+	                    </small>
+	                </div>
+
+	                <!-- 빠른 선택 버튼 -->
+	                <div class="form-group">
+	                    <label>빠른 선택:</label>
+	                    <div class="btn-group btn-group-sm" role="group">
+	                        <button type="button" class="btn btn-outline-secondary" 
+	                                onclick="setVoteDuration(10)">10초</button>
+	                        <button type="button" class="btn btn-outline-secondary" 
+	                                onclick="setVoteDuration(15)">15초</button>
+	                        <button type="button" class="btn btn-outline-secondary" 
+	                                onclick="setVoteDuration(20)">20초</button>
+	                        <button type="button" class="btn btn-outline-secondary" 
+	                                onclick="setVoteDuration(25)">25초</button>
+							<button type="button" class="btn btn-outline-secondary" 
+	                                onclick="setVoteDuration(30)">30초</button>
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="modal-footer">
+	                <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+	                <button type="button" class="btn btn-danger" onclick="submitVoteCreate()">투표 생성</button>
+	            </div>
+	        </div>
+	    </div>
+	</div>
 
     <!-- 사용자용 투표 참가 모달 -->
     <div

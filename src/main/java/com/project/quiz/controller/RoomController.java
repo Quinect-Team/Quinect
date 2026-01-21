@@ -81,12 +81,8 @@ public class RoomController {
 	public String showRoomByCode(@PathVariable("roomCode") String roomCode, Model model, Principal principal,
 			HttpSession session) {
 		Room room = roomService.getRoomByCode(roomCode);
-		if (room == null) {
-			return "404"; // 방 없음 처리 페이지
-		}
-
-		if ("CLOSED".equals(room.getStatusCode())) {
-			return "room_closed"; // "이 방은 종료되었습니다" 같은 안내 템플릿 만들기
+		if (room == null || "CLOSED".equals(room.getStatusCode())) {
+			return "room-error"; // 방 없음 처리 페이지
 		}
 
 		User user = null;

@@ -56,7 +56,7 @@ window.invitationsSubscribed = false;
 		$('#chatFriendName').text(username || '알 수 없는 사용자');
 		$('#messageHistory').html('<p class="text-center text-muted small">메시지가 없습니다.</p>');
 
-		console.log('✅ 채팅 전환:', $('#chatModal').data());
+		console.log('채팅 전환:', $('#chatModal').data());
 
 		setTimeout(function() {
 			$('#messageInput').focus();
@@ -100,7 +100,7 @@ window.invitationsSubscribed = false;
 				}
 			},
 			success: function(response) {
-				console.log('✅ 메시지 전송 성공:', response);
+				console.log('메시지 전송 성공:', response);
 				$('#messageInput').val('').focus();
 
 				if (response && response.id) {
@@ -112,7 +112,7 @@ window.invitationsSubscribed = false;
 				}
 			},
 			error: function(xhr) {
-				console.error('❌ 메시지 전송 실패:', xhr);
+				console.error('메시지 전송 실패:', xhr);
 				alert(xhr.responseText || '메시지 전송에 실패했습니다');
 			}
 		});
@@ -530,7 +530,7 @@ window.invitationsSubscribed = false;
 				}, 500);
 			},
 			error: function(xhr) {
-				console.error('❌ 친구 요청 실패:', xhr);
+				console.error('친구 요청 실패:', xhr);
 				alert(xhr.responseText || '친구 요청에 실패했습니다.');
 			}
 		});
@@ -593,7 +593,7 @@ window.invitationsSubscribed = false;
 				}, 1000);
 			},
 			error: function(xhr) {
-				console.error('❌ ' + (action === 'reject' ? '거절' : '차단') + ' 실패:', xhr);
+				console.error((action === 'reject' ? '거절' : '차단') + ' 실패:', xhr);
 				alert(xhr.responseText || (action === 'reject' ? '거절' : '차단') + '에 실패했습니다.');
 			}
 		});
@@ -623,7 +623,7 @@ window.invitationsSubscribed = false;
 				}, 500);
 			},
 			error: function(xhr) {
-				console.error('❌ 친구 삭제 실패:', xhr);
+				console.error('친구 삭제 실패:', xhr);
 				alert(xhr.responseText || '친구 삭제에 실패했습니다.');
 			}
 		});
@@ -666,7 +666,7 @@ window.invitationsSubscribed = false;
 				}
 			},
 			success: function(response) {
-				console.log('✅ 메시지 전송 성공:', response);
+				console.log('메시지 전송 성공:', response);
 				$('#messageInput').val('').focus();
 
 				if (response && response.id) {
@@ -678,7 +678,7 @@ window.invitationsSubscribed = false;
 				}
 			},
 			error: function(xhr) {
-				console.error('❌ 메시지 전송 실패:', xhr);
+				console.error('메시지 전송 실패:', xhr);
 				alert(xhr.responseText || '메시지 전송에 실패했습니다');
 			}
 		});
@@ -717,7 +717,7 @@ window.invitationsSubscribed = false;
 				}, 100);
 			},
 			error: function(xhr) {
-				console.error('❌ 메시지 기록 조회 실패:', xhr);
+				console.error('메시지 기록 조회 실패:', xhr);
 				$('#messageHistory').html(
 					'<p class="text-center text-muted small">메시지를 불러올 수 없습니다.</p>'
 				);
@@ -732,14 +732,6 @@ window.invitationsSubscribed = false;
 		console.log('📨 displayMessage() 호출:', msg);
 
 		const currentUserId = $('body').data('user-id');
-		console.log('  currentUserId:', currentUserId);
-		console.log('  msg.senderId:', msg.senderId);
-		console.log('  msg.messageText:', msg.messageText);
-
-		if (!currentUserId) {
-			console.error('❌ currentUserId가 없음!');
-			return;
-		}
 
 		// ⭐ sentAt을 Date 객체로 변환
 		const messageTime = new Date(msg.sentAt).toLocaleTimeString('ko-KR', {
@@ -759,64 +751,98 @@ window.invitationsSubscribed = false;
 		// 게임 초대 처리...
 		if (isGameInvitation && roomCode) {
 			console.log('🎮 게임 초대 감지:', roomCode);
+			console.log('📖 isRead:', msg.isRead);
 
-			// ✅ showInvitationNotification() 호출!
-			const invitationData = {
-				type: 'ROOM_INVITATION',
-				roomCode: roomCode,
-				inviterName: msg.senderName || '친구',
-				messageText: msg.messageText
-			};
+			// ⭐ isRead = false일 때만 모달 팝업 (첫 1회)
+			if (!msg.isRead) {
+				console.log('🎉 첫 초대, 모달 팝업 표시');
 
-			showInvitationNotification(invitationData);
+				const invitationData = {
+					type: 'ROOM_INVITATION',
+					roomCode: roomCode,
+					inviterName: msg.senderName || '친구',
+					messageText: msg.messageText,
+					messageId: msg.id,  // ⭐ 메시지 ID (읽음 처리용)
+					senderId: msg.senderId,
+					friendshipId: msg.friendshipId
+				};
+
+				showInvitationNotification(invitationData);
+			} else {
+				console.log('📨 이미 읽은 초대, 채팅창 메시지로만 표시');
+			}
+
+			// ⭐ 모든 초대: 채팅창에도 메시지로 표시
+			displayInvitationMessage(msg);
 			return;
 		}
 
 		// ⭐ 일반 메시지 처리
-		console.log('📝 일반 메시지 처리 시작');
-
 		if (msg.senderId === currentUserId) {
-			console.log('📤 내 메시지 표시');
 			$('#messageHistory').append(`
-	            <div class="mb-2 d-flex justify-content-end">
-	                <div class="card bg-success text-white" style="max-width: 70%; word-break: break-word;">
-	                    <div class="card-body p-2">
-	                        <p class="mb-0">${escapeHtml(msg.messageText)}</p>
-	                        <small class="text-bright-50" style="font-size: 0.75rem;">
-	                            ${messageTime}
-	                        </small>
-	                    </div>
-	                </div>
-	            </div>
-	        `);
+		            <div class="mb-2 d-flex justify-content-end">
+		                <div class="card bg-success text-white" style="max-width: 70%; word-break: break-word;">
+		                    <div class="card-body p-2">
+		                        <p class="mb-0">${escapeHtml(msg.messageText)}</p>
+		                        <small class="text-bright-50" style="font-size: 0.75rem;">
+		                            ${messageTime}
+		                        </small>
+		                    </div>
+		                </div>
+		            </div>
+		        `);
 		} else {
-			console.log('📥 상대 메시지 표시');
 			$('#messageHistory').append(`
-	            <div class="mb-2 d-flex justify-content-start">
-	                <div class="card bg-light" style="max-width: 70%; word-break: break-word;">
-	                    <div class="card-body p-2">
-	                        <p class="mb-0 text-dark">${escapeHtml(msg.messageText)}</p>
-	                        <small class="text-muted" style="font-size: 0.75rem;">
-	                            ${messageTime}
-	                        </small>
-	                    </div>
-	                </div>
-	            </div>
-	        `);
+		            <div class="mb-2 d-flex justify-content-start">
+		                <div class="card bg-light" style="max-width: 70%; word-break: break-word;">
+		                    <div class="card-body p-2">
+		                        <p class="mb-0 text-dark">${escapeHtml(msg.messageText)}</p>
+		                        <small class="text-muted" style="font-size: 0.75rem;">
+		                            ${messageTime}
+		                        </small>
+		                    </div>
+		                </div>
+		            </div>
+		        `);
 		}
 
-		// 스크롤
-		console.log('⬇️ 스크롤 처리');
 		setTimeout(function() {
 			var historyDiv = $('#messageHistory');
 			if (historyDiv.length > 0) {
 				historyDiv.scrollTop(historyDiv[0].scrollHeight);
-				console.log('✅ 스크롤 완료');
-			} else {
-				console.error('❌ #messageHistory를 찾을 수 없음!');
 			}
 		}, 50);
 	}
+
+	function displayInvitationMessage(msg) {
+		const roomCodeMatch = msg.messageText.match(/방 코드:\s*(\w+)/);
+		const roomCode = roomCodeMatch ? roomCodeMatch[1] : 'N/A';
+
+		$('#messageHistory').append(`
+	        <div class="mb-2 d-flex justify-content-start">
+	            <div class="card bg-warning text-dark" style="max-width: 70%; word-break: break-word;">
+	                <div class="card-body p-2">
+	                    <p class="mb-2"><strong>🎮 게임 초대</strong></p>
+	                    <p class="mb-2 text-dark">방 코드: <code>${roomCode}</code></p>
+	                    <button type="button" 
+	                            class="btn btn-success btn-sm accept-invitation-btn"
+	                            data-room-code="${roomCode}"
+	                            data-message-id="${msg.id}">
+	                        <i class="fas fa-check"></i> 참가하기
+	                    </button>
+	                </div>
+	            </div>
+	        </div>
+	    `);
+
+		setTimeout(function() {
+			var historyDiv = $('#messageHistory');
+			if (historyDiv.length > 0) {
+				historyDiv.scrollTop(historyDiv[0].scrollHeight);
+			}
+		}, 50);
+	}
+
 
 
 	/**
@@ -962,7 +988,7 @@ window.invitationsSubscribed = false;
 			window.invitationsSubscribed = true;
 			console.log('[INV] 구독 완료');
 		} catch (error) {
-			console.error('❌ 초대 구독 중 에러:', error);
+			console.error('초대 구독 중 에러:', error);
 		}
 	}
 
@@ -1015,11 +1041,12 @@ window.invitationsSubscribed = false;
 		console.log('🎉 showInvitationNotification 호출');
 
 		if (!invitation || !invitation.roomCode) {
-			console.error('❌ invitation 데이터 없음');
+			console.error('invitation 데이터 없음');
 			return;
 		}
 
 		const roomCode = invitation.roomCode;
+		const messageId = invitation.messageId;
 		const inviterName = invitation.inviterName || '친구';
 
 		console.log('🎮 방 초대 팝업 표시:', roomCode, 'by', inviterName);
@@ -1054,18 +1081,16 @@ window.invitationsSubscribed = false;
 				// ⭐ 1분(60초) 후 자동으로 팝업 닫기
 				setTimeout(() => {
 					Swal.close();
-					console.log('⏰ 1분 경과, 초대 팝업 자동 닫음');
 				}, 60000);  // 60000ms = 1분
 			}
 
 		}).then((result) => {
 			if (result.isConfirmed) {
-				console.log('✅ 초대 수락:', roomCode);
+				markInvitationAsRead(messageId);
 
-				// ✅ 참가자 업데이트 구독 시작 (새 탭에서도 실시간 업데이트)
+				// 참가자 업데이트 구독 시작 (새 탭에서도 실시간 업데이트)
 				if (typeof subscribeToParticipantUpdates === 'function') {
 					subscribeToParticipantUpdates(roomCode);
-					console.log('📡 참가자 업데이트 구독 시작');
 				}
 
 				// 1초 후 이동 (구독 시간 확보)
@@ -1073,11 +1098,33 @@ window.invitationsSubscribed = false;
 					window.location.href = '/waitroom/' + roomCode;
 				}, 500);
 			} else {
-				console.log('⏭️ 초대 나중에');
+				markInvitationAsRead(messageId);
 			}
 		});
 	}
 
+	function markInvitationAsRead(messageId) {
+		const csrfToken = $('meta[name="_csrf"]').attr('content');
+		const csrfHeader = $('meta[name="_csrf_header"]').attr('content');
+
+		if (!messageId) return;
+
+		$.ajax({
+			url: '/api/friend-messages/' + messageId + '/mark-as-read',
+			type: 'PUT',
+			beforeSend: function(xhr) {
+				if (csrfToken && csrfHeader) {
+					xhr.setRequestHeader(csrfHeader, csrfToken);
+				}
+			},
+			success: function(response) {
+				console.log('초대 메시지 읽음 처리:', messageId);
+			},
+			error: function(xhr) {
+				console.warn('읽음 처리 실패 (무시):', xhr);
+			}
+		});
+	}
 
 	/**
 	 * DOM 로드 후 초기화
@@ -1102,7 +1149,7 @@ window.invitationsSubscribed = false;
 				subscribeToInvitations();
 			})
 			.catch(function(error) {
-				console.error('❌ [1단계 실패] WebSocket 연결 실패:', error);
+				console.error('[1단계 실패] WebSocket 연결 실패:', error);
 			});
 
 		// 닫기 버튼 클릭
@@ -1180,15 +1227,13 @@ window.invitationsSubscribed = false;
 			const username = $(this).data('username');
 			const friendshipId = $(this).data('friendship-id');
 
-			console.log('🧪 클릭 시 값들');
+			console.log('클릭 시 값들');
 			console.log('userId:', userId);
 			console.log('username:', username);
 			console.log('friendshipId:', friendshipId);
 
 			switchToChatView(userId, username, friendshipId);
 		});
-
-
 
 		// 채팅 입력창 엔터로 전송
 		$(document).on('keypress', '#messageInput', function(e) {
@@ -1210,6 +1255,22 @@ window.invitationsSubscribed = false;
 			if (confirm(message)) {
 				handleRejectOption(friendshipId, action);
 			}
+		});
+
+		$(document).on('click', '.accept-invitation-btn', function() {
+			const roomCode = $(this).data('room-code');
+			const messageId = $(this).data('message-id');
+
+			markInvitationAsRead(messageId);
+
+			if (typeof subscribeToParticipantUpdates === 'function') {
+				subscribeToParticipantUpdates(roomCode);
+			}
+
+			setTimeout(() => {
+				window.location.href = '/waitroom/' + roomCode;
+			}, 500);
+
 		});
 
 	});

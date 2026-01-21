@@ -103,6 +103,8 @@ public class RoomQuizController {
 				System.out.println("🆔 퀴즈 게스트 effectiveUserId: " + effectiveUserId);
 			}
 
+			roomService.closeRoom(roomCode);
+
 			model.addAttribute("effectiveUserId", effectiveUserId); // ✅ HTML에 전달!
 
 			// ✅ 모든 참가자 점수 0으로 초기화 (회원 + 게스트)

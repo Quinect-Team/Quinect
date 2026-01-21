@@ -28,7 +28,7 @@ public class FriendMessage {
 	private String messageText;
 
 	@Column(nullable = false)
-	private Boolean isRead = false;
+	private Boolean isRead;
 
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime sentAt;
