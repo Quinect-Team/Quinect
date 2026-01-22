@@ -3,10 +3,6 @@ const pageSize = 10;
 let isLastPage = false;
 let isLoading = false;
 
-// ⭐ [추가] 컨트롤러(ProfileController)에서 Model로 넘겨준 targetEmail 값을 가져옴
-// (타임리프 인라인 문법 사용, 없으면 빈 문자열)
-const targetEmail = "[[${targetEmail}]]"; 
-
 // 페이지 로드 시 첫 번째 페이지 가져오기
 $(document).ready(function() {
 	loadTimelineData(currentPage);
@@ -29,12 +25,7 @@ function loadTimelineData(page) {
 	$.ajax({
 		url: '/api/timeline',
 		type: 'GET',
-		// ⭐ [수정] targetEmail 파라미터 추가
-		data: { 
-            page: page, 
-            size: pageSize,
-            targetEmail: targetEmail // 서버 API로 전달
-        },
+		data: { page: page, size: pageSize },
 		success: function(data) {
 			if (data.length === 0) {
 				isLastPage = true;
@@ -86,3 +77,14 @@ function renderTimelineItems(items) {
 	});
 	$('#timelineList').append(html);
 }
+
+// (선택사항) 스크롤이 바닥에 닿으면 자동 로딩하려면 아래 주석 해제
+/*
+$(window).scroll(function() {
+	if ($(window).scrollTop() + $(window).height() > $(document).height() - 100) {
+		if(!isLastPage && !isLoading) {
+			loadNextPage();
+		}
+	}
+});
+*/
