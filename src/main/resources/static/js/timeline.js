@@ -2,9 +2,18 @@ let currentPage = 0;
 const pageSize = 10;
 let isLastPage = false;
 let isLoading = false;
+let targetUserId = null;
 
 // 페이지 로드 시 첫 번째 페이지 가져오기
 $(document).ready(function() {
+	const val = $('#hiddenTargetUserId').val();
+	if (val && val !== '') {
+		targetUserId = Number(val);
+	}
+
+	console.log("📌 읽어온 ID:", targetUserId); // 확인용 로그
+
+	// 3. 그 다음 데이터 로드 시작
 	loadTimelineData(currentPage);
 });
 
@@ -20,30 +29,39 @@ function loadNextPage() {
 function loadTimelineData(page) {
 	isLoading = true;
 	$('#loadingSpinner').show();
-	$('#loadMoreBtnContainer').hide(); // 로딩 중엔 버튼 숨김
+	$('#loadMoreBtnContainer').hide();
+
+	// 1. 보낼 데이터를 객체로 정의
+	let requestData = {
+		page: page,
+		size: pageSize
+	};
+
+	// 2. targetUserId가 존재하면(타인 프로필) 데이터에 추가
+	if (targetUserId) {
+		requestData.userId = targetUserId;
+	}
 
 	$.ajax({
 		url: '/api/timeline',
 		type: 'GET',
-		data: { page: page, size: pageSize },
+		data: requestData, // ⭐ 수정됨: userId가 포함된 객체를 전송
 		success: function(data) {
+			// ... (기존 성공 로직 그대로) ...
 			if (data.length === 0) {
 				isLastPage = true;
 				if (page === 0) {
 					$('#timelineList').html('<div class="text-center text-gray-500 my-5">활동 기록이 없습니다.</div>');
 				} else {
-					// 더 이상 데이터가 없음
 					$('#loadMoreBtnContainer').html('<span class="small text-gray-500">모든 기록을 불러왔습니다.</span>').show();
 				}
 			} else {
 				renderTimelineItems(data);
-
-				// 데이터가 pageSize보다 적게 왔다면 그게 마지막 페이지임
 				if (data.length < pageSize) {
 					isLastPage = true;
 					$('#loadMoreBtnContainer').html('<span class="small text-gray-500">모든 기록을 불러왔습니다.</span>').show();
 				} else {
-					$('#loadMoreBtnContainer').show(); // 버튼 다시 표시
+					$('#loadMoreBtnContainer').show();
 				}
 			}
 		},

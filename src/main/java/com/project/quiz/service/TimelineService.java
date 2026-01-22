@@ -53,4 +53,15 @@ public class TimelineService {
 
         return resultPage.stream().map(TimelineDto::new).collect(Collectors.toList());
     }
+    
+    @Transactional(readOnly = true)
+    public List<TimelineDto> getTimelineByPage(Long userId, int page, int size) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+        
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<UserActivityLog> resultPage = logRepository.findAllByUserAndActivityTypeIn(user, TARGET_ACTIVITIES, pageRequest);
+        
+        return resultPage.stream().map(TimelineDto::new).collect(Collectors.toList());
+    }
 }

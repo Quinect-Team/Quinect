@@ -197,4 +197,19 @@ public class ProfileController {
 		// ▼▼▼ [Next] 성공 신호 + 이동할 목적지(profile) 지정 ▼▼▼
 		return "redirect:/profile/settings?status=success&next=/profile";
 	}
+	
+	@GetMapping("/profile/{profileId}/timeline")
+	public String userTimelinePage(@PathVariable("profileId") String profileId, Model model, Principal principal) {
+	    // 1. 프로필 ID로 타겟 유저 찾기
+	    UserProfile targetProfile = userProfileRepository.findById(profileId)
+	            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로필입니다."));
+	    User targetUser = targetProfile.getUser();
+
+	    // 2. 모델에 필요한 정보 담기
+	    model.addAttribute("targetUserId", targetUser.getId());      // (기존) API 호출용 숫자 ID
+	    model.addAttribute("targetProfileId", profileId);            // ⭐ (추가) 뒤로가기 링크용 UUID 문자열
+	    model.addAttribute("targetUsername", targetProfile.getUsername());
+	    
+	    return "timeline";
+	}
 }
