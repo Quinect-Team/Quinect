@@ -72,7 +72,7 @@
 		</div>
 	</div>
 
-	<div class="row">
+	<div class="row" id="itemGrid" th:fragment="itemGrid">
 		<div class="col-lg-3 col-md-4 col-6 mb-4" th:each="item : ${items}">
 			<div class="item-card shadow-sm" data-toggle="modal" data-target="#itemModal" th:data-id="${item.id}"
 				th:data-name="${item.itemName}" th:data-price="${item.price}" th:data-desc="${item.description}"

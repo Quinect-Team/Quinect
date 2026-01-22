@@ -2,18 +2,26 @@ $(document).ready(function() {
 	$('#categorySelect').on('change', function() {
 		var selectedCategory = $(this).val();
 
-		// 현재 URL 가져오기
-		var currentUrl = new URL(window.location.href);
+		$.ajax({
+			url: '/shop', // 요청 보낼 주소 (고정)
+			type: 'GET',
+			data: {
+				category: selectedCategory, // 선택된 카테고리
+				ajax: 'true'                // 컨트롤러에게 "조각만 줘"라고 알리는 신호
+			},
+			success: function(result) {
+				if (!result || result.trim() === "") { return; }
 
-		// category 파라미터 업데이트 (값이 없으면 전체보기이므로 파라미터 삭제)
-		if (selectedCategory) {
-			currentUrl.searchParams.set('category', selectedCategory);
-		} else {
-			currentUrl.searchParams.delete('category');
-		}
+				// 1. 화면 교체
+				$('#itemGrid').replaceWith(result);
 
-		// 페이지 이동 (새로고침)
-		window.location.href = currentUrl.toString();
+				// 2. 주소창 업데이트(history.pushState) 코드 삭제함
+				// -> 이제 주소창은 계속 /shop 으로 고정됨
+			},
+			error: function() {
+				alert('아이템 목록을 불러오지 못했습니다.');
+			}
+		});
 	});
 
 	// [기능 1] 아이템 모달이 열릴 때 실행되는 로직

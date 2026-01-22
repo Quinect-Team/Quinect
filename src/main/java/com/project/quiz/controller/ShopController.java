@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -24,21 +25,23 @@ public class ShopController {
 	// 상점 페이지 (DB 조회)
 	@GetMapping("/shop")
 	public String shopPage(Model model, Principal principal,
-			@RequestParam(name = "category", required = false) String category) {
+	        @RequestParam(name = "category", required = false) String category,
+	        @RequestParam(name = "ajax", required = false) String ajax) { // [추가] AJAX 헤더 확인용
 
-		// 로그인한 사람(principal) 확인
-		String email = (principal != null) ? principal.getName() : "";
+        // 로그인한 사람(principal) 확인
+        String email = (principal != null) ? principal.getName() : "";
 
-		// [수정] 서비스에 category 전달
-		List<ShopItemResponse> items = shopService.getAvailableItems(email, category);
+        // 서비스에 category 전달
+        List<ShopItemResponse> items = shopService.getAvailableItems(email, category);
+        model.addAttribute("items", items);
 
-		model.addAttribute("items", items);
+        // [핵심 변경] AJAX 요청("XMLHttpRequest")이 들어오면 타임리프 조각(Fragment)만 반환
+        if ("true".equals(ajax)) {
+            return "layout/shop :: itemGrid"; 
+        }
 
-		// (선택 사항) 현재 선택된 카테고리가 무엇인지 뷰에 다시 전달할 필요가 있을 수 있음
-		// 하지만 shop.html 수정본에서 ${param.category}를 사용하므로 model에 안 담아도 동작합니다.
-
-		return "shop";
-	}
+        return "shop"; // 일반 요청은 전체 페이지 반환
+    }
 
 	// [POST] 아이템 구매 처리
 	@PostMapping("/shop/buy")
