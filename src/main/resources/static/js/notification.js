@@ -32,7 +32,7 @@ function updateTopbarAlert(notification) {
 		$badge.show();
 	}
 
-	$badge.text((currentCount + 1) + "+");
+	$badge.text((currentCount + 1));
 	$('#noAlertsMessage').hide();
 
 	var now = new Date();
