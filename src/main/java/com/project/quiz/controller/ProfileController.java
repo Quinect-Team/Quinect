@@ -162,9 +162,46 @@ public class ProfileController {
 	}
 
 	// ▼▼▼ 타임라인 페이지 (기존에 있었으므로 유지) ▼▼▼
-	@GetMapping("/profile/timeline")
-	public String timelinePage() {
-		return "timeline"; // timeline.html 껍데기만 렌더링
+	@GetMapping({ "/profile/timeline", "/profile/timeline/{profileId}" }) // ⭐ URL 패턴 추가
+	public String timelinePage(
+			@PathVariable(value = "profileId", required = false) String profileId,
+			Model model,
+			Principal principal) {
+
+		// 1. 로그인 유저 확인
+		User currentUser = null;
+		if (principal != null) {
+			currentUser = userRepository.findByEmail(principal.getName()).orElse(null);
+		}
+
+		// 2. 타겟 유저 결정 (profilePage 로직과 동일하게 처리)
+		User targetUser = null;
+		if (profileId != null) {
+			// (A) 타인 프로필 ID가 있는 경우
+			UserProfile targetProfile = userProfileRepository.findById(profileId)
+					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 프로필입니다."));
+			targetUser = targetProfile.getUser();
+		} else if (currentUser != null) {
+			// (B) 내 프로필인 경우
+			targetUser = currentUser;
+		} else {
+			// 로그인 안 했고 ID도 없으면 로그인 페이지로
+			return "redirect:/login";
+		}
+
+		// 3. 모델에 데이터 전달
+		if (targetUser != null) {
+			// 탈퇴한 유저라면 메인으로 튕겨내거나 처리
+			if (!"ACTIVE".equals(targetUser.getStatus())) {
+				return "redirect:/main";
+			}
+			
+			// ⭐ HTML(Javascript)에서 API 호출 시 사용할 targetEmail 전달
+			model.addAttribute("targetEmail", targetUser.getEmail());
+			model.addAttribute("targetUser", targetUser); // 상단 정보 표시용
+		}
+
+		return "timeline"; // timeline.html 렌더링
 	}
 
 	// ▼▼▼ [POST] 프로필 저장 로직 추가 ▼▼▼
