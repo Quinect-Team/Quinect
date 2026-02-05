@@ -94,8 +94,6 @@
 
 ## 데이터 모델 개요 (ERD 요약)
 
-> 실제 ERD는 `docs/erd.png` 와 같이 이미지로 함께 관리하는 것을 권장합니다.
-
 - **사용자 영역**
   - `user`, `user_profile`, `friendship`, `friend_message`
   - `user_activity_log`, `user_activity_point_change`, `user_activity_attendance`
