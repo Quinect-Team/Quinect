@@ -1,5 +1,5 @@
 # 1단계: Gradle로 앱 빌드
-FROM gradle:8.5-jdk21-alpine AS builder
+FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /app
 
 # 프로젝트 소스 전체 복사
@@ -10,7 +10,7 @@ RUN chmod +x ./gradlew
 RUN ./gradlew bootJar --no-daemon
 
 # 2단계: 실행용 이미지
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Render에서 내려주는 포트 사용 (기본 8080)
