@@ -4,6 +4,7 @@ WORKDIR /app
 
 # 프로젝트 소스 전체 복사
 COPY . .
+RUN chmod +x ./gradlew
 
 # 스프링부트 JAR 빌드
 RUN ./gradlew bootJar --no-daemon
