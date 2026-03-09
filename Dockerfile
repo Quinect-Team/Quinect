@@ -1,5 +1,5 @@
 # 1단계: Gradle로 앱 빌드
-FROM gradle:8.5-jdk17-alpine AS builder
+FROM gradle:8.5-jdk21-alpine AS builder
 WORKDIR /app
 
 # 프로젝트 소스 전체 복사
