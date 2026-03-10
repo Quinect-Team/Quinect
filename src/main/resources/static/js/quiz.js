@@ -5,6 +5,9 @@ var userId = parseInt(document.body.getAttribute('data-user-id'));
 var stompClient = null;
 let autosaveTimer = null;
 
+let submittedUsers = new Set();
+let latestRanking = [];
+
 function getAnswerValue() {
 	if (!currentQuestionData) return null;
 	if (currentQuestionData.quizTypeCode === 2) {
@@ -74,12 +77,25 @@ function connectWebSocket() {
 	stompClient.connect({}, function(frame) {
 		stompClient.subscribe('/topic/quiz/' + roomCode, function(message) {
 			var data = JSON.parse(message.body);
-			if (data.type === 'QUESTION') displayQuestion(data);
-			else if (data.type === 'RANKING') displayRanking(data.ranking);
-			else if (data.type === 'FINISH') finishQuiz();
+
+			if (data.type === 'QUESTION') {
+				submittedUsers.clear();
+				displayQuestion(data);
+				updateSubmitProgress(0, data.totalPlayers);
+			}
+			else if (data.type === 'RANKING') {
+				latestRanking = data.ranking || [];
+				displayRanking(latestRanking);
+			}
+			else if (data.type === 'SUBMIT_STATUS') {
+				markSubmitted(data.userId);
+				updateSubmitProgress(data.submittedCount, data.totalPlayers);
+			}
+			else if (data.type === 'FINISH') {
+				finishQuiz();
+			}
 		});
 
-		// ✅ userId 기반 (각 사용자별 한 번만 호출)
 		var userStorageKey = 'quiz_started_' + roomCode + '_' + userId;
 		if (!sessionStorage.getItem(userStorageKey)) {
 			sessionStorage.setItem(userStorageKey, 'true');
@@ -213,16 +229,40 @@ function displayRanking(ranking) {
 
 	var rankingHtml = '';
 	ranking.forEach(function(player) {
+		const isSubmitted = submittedUsers.has(player.userId);
+
 		rankingHtml += `
-                    <div class="d-flex justify-content-between align-items-center pb-3 border-bottom">
-                        <span class="badge badge-pill badge-success px-3 py-2" style="font-size: 14px;">${player.rank}</span>
-                        <span class="font-weight-500 fs-6">${player.nickname}</span>
-                        <span class="badge badge-success px-3 py-2" style="font-size: 14px;">${player.score || 0}점</span>
-                    </div>
-                `;
+			<div class="d-flex justify-content-between align-items-center pb-3 border-bottom" data-user-id="${player.userId}">
+				<span class="badge badge-pill badge-success px-3 py-2" style="font-size: 14px;">${player.rank}</span>
+				<span class="font-weight-500 fs-6">
+					${player.nickname}
+					<span class="ml-2" style="font-size: 16px;">
+						${isSubmitted ? '✅' : '⏳'}
+					</span>
+				</span>
+				<span class="badge badge-success px-3 py-2" style="font-size: 14px;">${player.score || 0}점</span>
+			</div>
+		`;
 	});
 
 	document.getElementById('ranking-list').innerHTML = rankingHtml;
+}
+
+function markSubmitted(userId) {
+	submittedUsers.add(userId);
+	displayRanking(latestRanking);
+}
+
+function updateSubmitProgress(submittedCount, totalPlayers) {
+	const el = document.getElementById('submit-progress');
+	if (!el) return;
+
+	if (!totalPlayers || totalPlayers <= 0) {
+		el.textContent = '';
+		return;
+	}
+
+	el.textContent = `제출 현황: ${submittedCount} / ${totalPlayers}`;
 }
 
 function finishQuiz() {

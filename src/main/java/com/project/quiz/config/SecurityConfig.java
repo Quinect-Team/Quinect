@@ -29,7 +29,7 @@ public class SecurityConfig {
 				.requestMatchers("/", "/index", "/login", "/signup/**", "/register", "/api/user/check-email",
 						"/guest/**", "/css/**", "/js/**", "/images/**", "/vendor/**", "/joinroom", "/waitroom/**",
 						"/ws/**", "/forgot/**", "/send", "/verify", "/check", "/reset", "/success", "/img/**",
-						"/quiz/**", "/quiz-result/**")
+						"/quiz/**", "/quiz-result/**", "/uploads/**")
 				.permitAll().requestMatchers("/api/**").authenticated()
 
 				.requestMatchers("/notice/write").hasRole("ADMIN")

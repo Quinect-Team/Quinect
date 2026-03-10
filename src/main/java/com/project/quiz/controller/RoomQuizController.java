@@ -183,6 +183,9 @@ public class RoomQuizController {
 		questionData.put("point", question.getPoint());
 		questionData.put("imageUrl", question.getImage());
 
+		List<Participant> participants = participantService.findByRoom(roomService.getRoomByCode(roomCode));
+		questionData.put("totalPlayers", participants.size());
+
 		if (question.getQuizTypeCode() == 2) {
 			List<Map<String, Object>> options = new ArrayList<>();
 			for (QuizDto.OptionDto option : question.getOptions()) {
@@ -299,6 +302,16 @@ public class RoomQuizController {
 				return;
 			}
 			submitted.add(userId);
+			
+			Map<String, Object> submitStatus = new HashMap<>();
+			submitStatus.put("type", "SUBMIT_STATUS");
+			submitStatus.put("userId", userId);
+			submitStatus.put("submittedCount", submitted.size());
+
+			List<Participant> participants = participantService.findByRoom(room);
+			submitStatus.put("totalPlayers", participants.size());
+
+			messagingTemplate.convertAndSend("/topic/quiz/" + roomCode, submitStatus);
 
 			// 2. 점수 계산
 			boolean correct = false;
@@ -363,7 +376,6 @@ public class RoomQuizController {
 			messagingTemplate.convertAndSend("/topic/quiz/" + roomCode,
 					Map.of("type", "ANSWER_RESULT", "userId", userId, "isCorrect", correct));
 
-			List<Participant> participants = participantService.findByRoom(room);
 			int totalPlayers = participants.size();
 			int submittedCount = submitted.size();
 
