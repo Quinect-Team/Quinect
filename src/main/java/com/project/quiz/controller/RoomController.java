@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.project.quiz.config.QRCodeService;
 import com.project.quiz.domain.Quiz;
@@ -58,6 +59,9 @@ public class RoomController {
 	private SimpMessagingTemplate messagingTemplate;
 
 	private final Map<String, Map<Long, Boolean>> roomReadyStatus = new ConcurrentHashMap<>();
+
+	@Value("${BASE_URL}")
+	private String baseUrl;
 
 	@GetMapping("/waitroom/create")
 	public String createRoomPost(Principal principal, HttpSession session) {
@@ -145,15 +149,15 @@ public class RoomController {
 		model.addAttribute("isRoomMaster", isRoomMaster);
 
 		try {
-			String url2 = "https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query="
-					+ roomCode + "&ackey=088trqms"; // 도메인에 맞게 변경!
-			byte[] qrImage = qrCodeService.generateQRCodeImage(url2, 250, 250);
+			String roomUrl = baseUrl + "/waitroom/" + roomCode;
+			byte[] qrImage = qrCodeService.generateQRCodeImage(roomUrl, 250, 250);
 			@SuppressWarnings("deprecation")
 			String qrCodeBase64 = Base64.encodeBase64String(qrImage);
 			model.addAttribute("qrCodeBase64", qrCodeBase64);
+			model.addAttribute("roomUrl", roomUrl);
 		} catch (Exception e) {
-			// 에러시 기본 값 등 처리
 			model.addAttribute("qrCodeBase64", null);
+			model.addAttribute("roomUrl", null);
 		}
 
 		List<Quiz> quizzes = quizService.findAll();
