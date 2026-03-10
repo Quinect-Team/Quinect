@@ -78,7 +78,9 @@ public class RoomController {
 		// user.getId()를 호스트유저아이디로 사용
 		Room room = roomService.createRoom(user.getId(), "opened");
 
-		return "redirect:/waitroom/" + room.getRoomCode();
+		if (principal == null && session.getAttribute("guestUser") == null) {
+			return "redirect:/guest/setup?next=/waitroom/" + roomCode;
+		}
 	}
 
 	@GetMapping("/waitroom/{roomCode}")
@@ -149,15 +151,17 @@ public class RoomController {
 		model.addAttribute("isRoomMaster", isRoomMaster);
 
 		try {
-			String roomUrl = baseUrl + "/waitroom/" + roomCode;
+			String roomUrl = baseUrl + "/guest/setup?next=/waitroom/" + roomCode;
+
 			byte[] qrImage = qrCodeService.generateQRCodeImage(roomUrl, 250, 250);
+
 			@SuppressWarnings("deprecation")
 			String qrCodeBase64 = Base64.encodeBase64String(qrImage);
+
 			model.addAttribute("qrCodeBase64", qrCodeBase64);
-			model.addAttribute("roomUrl", roomUrl);
+
 		} catch (Exception e) {
 			model.addAttribute("qrCodeBase64", null);
-			model.addAttribute("roomUrl", null);
 		}
 
 		List<Quiz> quizzes = quizService.findAll();
