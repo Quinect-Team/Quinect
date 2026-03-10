@@ -78,9 +78,7 @@ public class RoomController {
 		// user.getId()를 호스트유저아이디로 사용
 		Room room = roomService.createRoom(user.getId(), "opened");
 
-		if (principal == null && session.getAttribute("guestUser") == null) {
-			return "redirect:/guest/setup?next=/waitroom/" + roomCode;
-		}
+		return "redirect:/waitroom/" + room.getRoomCode();
 	}
 
 	@GetMapping("/waitroom/{roomCode}")
